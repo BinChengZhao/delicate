@@ -1,0 +1,12 @@
+[package]
+name = "delicate-executor"
+version = "0.1.0"
+authors = ["BinChengZhao <binchengZhao@outlook.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+sysinfo = "0.16.4"
+delay_timer = "0.3.0"
+actix-web = "3.3.2"
