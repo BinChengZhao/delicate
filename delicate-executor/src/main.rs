@@ -2,15 +2,17 @@ use actix_web::web::{self, Data as ShareData};
 use actix_web::{get, App, HttpResponse, HttpServer, Responder};
 
 use delay_timer::prelude::*;
+//TODO: delay-timer add `tokio_unblock_process_task_fn` to prelude
+use delay_timer::utils::convenience::functions::tokio_unblock_process_task_fn;
 use serde::{Deserialize, Serialize};
 
 use anyhow::{anyhow, Error as AnyError, Result as AnyResult};
 
-use std::convert::TryInto;
+use std::convert::{TryFrom, TryInto};
 
 type SharedDelayTimer = ShareData<DelayTimer>;
 
-#[derive(Debug, Debug, Clone, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
 struct UnifiedResponseMessages {
     code: i8,
     msg: String,
@@ -33,16 +35,28 @@ impl UnifiedResponseMessages {
         self
     }
 
+    #[allow(dead_code)]
     fn customized_error_code(mut self, code: i8) -> Self {
         self.code = code;
 
         self
     }
 
+    #[allow(dead_code)]
     fn reverse(mut self) -> Self {
         self.code = -1 - self.code;
+        self
+    }
+
+    fn init_by_result<T>(result: AnyResult<T>) -> Self {
+        match result {
+            Ok(_) => Self::success(),
+            Err(e) => Self::error().customized_error_msg(e.to_string()),
+        }
     }
 }
+
+//TODO: err.to_string()
 #[derive(Debug, Serialize, Deserialize)]
 struct TaskConf {
     /// Task_id should unique.
@@ -106,54 +120,63 @@ impl<'a> TryInto<Frequency<'a>> for FrequencyRaw<'a> {
     }
 }
 
-impl TryInto<Task> for TaskConf {
+impl TryFrom<TaskConf> for Task {
     type Error = AnyError;
-    fn try_into(self) -> Result<Task, Self::Error> {
-        let frequency: Result<Frequency, Self::Error> =
-            FrequencyRaw::get_frequency_by_task_conf_ref(&self);
+    fn try_from(task_conf: TaskConf) -> Result<Self, Self::Error> {
+        let frequency: Frequency = FrequencyRaw::get_frequency_by_task_conf_ref(&task_conf)?;
 
         let mut task_builder = TaskBuilder::default();
         let task = task_builder
-            .set_task_id(self.task_id)
+            .set_task_id(task_conf.task_id)
             .set_frequency(frequency)
-            .set_maximum_running_time(self.maximum_running_time)
-            .set_maximun_parallel_runable_num(self.maximun_parallel_runable_num)
-            .spawn(tokio_unblock_process_task_fn(self.command_string));
+            .set_maximum_running_time(task_conf.maximum_running_time)
+            .set_maximun_parallel_runable_num(task_conf.maximun_parallel_runable_num)
+            .spawn(tokio_unblock_process_task_fn(
+                task_conf.command_string.clone(),
+            ))?;
 
         Ok(task)
     }
 }
 
 /// This handler uses json extractor
-async fn addTask(item: web::Json<TaskConf>, shared_delay_timer: SharedDelayTimer) -> HttpResponse {
-    // If one fn(f1) have a lot of statment is result-structure, but reture-type is other type such as i32.
-    // We should move that statment to another fn(f2) ,in there use '?' ops and reture-type is result-structure.
-    // fn(f1) just judgment result of fn(f2) returnd. then dosometing.
+#[get("/add_task")]
+async fn add_task(
+    task_conf: web::Json<TaskConf>,
+    shared_delay_timer: SharedDelayTimer,
+) -> impl Responder {
+    let mut response = UnifiedResponseMessages::error();
+    if let Ok(task) = Task::try_from(task_conf.0) {
+        response = UnifiedResponseMessages::init_by_result(shared_delay_timer.add_task(task));
+    }
 
-    //    shared_delay_timer.add_task(TaskConf.try_into());
-    HttpResponse::Ok().json(item.0) // <- send response
+    HttpResponse::Ok().json(response)
 }
 
-#[get("/removeTask/{id}")]
-async fn removeTask(
-    web::Path((task_id)): web::Path<(u64)>,
+#[get("/remove_task/{id}")]
+async fn remove_task(
+    web::Path(task_id): web::Path<u64>,
     shared_delay_timer: SharedDelayTimer,
 ) -> HttpResponse {
-    shared_delay_timer.remove_task(task_id);
-    HttpResponse::Ok().json(task_id) // <- send response
+    let response = UnifiedResponseMessages::init_by_result(shared_delay_timer.remove_task(task_id));
+    HttpResponse::Ok().json(response) // <- send response
 }
 
-#[get("/cancelTask/{task_id}/{record_id}")]
-async fn cancelTask(
-    web::Path((task_id, record_id)): web::Path<(u64, u64)>,
+#[get("/cancel_task/{task_id}/{record_id}")]
+async fn cancel_task(
+    web::Path((task_id, record_id)): web::Path<(u64, i64)>,
     shared_delay_timer: SharedDelayTimer,
 ) -> HttpResponse {
-    HttpResponse::Ok().json(record_id) // <- send response
+    let response =
+        UnifiedResponseMessages::init_by_result(shared_delay_timer.cancel_task(task_id, record_id));
+    HttpResponse::Ok().json(response) // <- send response
 }
 
-async fn maintenance(shared_delay_timer: SharedDelayTimer) -> HttpResponse {
-    shared_delay_timer.stop_delay_timer();
-    HttpResponse::Ok().json(task_id) // <- send response
+#[allow(dead_code)]
+async fn maintenance(shared_delay_timer: SharedDelayTimer) -> impl Responder {
+    HttpResponse::Ok().json(UnifiedResponseMessages::init_by_result(
+        shared_delay_timer.stop_delay_timer(),
+    ))
 }
 
 #[get("/{id}/{name}/index.html")]
@@ -162,16 +185,16 @@ async fn index(web::Path((id, name)): web::Path<(u32, String)>) -> impl Responde
 }
 
 //Health Screening
-#[get("/healthScreen")]
-async fn healthScreen(web::Path((id, name)): web::Path<(u32, String)>) -> impl Responder {
+#[get("/health_screen")]
+async fn health_screen(web::Path((id, name)): web::Path<(u32, String)>) -> impl Responder {
     format!("Hello {}! id:{}", name, id)
 }
 
-#[get("/bindExecutor")]
+#[get("/bind_executor")]
 // who are you.
 // callback_address.
 // token.
-async fn bindExecutor(web::Path((id, name)): web::Path<(u32, String)>) -> impl Responder {
+async fn bind_executor(web::Path((id, name)): web::Path<(u32, String)>) -> impl Responder {
     format!("Hello {}! id:{}", name, id)
 }
 
@@ -184,9 +207,12 @@ async fn main() -> std::io::Result<()> {
 
     let shared_delay_timer: SharedDelayTimer = ShareData::new(delay_timer);
 
-    HttpServer::new(move || App::new().service(index))
-        .app_data(shared_delay_timer)
-        .bind("127.0.0.1:8080")?
-        .run()
-        .await
+    HttpServer::new(move || {
+        App::new()
+            .service(index)
+            .app_data(shared_delay_timer.clone())
+    })
+    .bind("127.0.0.1:8080")?
+    .run()
+    .await
 }
