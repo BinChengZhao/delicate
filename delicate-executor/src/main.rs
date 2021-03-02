@@ -6,57 +6,23 @@ use delay_timer::prelude::*;
 use delay_timer::utils::convenience::functions::tokio_unblock_process_task_fn;
 use serde::{Deserialize, Serialize};
 
-use anyhow::{anyhow, Error as AnyError, Result as AnyResult};
+use anyhow::{anyhow, Error as AnyError};
 
-use std::convert::{TryFrom, TryInto};
+use std::convert::{From, Into, TryFrom, TryInto};
+use std::net::IpAddr;
 
-type SharedDelayTimer = ShareData<DelayTimer>;
+mod component;
+use component::*;
 
-#[derive(Default, Debug, Clone, Serialize, Deserialize)]
-struct UnifiedResponseMessages {
-    code: i8,
-    msg: String,
-}
-impl UnifiedResponseMessages {
-    fn success() -> Self {
-        UnifiedResponseMessages::default()
-    }
-
-    fn error() -> Self {
-        UnifiedResponseMessages {
-            code: -1,
-            ..Default::default()
-        }
-    }
-
-    fn customized_error_msg(mut self, msg: String) -> Self {
-        self.msg = msg;
-
-        self
-    }
-
-    #[allow(dead_code)]
-    fn customized_error_code(mut self, code: i8) -> Self {
-        self.code = code;
-
-        self
-    }
-
-    #[allow(dead_code)]
-    fn reverse(mut self) -> Self {
-        self.code = -1 - self.code;
-        self
-    }
-
-    fn init_by_result<T>(result: AnyResult<T>) -> Self {
-        match result {
-            Ok(_) => Self::success(),
-            Err(e) => Self::error().customized_error_msg(e.to_string()),
-        }
-    }
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct Scheduler {
+    name: String,
+    ip: IpAddr,
+    port: u16,
+    domin: String,
+    callback_url: String,
 }
 
-//TODO: err.to_string()
 #[derive(Debug, Serialize, Deserialize)]
 struct TaskConf {
     /// Task_id should unique.
@@ -85,31 +51,26 @@ struct FrequencyRaw<'a> {
     cron_str: &'a str,
 }
 
-impl<'a> FrequencyRaw<'a> {
-    fn build_by_task_conf_ref(task_conf_ref: &TaskConf) -> FrequencyRaw {
+impl<'a> From<&'a TaskConf> for FrequencyRaw<'a>{
+    fn from(value:&'a TaskConf) -> Self{
         FrequencyRaw {
-            mode: task_conf_ref.frequency_mode,
-            count: task_conf_ref.frequency_count,
-            cron_str: &task_conf_ref.cron_str,
+            mode: value.frequency_mode,
+            count: value.frequency_count,
+            cron_str: &value.cron_str,
         }
-    }
-
-    fn get_frequency_by_task_conf_ref(
-        task_conf_ref: &'a TaskConf,
-    ) -> Result<Frequency<'a>, AnyError> {
-        FrequencyRaw::build_by_task_conf_ref(task_conf_ref).try_into()
     }
 }
 
-impl<'a> TryInto<Frequency<'a>> for FrequencyRaw<'a> {
+
+impl<'a> TryFrom<FrequencyRaw<'a>> for Frequency<'a> {
     type Error = AnyError;
-    fn try_into(self) -> Result<Frequency<'a>, Self::Error> {
-        let f = match self.mode {
-            0 => Frequency::Repeated(self.cron_str),
+    fn try_from(value: FrequencyRaw<'a>) -> Result<Self, Self::Error> {
+        let f = match value.mode {
+            0 => Frequency::Repeated(value.cron_str),
 
-            1 => Frequency::CountDown(self.count, self.cron_str),
+            1 => Frequency::CountDown(value.count, value.cron_str),
 
-            2 => Frequency::Once(self.cron_str),
+            2 => Frequency::Once(value.cron_str),
 
             _ => {
                 return Err(anyhow!("Frequency-mode missed."));
@@ -123,7 +84,7 @@ impl<'a> TryInto<Frequency<'a>> for FrequencyRaw<'a> {
 impl TryFrom<TaskConf> for Task {
     type Error = AnyError;
     fn try_from(task_conf: TaskConf) -> Result<Self, Self::Error> {
-        let frequency: Frequency = FrequencyRaw::get_frequency_by_task_conf_ref(&task_conf)?;
+        let frequency: Frequency = FrequencyRaw::from(&task_conf).try_into()?;
 
         let mut task_builder = TaskBuilder::default();
         let task = task_builder
@@ -147,7 +108,7 @@ async fn add_task(
 ) -> impl Responder {
     let mut response = UnifiedResponseMessages::error();
     if let Ok(task) = Task::try_from(task_conf.0) {
-        response = UnifiedResponseMessages::init_by_result(shared_delay_timer.add_task(task));
+        response = shared_delay_timer.add_task(task).into();
     }
 
     HttpResponse::Ok().json(response)
@@ -158,14 +119,14 @@ async fn remove_task(
     web::Path(task_id): web::Path<u64>,
     shared_delay_timer: SharedDelayTimer,
 ) -> HttpResponse {
-    let response = UnifiedResponseMessages::init_by_result(shared_delay_timer.remove_task(task_id));
+    let response: UnifiedResponseMessages = shared_delay_timer.remove_task(task_id).into();
     HttpResponse::Ok().json(response) // <- send response
 }
 
 #[get("/cancel_task/{task_id}/{record_id}")]
 async fn cancel_task(
     web::Path((task_id, record_id)): web::Path<(u64, i64)>,
-    shared_delay_timer: SharedDelayTimer,
+    shared_delay_timer: SharedDelayTimer
 ) -> HttpResponse {
     let response =
         UnifiedResponseMessages::init_by_result(shared_delay_timer.cancel_task(task_id, record_id));
@@ -174,7 +135,7 @@ async fn cancel_task(
 
 #[allow(dead_code)]
 async fn maintenance(shared_delay_timer: SharedDelayTimer) -> impl Responder {
-    HttpResponse::Ok().json(UnifiedResponseMessages::init_by_result(
+    HttpResponse::Ok().json(Into::<UnifiedResponseMessages>::into(
         shared_delay_timer.stop_delay_timer(),
     ))
 }
@@ -194,8 +155,16 @@ async fn health_screen(web::Path((id, name)): web::Path<(u32, String)>) -> impl 
 // who are you.
 // callback_address.
 // token.
-async fn bind_executor(web::Path((id, name)): web::Path<(u32, String)>) -> impl Responder {
-    format!("Hello {}! id:{}", name, id)
+
+// Or use middleware to reach consensus.
+// Register token at executor startup, check token when scheduler bind executor.
+
+// Or set security level, no authentication at level 0, public and private keys required at level 1.
+async fn bind_executor(
+    scheduler: web::Json<Scheduler>,
+    delicate_conf: web::Data<DelicateConf>,
+) -> impl Responder {
+    scheduler
 }
 
 #[actix_web::main]
@@ -209,10 +178,15 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         App::new()
-            .service(index)
+            .service(bind_executor)
+            .service(add_task)
+            .service(remove_task)
+            .service(cancel_task)
+            .service(health_screen)
             .app_data(shared_delay_timer.clone())
+            .data(|| DelicateConf::default())
     })
-    .bind("127.0.0.1:8080")?
+    .bind("127.0.0.1:8090")?
     .run()
     .await
 }
