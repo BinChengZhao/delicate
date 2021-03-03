@@ -21,6 +21,15 @@ struct Scheduler {
     port: u16,
     domin: String,
     callback_url: String,
+    // private_key.decrypt(raw_token) = "ip:port:token" when security_level = SecurityLevel::Normal.
+    // raw_token = "ip:port:token" when security_level = SecurityLevel::ZeroRestriction.
+    raw_token: String,
+}
+
+impl Scheduler {
+    fn verify(&self, security_level: SecurityLevel) -> bool {
+        todo!()
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -51,8 +60,8 @@ struct FrequencyRaw<'a> {
     cron_str: &'a str,
 }
 
-impl<'a> From<&'a TaskConf> for FrequencyRaw<'a>{
-    fn from(value:&'a TaskConf) -> Self{
+impl<'a> From<&'a TaskConf> for FrequencyRaw<'a> {
+    fn from(value: &'a TaskConf) -> Self {
         FrequencyRaw {
             mode: value.frequency_mode,
             count: value.frequency_count,
@@ -60,7 +69,6 @@ impl<'a> From<&'a TaskConf> for FrequencyRaw<'a>{
         }
     }
 }
-
 
 impl<'a> TryFrom<FrequencyRaw<'a>> for Frequency<'a> {
     type Error = AnyError;
@@ -126,7 +134,7 @@ async fn remove_task(
 #[get("/cancel_task/{task_id}/{record_id}")]
 async fn cancel_task(
     web::Path((task_id, record_id)): web::Path<(u64, i64)>,
-    shared_delay_timer: SharedDelayTimer
+    shared_delay_timer: SharedDelayTimer,
 ) -> HttpResponse {
     let response =
         UnifiedResponseMessages::init_by_result(shared_delay_timer.cancel_task(task_id, record_id));

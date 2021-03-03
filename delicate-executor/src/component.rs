@@ -6,21 +6,54 @@ use serde::{Deserialize, Serialize};
 
 use anyhow::{anyhow, Error as AnyError, Result as AnyResult};
 
+use rsa::pem;
+use rsa::{PaddingScheme, PublicKey, RSAPrivateKey, RSAPublicKey};
+
 use std::convert::{From, TryFrom, TryInto};
 use std::env::var_os as get_env_val;
+use std::fs;
 use std::str::FromStr;
 
 pub(crate) type SharedDelayTimer = ShareData<DelayTimer>;
 
-#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
-pub(crate) struct DelicateConf {
+#[derive(Debug, Clone)]
+pub(crate) struct SecurityKey(RSAPrivateKey);
+
+impl SecurityKey {
+    /// Get delicate-executor's security level from env.
+    pub(crate) fn get_app_security_key() -> Option<Self> {
+        get_env_val("DELICATE_SECURITY_KEY").map_or(None, |s| {
+            fs::read(s)
+                .ok()
+                .map(|v| SecurityKey(pem::parse(v).unwrap().try_into().unwrap()))
+        })
+    }
+}
+
+#[derive(Debug, Clone)]
+pub(crate) struct SecurityConf {
     pub(crate) security_level: SecurityLevel,
+    pub(crate) rsa_private_key: Option<SecurityKey>,
+}
+
+#[derive(Debug, Clone)]
+pub(crate) struct DelicateConf {
+    pub(crate) security_conf: SecurityConf,
+}
+
+impl Default for SecurityConf {
+    fn default() -> Self {
+        Self {
+            security_level: SecurityLevel::get_app_security_level(),
+            rsa_private_key: SecurityKey::get_app_security_key(),
+        }
+    }
 }
 
 impl Default for DelicateConf {
     fn default() -> Self {
         DelicateConf {
-            security_level: SecurityLevel::get_app_security_level(),
+            security_conf: SecurityConf::default(),
         }
     }
 }
@@ -54,7 +87,6 @@ impl TryFrom<u16> for SecurityLevel {
 }
 
 impl SecurityLevel {
-
     /// Get delicate-executor's security level from env.
     pub(crate) fn get_app_security_level() -> Self {
         get_env_val("DELICATE_SECURITY_LEVEL").map_or(SecurityLevel::default(), |e| {
