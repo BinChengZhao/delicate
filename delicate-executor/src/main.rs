@@ -132,12 +132,13 @@ async fn remove_task(
 }
 
 #[get("/cancel_task/{task_id}/{record_id}")]
+
 async fn cancel_task(
     web::Path((task_id, record_id)): web::Path<(u64, i64)>,
     shared_delay_timer: SharedDelayTimer,
 ) -> HttpResponse {
-    let response =
-        UnifiedResponseMessages::init_by_result(shared_delay_timer.cancel_task(task_id, record_id));
+    let response: UnifiedResponseMessages =
+        shared_delay_timer.cancel_task(task_id, record_id).into();
     HttpResponse::Ok().json(response) // <- send response
 }
 

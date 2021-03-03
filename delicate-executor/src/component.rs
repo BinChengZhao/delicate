@@ -9,6 +9,8 @@ use anyhow::{anyhow, Error as AnyError, Result as AnyResult};
 use rsa::pem;
 use rsa::{PaddingScheme, PublicKey, RSAPrivateKey, RSAPublicKey};
 
+use sysinfo::{RefreshKind, System};
+
 use std::convert::{From, TryFrom, TryInto};
 use std::env::var_os as get_env_val;
 use std::fs;
@@ -34,6 +36,11 @@ impl SecurityKey {
 pub(crate) struct SecurityConf {
     pub(crate) security_level: SecurityLevel,
     pub(crate) rsa_private_key: Option<SecurityKey>,
+}
+
+// TODO:
+pub(crate) struct SystemMirror {
+    system: System,
 }
 
 #[derive(Debug, Clone)]
@@ -135,13 +142,6 @@ impl UnifiedResponseMessages {
     pub(crate) fn reverse(mut self) -> Self {
         self.code = -1 - self.code;
         self
-    }
-
-    pub(crate) fn init_by_result<T>(result: AnyResult<T>) -> Self {
-        match result {
-            Ok(_) => Self::success(),
-            Err(e) => Self::error().customized_error_msg(e.to_string()),
-        }
     }
 }
 
