@@ -8,14 +8,24 @@ use serde::{Deserialize, Serialize};
 
 use anyhow::{anyhow, Error as AnyError};
 
+use async_lock::RwLock;
+
 use std::convert::{From, Into, TryFrom, TryInto};
 use std::net::IpAddr;
 
 mod component;
 use component::*;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+type SharedScheduler = ShareData<Scheduler>;
+
+#[derive(Debug, Default)]
 struct Scheduler {
+    inner: RwLock<Option<RequestScheduler>>,
+}
+
+//TODO: shared by app_data(Data<AsyncRwlock>)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct RequestScheduler {
     name: String,
     ip: IpAddr,
     port: u16,
@@ -26,13 +36,45 @@ struct Scheduler {
     raw_token: String,
 }
 
-impl Scheduler {
-    fn verify(&self, security_level: SecurityLevel) -> bool {
+impl Default for RequestScheduler {
+    fn default() -> Self {
+        RequestScheduler {
+            ip: IpAddr::V4([0, 0, 0, 0].into()),
+            ..Default::default()
+        }
+    }
+}
+
+impl RequestScheduler {
+    fn verify(&self, security_level: SecurityLevel) -> AnyResult<String> {
+        match security_level {
+            SecurityLevel::ZeroRestriction => {
+                let mut split_str = self.raw_token.split(":");
+
+                let ip_str = split_str
+                    .next()
+                    .ok_or(anyhow!("ip_str missed for raw_token."))?;
+
+                let port_str = split_str
+                    .next()
+                    .ok_or(anyhow!("port_str missed for raw_token."))?;
+
+                if ip_str != self.ip.to_string() || port_str != self.port.to_string() {
+                    return Err(anyhow!("verify error."));
+                }
+
+                return split_str
+                    .next()
+                    .map(|t| t.to_string())
+                    .ok_or(anyhow!("token missed for raw_token."));
+            }
+            SecurityLevel::Normal => {}
+        }
         todo!()
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 struct TaskConf {
     /// Task_id should unique.
     task_id: u64,
@@ -170,10 +212,12 @@ async fn health_screen(web::Path((id, name)): web::Path<(u32, String)>) -> impl 
 
 // Or set security level, no authentication at level 0, public and private keys required at level 1.
 async fn bind_executor(
-    scheduler: web::Json<Scheduler>,
+    request_bind_scheduler: web::Json<RequestScheduler>,
+    delicate_shared_scheduler: ShareData<Scheduler>,
     delicate_conf: web::Data<DelicateConf>,
 ) -> impl Responder {
-    scheduler
+    request_bind_scheduler.verify(delicate_conf.security_conf.security_level);
+    ""
 }
 
 #[actix_web::main]
@@ -184,6 +228,7 @@ async fn main() -> std::io::Result<()> {
         .build();
 
     let shared_delay_timer: SharedDelayTimer = ShareData::new(delay_timer);
+    let shared_scheduler: SharedScheduler = ShareData::new(Scheduler::default());
 
     HttpServer::new(move || {
         App::new()
@@ -193,6 +238,7 @@ async fn main() -> std::io::Result<()> {
             .service(cancel_task)
             .service(health_screen)
             .app_data(shared_delay_timer.clone())
+            .app_data(shared_scheduler.clone())
             .data(|| DelicateConf::default())
     })
     .bind("127.0.0.1:8090")?
