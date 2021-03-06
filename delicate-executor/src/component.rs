@@ -19,7 +19,7 @@ use std::str::FromStr;
 pub(crate) type SharedDelayTimer = ShareData<DelayTimer>;
 
 #[derive(Debug, Clone)]
-pub(crate) struct SecurityKey(RSAPrivateKey);
+pub(crate) struct SecurityKey(pub(crate) RSAPrivateKey);
 
 impl SecurityKey {
     /// Get delicate-executor's security level from env.
@@ -50,6 +50,13 @@ pub(crate) struct DelicateConf {
 
 impl Default for SecurityConf {
     fn default() -> Self {
+        let security_level = SecurityLevel::get_app_security_level();
+        let rsa_private_key = SecurityKey::get_app_security_key();
+
+        assert!(
+            matches!(security_level, SecurityLevel::Normal if rsa_private_key.is_some()), "When the security level is Normal, the initialization `delicate-executor` must contain the secret key (DELICATE_SECURITY_KEY)"
+        );
+
         Self {
             security_level: SecurityLevel::get_app_security_level(),
             rsa_private_key: SecurityKey::get_app_security_key(),

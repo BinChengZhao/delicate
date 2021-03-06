@@ -10,17 +10,23 @@ use anyhow::{anyhow, Error as AnyError};
 
 use async_lock::RwLock;
 
-use std::convert::{From, Into, TryFrom, TryInto};
+use rsa::{PaddingScheme};
+
 use std::net::IpAddr;
+use std::str::from_utf8;
+use std::{
+    convert::{From, Into, TryFrom, TryInto},
+    ops::DerefMut,
+};
 
 mod component;
 use component::*;
 
-type SharedScheduler = ShareData<Scheduler>;
+type SharedBindScheduler = ShareData<BindScheduler>;
 
 #[derive(Debug, Default)]
-struct Scheduler {
-    inner: RwLock<Option<RequestScheduler>>,
+struct BindScheduler {
+    inner: RwLock<Option<(RequestScheduler, String)>>,
 }
 
 //TODO: shared by app_data(Data<AsyncRwlock>)
@@ -46,8 +52,8 @@ impl Default for RequestScheduler {
 }
 
 impl RequestScheduler {
-    fn verify(&self, security_level: SecurityLevel) -> AnyResult<String> {
-        match security_level {
+    fn verify(&self, security_conf: &SecurityConf) -> AnyResult<String> {
+        match security_conf.security_level {
             SecurityLevel::ZeroRestriction => {
                 let mut split_str = self.raw_token.split(":");
 
@@ -63,14 +69,42 @@ impl RequestScheduler {
                     return Err(anyhow!("verify error."));
                 }
 
-                return split_str
+                split_str
                     .next()
                     .map(|t| t.to_string())
-                    .ok_or(anyhow!("token missed for raw_token."));
+                    .ok_or(anyhow!("token missed for raw_token."))
             }
-            SecurityLevel::Normal => {}
+            SecurityLevel::Normal => {
+                let padding = PaddingScheme::new_pkcs1v15_encrypt();
+                //|k|k.0.decrypt(padding, &self.raw_token.as_bytes()).err()
+                let rsa_private_key =  security_conf.rsa_private_key.as_ref().ok_or(anyhow!("When the security level is Normal, the initialization `delicate-executor` must contain the secret key (DELICATE_SECURITY_KEY)"))?;
+                let decrypt_raw_token = from_utf8(
+                    &rsa_private_key
+                        .0
+                        .decrypt(padding, &self.raw_token.as_bytes())?,
+                )?
+                .to_string();
+
+                let mut split_str = decrypt_raw_token.split(":");
+
+                let ip_str = split_str
+                    .next()
+                    .ok_or(anyhow!("ip_str missed for raw_token."))?;
+
+                let port_str = split_str
+                    .next()
+                    .ok_or(anyhow!("port_str missed for raw_token."))?;
+
+                if ip_str != self.ip.to_string() || port_str != self.port.to_string() {
+                    return Err(anyhow!("verify error."));
+                }
+
+                split_str
+                    .next()
+                    .map(|t| t.to_string())
+                    .ok_or(anyhow!("token missed for raw_token."))
+            }
         }
-        todo!()
     }
 }
 
@@ -208,16 +242,29 @@ async fn health_screen(web::Path((id, name)): web::Path<(u32, String)>) -> impl 
 // token.
 
 // Or use middleware to reach consensus.
-// Register token at executor startup, check token when scheduler bind executor.
+// Register token at executor startup, check token when RequestScheduler bind executor.
 
 // Or set security level, no authentication at level 0, public and private keys required at level 1.
 async fn bind_executor(
-    request_bind_scheduler: web::Json<RequestScheduler>,
-    delicate_shared_scheduler: ShareData<Scheduler>,
+    web::Json(request_bind_scheduler): web::Json<RequestScheduler>,
+    delicate_shared_scheduler: SharedBindScheduler,
     delicate_conf: web::Data<DelicateConf>,
 ) -> impl Responder {
-    request_bind_scheduler.verify(delicate_conf.security_conf.security_level);
-    ""
+    let verify_result = request_bind_scheduler.verify(&delicate_conf.security_conf);
+    if verify_result.is_err() {
+        return HttpResponse::Ok().json(
+            <AnyResult<String> as Into<UnifiedResponseMessages>>::into(verify_result),
+        );
+    }
+
+    delicate_shared_scheduler
+        .inner
+        .write()
+        .await
+        .deref_mut()
+        .replace((request_bind_scheduler, verify_result.unwrap()));
+
+    HttpResponse::Ok().json(UnifiedResponseMessages::success())
 }
 
 #[actix_web::main]
@@ -228,7 +275,7 @@ async fn main() -> std::io::Result<()> {
         .build();
 
     let shared_delay_timer: SharedDelayTimer = ShareData::new(delay_timer);
-    let shared_scheduler: SharedScheduler = ShareData::new(Scheduler::default());
+    let shared_scheduler: SharedBindScheduler = ShareData::new(BindScheduler::default());
 
     HttpServer::new(move || {
         App::new()
