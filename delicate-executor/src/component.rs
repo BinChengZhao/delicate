@@ -9,11 +9,15 @@ use anyhow::{anyhow, Error as AnyError, Result as AnyResult};
 use rsa::pem;
 use rsa::RSAPrivateKey;
 
-use sysinfo::System;
+use sysinfo::{Process as SysProcess, ProcessExt, System, SystemExt};
 
+use async_lock::RwLock;
+
+use std::collections::HashMap;
 use std::convert::{From, TryFrom, TryInto};
 use std::env::var_os as get_env_val;
 use std::fs;
+use std::path::PathBuf;
 use std::str::FromStr;
 
 pub(crate) type SharedDelayTimer = ShareData<DelayTimer>;
@@ -40,8 +44,24 @@ pub(crate) struct SecurityConf {
 
 // TODO:
 #[allow(dead_code)]
+#[derive(Debug, Default)]
 pub(crate) struct SystemMirror {
-    system: System,
+    inner_system: RwLock<System>,
+    inner_snapshot: RwLock<SystemSnapshot>,
+}
+
+impl SystemMirror {
+    pub(crate) async fn refresh_all(&self) {
+        {
+            let mut system = self.inner_system.write().await;
+            system.refresh_all();
+        }
+
+        {
+            let system = self.inner_system.read().await;
+            let inner_processes = system.get_processes();
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -158,6 +178,54 @@ impl<T> From<AnyResult<T>> for UnifiedResponseMessages {
         match value {
             Ok(_) => Self::success(),
             Err(e) => Self::error().customized_error_msg(e.to_string()),
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Default)]
+struct SystemSnapshot {
+    Processes: Processes,
+}
+
+#[derive(Debug, Serialize, Deserialize, Default)]
+struct Processes {
+    inner: HashMap<usize, Process>,
+}
+
+impl From<&HashMap<usize, SysProcess>> for Processes {
+    fn from(value: &HashMap<usize, SysProcess>) -> Processes {
+        // let inner: HashMap<usize, Process> = value.iter().map(|(_, s)| s.into()).collect();
+        // Processes { inner }
+        todo!()
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+struct Process {
+    name: String,
+    cmd: Vec<String>,
+    exe: PathBuf,
+    pid: usize,
+    memory: u64,
+    virtual_memory: u64,
+    parent: Option<usize>,
+    start_time: u64,
+    cpu_usage: f32,
+    //TODO: ProcessStatus should be stored in Process;
+}
+
+impl From<&SysProcess> for Process {
+    fn from(sys_process: &SysProcess) -> Self {
+        Process {
+            name: sys_process.name().to_string(),
+            cmd: sys_process.cmd().to_vec(),
+            exe: sys_process.exe().to_path_buf(),
+            pid: sys_process.pid(),
+            memory: sys_process.memory(),
+            virtual_memory: sys_process.virtual_memory(),
+            parent: sys_process.parent(),
+            start_time: sys_process.start_time(),
+            cpu_usage: sys_process.cpu_usage(),
         }
     }
 }

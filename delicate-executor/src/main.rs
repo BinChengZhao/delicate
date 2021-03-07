@@ -23,6 +23,7 @@ mod component;
 use component::*;
 
 type SharedBindScheduler = ShareData<BindScheduler>;
+type SharedSystemMirror = ShareData<SystemMirror>;
 
 #[derive(Debug, Default)]
 struct BindScheduler {
@@ -208,7 +209,6 @@ async fn remove_task(
 }
 
 #[get("/cancel_task/{task_id}/{record_id}")]
-
 async fn cancel_task(
     web::Path((task_id, record_id)): web::Path<(u64, i64)>,
     shared_delay_timer: SharedDelayTimer,
@@ -225,15 +225,11 @@ async fn maintenance(shared_delay_timer: SharedDelayTimer) -> impl Responder {
     ))
 }
 
-#[get("/{id}/{name}/index.html")]
-async fn index(web::Path((id, name)): web::Path<(u32, String)>) -> impl Responder {
-    format!("Hello {}! id:{}", name, id)
-}
-
 //Health Screening
 #[get("/health_screen")]
-async fn health_screen(web::Path((id, name)): web::Path<(u32, String)>) -> impl Responder {
-    format!("Hello {}! id:{}", name, id)
+async fn health_screen(system_mirror: SharedSystemMirror) -> impl Responder {
+    let system = system_mirror.refresh_all().await;
+    ""
 }
 
 #[get("/bind_executor")]
@@ -276,6 +272,7 @@ async fn main() -> std::io::Result<()> {
 
     let shared_delay_timer: SharedDelayTimer = ShareData::new(delay_timer);
     let shared_scheduler: SharedBindScheduler = ShareData::new(BindScheduler::default());
+    let shared_system_mirror: SharedSystemMirror = ShareData::new(SystemMirror::default());
 
     HttpServer::new(move || {
         App::new()
@@ -286,7 +283,7 @@ async fn main() -> std::io::Result<()> {
             .service(health_screen)
             .app_data(shared_delay_timer.clone())
             .app_data(shared_scheduler.clone())
-            .data(DelicateConf::default)
+            .app_data(shared_system_mirror.clone())
     })
     .bind("127.0.0.1:8090")?
     .run()
