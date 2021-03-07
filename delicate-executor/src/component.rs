@@ -7,9 +7,9 @@ use serde::{Deserialize, Serialize};
 use anyhow::{anyhow, Error as AnyError, Result as AnyResult};
 
 use rsa::pem;
-use rsa::{PaddingScheme, PublicKey, RSAPrivateKey, RSAPublicKey};
+use rsa::RSAPrivateKey;
 
-use sysinfo::{RefreshKind, System};
+use sysinfo::System;
 
 use std::convert::{From, TryFrom, TryInto};
 use std::env::var_os as get_env_val;
@@ -24,7 +24,7 @@ pub(crate) struct SecurityKey(pub(crate) RSAPrivateKey);
 impl SecurityKey {
     /// Get delicate-executor's security level from env.
     pub(crate) fn get_app_security_key() -> Option<Self> {
-        get_env_val("DELICATE_SECURITY_KEY").map_or(None, |s| {
+        get_env_val("DELICATE_SECURITY_KEY").and_then(|s| {
             fs::read(s)
                 .ok()
                 .map(|v| SecurityKey(pem::parse(v).unwrap().try_into().unwrap()))
@@ -39,6 +39,7 @@ pub(crate) struct SecurityConf {
 }
 
 // TODO:
+#[allow(dead_code)]
 pub(crate) struct SystemMirror {
     system: System,
 }
