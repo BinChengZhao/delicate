@@ -9,12 +9,16 @@ use anyhow::{anyhow, Error as AnyError, Result as AnyResult};
 use rsa::pem;
 use rsa::RSAPrivateKey;
 
-use sysinfo::{RefreshKind, System, SystemExt};
+use sysinfo::{Process as SysProcess, ProcessExt, RefreshKind, System, SystemExt};
 
+use async_lock::RwLock;
+
+use std::collections::HashMap;
 use std::convert::{From, TryFrom, TryInto};
 use std::env::var_os as get_env_val;
 use std::fmt::Debug;
 use std::fs;
+use std::path::PathBuf;
 use std::str::FromStr;
 
 pub(crate) type SharedDelayTimer = ShareData<DelayTimer>;
@@ -25,7 +29,7 @@ pub(crate) struct SecurityKey(pub(crate) RSAPrivateKey);
 impl SecurityKey {
     /// Get delicate-executor's security level from env.
     pub(crate) fn get_app_security_key() -> Option<Self> {
-        get_env_val("DELICATE_SECURITY_KEY").map_or(None, |s| {
+        get_env_val("DELICATE_SECURITY_KEY").and_then(|s| {
             fs::read(s)
                 .ok()
                 .map(|v| SecurityKey(pem::parse(v).unwrap().try_into().unwrap()))
@@ -41,21 +45,38 @@ pub(crate) struct SecurityConf {
 
 /// This is a mirror of the system that can reflect the current state of the system.
 // TODO:
+#[allow(dead_code)]
+#[derive(Debug, Default)]
 pub(crate) struct SystemMirror {
-    system: System,
+    inner_system: RwLock<System>,
+    inner_snapshot: RwLock<SystemSnapshot>,
 }
 
-impl Default for SystemMirror {
-    fn default() -> SystemMirror {
-        let system = System::new_with_specifics(
-            RefreshKind::everything()
-                .without_components()
-                .without_components_list()
-                .without_users_list(),
-        );
-        SystemMirror { system }
+impl SystemMirror {
+    pub(crate) async fn refresh_all(&self) {
+        {
+            let mut system = self.inner_system.write().await;
+            system.refresh_all();
+        }
+
+        {
+            let system = self.inner_system.read().await;
+            let inner_processes = system.get_processes();
+        }
     }
 }
+
+// impl Default for SystemMirror {
+//     fn default() -> SystemMirror {
+//         let system = System::new_with_specifics(
+//             RefreshKind::everything()
+//                 .without_components()
+//                 .without_components_list()
+//                 .without_users_list(),
+//         );
+//         SystemMirror { system }
+//     }
+// }
 #[derive(Debug, Clone)]
 pub(crate) struct DelicateConf {
     pub(crate) security_conf: SecurityConf,
@@ -176,6 +197,54 @@ impl<T> From<AnyResult<T>> for UnifiedResponseMessages<()> {
         match value {
             Ok(_) => Self::success(),
             Err(e) => Self::error().customized_error_msg(e.to_string()),
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Default)]
+struct SystemSnapshot {
+    Processes: Processes,
+}
+
+#[derive(Debug, Serialize, Deserialize, Default)]
+struct Processes {
+    inner: HashMap<usize, Process>,
+}
+
+impl From<&HashMap<usize, SysProcess>> for Processes {
+    fn from(value: &HashMap<usize, SysProcess>) -> Processes {
+        // let inner: HashMap<usize, Process> = value.iter().map(|(_, s)| s.into()).collect();
+        // Processes { inner }
+        todo!()
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+struct Process {
+    name: String,
+    cmd: Vec<String>,
+    exe: PathBuf,
+    pid: i32,
+    memory: u64,
+    virtual_memory: u64,
+    parent: Option<i32>,
+    start_time: u64,
+    cpu_usage: f32,
+    //TODO: ProcessStatus should be stored in Process;
+}
+
+impl From<&SysProcess> for Process {
+    fn from(sys_process: &SysProcess) -> Self {
+        Process {
+            name: sys_process.name().to_string(),
+            cmd: sys_process.cmd().to_vec(),
+            exe: sys_process.exe().to_path_buf(),
+            pid: sys_process.pid(),
+            memory: sys_process.memory(),
+            virtual_memory: sys_process.virtual_memory(),
+            parent: sys_process.parent(),
+            start_time: sys_process.start_time(),
+            cpu_usage: sys_process.cpu_usage(),
         }
     }
 }
