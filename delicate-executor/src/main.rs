@@ -10,7 +10,7 @@ use anyhow::{anyhow, Error as AnyError};
 
 use async_lock::RwLock;
 
-use rsa::{PaddingScheme};
+use rsa::PaddingScheme;
 
 use std::net::IpAddr;
 use std::str::from_utf8;
@@ -23,6 +23,7 @@ mod component;
 use component::*;
 
 type SharedBindScheduler = ShareData<BindScheduler>;
+type UnitUnifiedResponseMessages = UnifiedResponseMessages<()>;
 
 #[derive(Debug, Default)]
 struct BindScheduler {
@@ -30,6 +31,7 @@ struct BindScheduler {
 }
 
 //TODO: shared by app_data(Data<AsyncRwlock>)
+/// External request for registration of Scheduler.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct RequestScheduler {
     name: String,
@@ -190,7 +192,7 @@ async fn add_task(
     task_conf: web::Json<TaskConf>,
     shared_delay_timer: SharedDelayTimer,
 ) -> impl Responder {
-    let mut response = UnifiedResponseMessages::error();
+    let mut response = UnitUnifiedResponseMessages::error();
     if let Ok(task) = Task::try_from(task_conf.0) {
         response = shared_delay_timer.add_task(task).into();
     }
@@ -203,7 +205,7 @@ async fn remove_task(
     web::Path(task_id): web::Path<u64>,
     shared_delay_timer: SharedDelayTimer,
 ) -> HttpResponse {
-    let response: UnifiedResponseMessages = shared_delay_timer.remove_task(task_id).into();
+    let response: UnitUnifiedResponseMessages = shared_delay_timer.remove_task(task_id).into();
     HttpResponse::Ok().json(response) // <- send response
 }
 
@@ -213,14 +215,14 @@ async fn cancel_task(
     web::Path((task_id, record_id)): web::Path<(u64, i64)>,
     shared_delay_timer: SharedDelayTimer,
 ) -> HttpResponse {
-    let response: UnifiedResponseMessages =
+    let response: UnitUnifiedResponseMessages =
         shared_delay_timer.cancel_task(task_id, record_id).into();
     HttpResponse::Ok().json(response) // <- send response
 }
 
 #[allow(dead_code)]
 async fn maintenance(shared_delay_timer: SharedDelayTimer) -> impl Responder {
-    HttpResponse::Ok().json(Into::<UnifiedResponseMessages>::into(
+    HttpResponse::Ok().json(Into::<UnitUnifiedResponseMessages>::into(
         shared_delay_timer.stop_delay_timer(),
     ))
 }
@@ -252,9 +254,8 @@ async fn bind_executor(
 ) -> impl Responder {
     let verify_result = request_bind_scheduler.verify(&delicate_conf.security_conf);
     if verify_result.is_err() {
-        return HttpResponse::Ok().json(
-            <AnyResult<String> as Into<UnifiedResponseMessages>>::into(verify_result),
-        );
+        return HttpResponse::Ok()
+            .json(<AnyResult<String> as Into<UnitUnifiedResponseMessages>>::into(verify_result));
     }
 
     delicate_shared_scheduler
@@ -264,7 +265,7 @@ async fn bind_executor(
         .deref_mut()
         .replace((request_bind_scheduler, verify_result.unwrap()));
 
-    HttpResponse::Ok().json(UnifiedResponseMessages::success())
+    HttpResponse::Ok().json(UnitUnifiedResponseMessages::success())
 }
 
 #[actix_web::main]

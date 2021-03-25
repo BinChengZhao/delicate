@@ -7,12 +7,13 @@ use serde::{Deserialize, Serialize};
 use anyhow::{anyhow, Error as AnyError, Result as AnyResult};
 
 use rsa::pem;
-use rsa::{PaddingScheme, PublicKey, RSAPrivateKey, RSAPublicKey};
+use rsa::RSAPrivateKey;
 
-use sysinfo::{RefreshKind, System};
+use sysinfo::{RefreshKind, System, SystemExt};
 
 use std::convert::{From, TryFrom, TryInto};
 use std::env::var_os as get_env_val;
+use std::fmt::Debug;
 use std::fs;
 use std::str::FromStr;
 
@@ -38,11 +39,23 @@ pub(crate) struct SecurityConf {
     pub(crate) rsa_private_key: Option<SecurityKey>,
 }
 
+/// This is a mirror of the system that can reflect the current state of the system.
 // TODO:
 pub(crate) struct SystemMirror {
     system: System,
 }
 
+impl Default for SystemMirror {
+    fn default() -> SystemMirror {
+        let system = System::new_with_specifics(
+            RefreshKind::everything()
+                .without_components()
+                .without_components_list()
+                .without_users_list(),
+        );
+        SystemMirror { system }
+    }
+}
 #[derive(Debug, Clone)]
 pub(crate) struct DelicateConf {
     pub(crate) security_conf: SecurityConf,
@@ -114,13 +127,19 @@ impl SecurityLevel {
     }
 }
 
+pub trait UniformData: Default + Debug + Clone + Serialize {}
+
+impl<T: Default + Debug + Clone + Serialize> UniformData for T {}
+
 /// Uniform public message response format.
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-pub(crate) struct UnifiedResponseMessages {
+pub(crate) struct UnifiedResponseMessages<T: UniformData> {
     code: i8,
     msg: String,
+    data: T,
 }
-impl UnifiedResponseMessages {
+
+impl<T: UniformData> UnifiedResponseMessages<T> {
     pub(crate) fn success() -> Self {
         UnifiedResponseMessages::default()
     }
@@ -152,7 +171,7 @@ impl UnifiedResponseMessages {
     }
 }
 
-impl<T> From<AnyResult<T>> for UnifiedResponseMessages {
+impl<T> From<AnyResult<T>> for UnifiedResponseMessages<()> {
     fn from(value: AnyResult<T>) -> Self {
         match value {
             Ok(_) => Self::success(),
