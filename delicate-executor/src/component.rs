@@ -45,8 +45,7 @@ pub(crate) struct SecurityConf {
 
 /// This is a mirror of the system that can reflect the current state of the system.
 // TODO:
-#[allow(dead_code)]
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub(crate) struct SystemMirror {
     inner_system: RwLock<System>,
     inner_snapshot: RwLock<SystemSnapshot>,
@@ -54,29 +53,37 @@ pub(crate) struct SystemMirror {
 
 impl SystemMirror {
     pub(crate) async fn refresh_all(&self) {
+        let inner_processes: &HashMap<i32, SysProcess>;
+        let processes: Processes;
+
         {
             let mut system = self.inner_system.write().await;
             system.refresh_all();
+            inner_processes = system.get_processes();
+            processes = inner_processes.into();
         }
 
         {
-            let system = self.inner_system.read().await;
-            let inner_processes = system.get_processes();
+            let mut inner_snapshot = self.inner_snapshot.write().await;
+            inner_snapshot.processes = processes;
         }
     }
 }
 
-// impl Default for SystemMirror {
-//     fn default() -> SystemMirror {
-//         let system = System::new_with_specifics(
-//             RefreshKind::everything()
-//                 .without_components()
-//                 .without_components_list()
-//                 .without_users_list(),
-//         );
-//         SystemMirror { system }
-//     }
-// }
+impl Default for SystemMirror {
+    fn default() -> SystemMirror {
+        let inner_system = RwLock::new(System::new_with_specifics(
+            RefreshKind::everything()
+                .without_components()
+                .without_components_list()
+                .without_users_list(),
+        ));
+        SystemMirror {
+            inner_system,
+            ..Default::default()
+        }
+    }
+}
 #[derive(Debug, Clone)]
 pub(crate) struct DelicateConf {
     pub(crate) security_conf: SecurityConf,
@@ -203,19 +210,22 @@ impl<T> From<AnyResult<T>> for UnifiedResponseMessages<()> {
 
 #[derive(Debug, Serialize, Deserialize, Default)]
 struct SystemSnapshot {
-    Processes: Processes,
+    processes: Processes,
 }
 
 #[derive(Debug, Serialize, Deserialize, Default)]
 struct Processes {
-    inner: HashMap<usize, Process>,
+    inner: HashMap<i32, Process>,
 }
+use std::iter::Iterator;
+impl From<&HashMap<i32, SysProcess>> for Processes {
+    fn from(value: &HashMap<i32, SysProcess>) -> Processes {
+        let inner: HashMap<i32, Process> = value
+            .iter()
+            .map(|(index, process)| (*index, Into::<Process>::into(process)))
+            .collect();
 
-impl From<&HashMap<usize, SysProcess>> for Processes {
-    fn from(value: &HashMap<usize, SysProcess>) -> Processes {
-        // let inner: HashMap<usize, Process> = value.iter().map(|(_, s)| s.into()).collect();
-        // Processes { inner }
-        todo!()
+        Processes { inner }
     }
 }
 

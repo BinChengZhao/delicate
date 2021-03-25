@@ -230,7 +230,7 @@ async fn maintenance(shared_delay_timer: SharedDelayTimer) -> impl Responder {
 //Health Screening
 #[get("/health_screen")]
 async fn health_screen(system_mirror: SharedSystemMirror) -> impl Responder {
-    let system = system_mirror.refresh_all().await;
+    let _system = system_mirror.refresh_all().await;
     ""
 }
 
