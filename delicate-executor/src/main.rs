@@ -230,8 +230,11 @@ async fn maintenance(shared_delay_timer: SharedDelayTimer) -> impl Responder {
 //Health Screening
 #[get("/health_screen")]
 async fn health_screen(system_mirror: SharedSystemMirror) -> impl Responder {
-    let _system = system_mirror.refresh_all().await;
-    ""
+    HttpResponse::Ok().json(
+        UnifiedResponseMessages::<SystemSnapshot>::success_with_data(
+            system_mirror.refresh_all().await,
+        ),
+    )
 }
 
 #[get("/bind_executor")]

@@ -52,7 +52,7 @@ pub(crate) struct SystemMirror {
 }
 
 impl SystemMirror {
-    pub(crate) async fn refresh_all(&self) {
+    pub(crate) async fn refresh_all(&self) -> SystemSnapshot {
         let inner_processes: &HashMap<i32, SysProcess>;
         let processes: Processes;
 
@@ -63,10 +63,10 @@ impl SystemMirror {
             processes = inner_processes.into();
         }
 
-        {
-            let mut inner_snapshot = self.inner_snapshot.write().await;
-            inner_snapshot.processes = processes;
-        }
+        let mut inner_snapshot = self.inner_snapshot.write().await;
+        inner_snapshot.processes = processes;
+
+        inner_snapshot.clone()
     }
 }
 
@@ -172,9 +172,26 @@ impl<T: UniformData> UnifiedResponseMessages<T> {
         UnifiedResponseMessages::default()
     }
 
+    pub(crate) fn success_with_data(data: T) -> Self {
+        UnifiedResponseMessages {
+            data,
+            ..Default::default()
+        }
+    }
+
     pub(crate) fn error() -> Self {
         UnifiedResponseMessages {
             code: -1,
+            ..Default::default()
+        }
+    }
+
+    #[allow(dead_code)]
+    pub(crate) fn error_with_data(data: T) -> Self {
+        let code = -1;
+        UnifiedResponseMessages {
+            code,
+            data,
             ..Default::default()
         }
     }
@@ -208,12 +225,12 @@ impl<T> From<AnyResult<T>> for UnifiedResponseMessages<()> {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Default)]
-struct SystemSnapshot {
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
+pub(crate) struct SystemSnapshot {
     processes: Processes,
 }
 
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
 struct Processes {
     inner: HashMap<i32, Process>,
 }
