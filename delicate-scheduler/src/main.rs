@@ -1,1 +1,3 @@
+mod db;
+
 fn main() {}
