@@ -5,6 +5,11 @@ authors = ["BinChengZhao <binchengZhao@outlook.com>"]
 readme = "README.md"
 edition = "2018"
 build = "build/build.rs"
+homepage = "https://github.com/BinChengZhao/delicate"
+repository = "https://github.com/BinChengZhao/delicate"
+keywords = ["scheduler", "cron", "distributed"]
+documentation = ""
+
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
