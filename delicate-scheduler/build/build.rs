@@ -6,6 +6,10 @@ use std::env;
 
 fn main() {
     dotenv().ok();
+    
+    for (key, value) in env::vars() {
+        println!("{}: {}", key, value);
+    }
 
     let database = env::var("DATABASE").expect("Without `DATABASE` set in .env");
     match database.as_str() {

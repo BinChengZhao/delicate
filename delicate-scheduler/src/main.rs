@@ -42,7 +42,7 @@ fn main() {
 }
 
 pub fn create_post<'a>(
-    conn: &MysqlConnection,
+    conn: &PgConnection,
     title_str: &'a str,
     body_str: &'a str,
     id_num: i64,
@@ -61,7 +61,7 @@ pub fn create_post<'a>(
         .expect("Error saving new post")
 }
 
-pub fn update_post<'a>(conn: &MysqlConnection, id_num: i64) -> usize {
+pub fn update_post<'a>(conn: &PgConnection, id_num: i64) -> usize {
     use schema::posts;
 
     diesel::update(posts::table)
@@ -71,13 +71,13 @@ pub fn update_post<'a>(conn: &MysqlConnection, id_num: i64) -> usize {
         .unwrap()
 }
 
-pub fn update_post_tilte<'a>(conn: &MysqlConnection, id_num: i64) -> usize {
+pub fn update_post_tilte<'a>(conn: &PgConnection, id_num: i64) -> usize {
     diesel::update(posts.find(id_num))
         .set(title.eq("update"))
         .execute(conn)
         .unwrap()
 }
 
-pub fn delete_post<'a>(conn: &MysqlConnection, id_num: i64) -> usize {
+pub fn delete_post<'a>(conn: &PgConnection, id_num: i64) -> usize {
     diesel::delete(posts.find(id_num)).execute(conn).unwrap()
 }

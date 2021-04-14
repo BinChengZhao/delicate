@@ -11,7 +11,7 @@ cfg_mysql_support!(
 cfg_postgres_support!(
     pub(crate) mod postgres;
 
-    pub(crate) use postgre::establish_connection;
+    pub(crate) use postgres::establish_connection;
     embed_migrations!("./migrations/postgres");
 );
 
