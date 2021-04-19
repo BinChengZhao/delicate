@@ -53,20 +53,21 @@ pub(crate) struct SystemMirror {
 
 impl SystemMirror {
     pub(crate) async fn refresh_all(&self) -> SystemSnapshot {
-        let inner_processes: &HashMap<i32, SysProcess>;
-        let processes: Processes;
+        todo!();
+        // let inner_processes: &HashMap<usize, SysProcess>;
+        // let processes: Processes;
 
-        {
-            let mut system = self.inner_system.write().await;
-            system.refresh_all();
-            inner_processes = system.get_processes();
-            processes = inner_processes.into();
-        }
+        // {
+        //     let mut system = self.inner_system.write().await;
+        //     system.refresh_all();
+        //     inner_processes = system.get_processes();
+        //     processes = inner_processes.into();
+        // }
 
-        let mut inner_snapshot = self.inner_snapshot.write().await;
-        inner_snapshot.processes = processes;
+        // let mut inner_snapshot = self.inner_snapshot.write().await;
+        // inner_snapshot.processes = processes;
 
-        inner_snapshot.clone()
+        // inner_snapshot.clone()
     }
 }
 
@@ -167,6 +168,7 @@ pub(crate) struct UnifiedResponseMessages<T: UniformData> {
     data: T,
 }
 
+
 impl<T: UniformData> UnifiedResponseMessages<T> {
     pub(crate) fn success() -> Self {
         UnifiedResponseMessages::default()
@@ -262,16 +264,17 @@ struct Process {
 
 impl From<&SysProcess> for Process {
     fn from(sys_process: &SysProcess) -> Self {
-        Process {
-            name: sys_process.name().to_string(),
-            cmd: sys_process.cmd().to_vec(),
-            exe: sys_process.exe().to_path_buf(),
-            pid: sys_process.pid(),
-            memory: sys_process.memory(),
-            virtual_memory: sys_process.virtual_memory(),
-            parent: sys_process.parent(),
-            start_time: sys_process.start_time(),
-            cpu_usage: sys_process.cpu_usage(),
-        }
+        todo!();
+        // Process {
+        //     name: sys_process.name().to_string(),
+        //     cmd: sys_process.cmd().to_vec(),
+        //     exe: sys_process.exe().to_path_buf(),
+        //     pid: sys_process.pid() as i32,
+        //     memory: sys_process.memory(),
+        //     virtual_memory: sys_process.virtual_memory(),
+        //     parent: sys_process.parent() as i32,
+        //     start_time: sys_process.start_time(),
+        //     cpu_usage: sys_process.cpu_usage(),
+        // }
     }
 }

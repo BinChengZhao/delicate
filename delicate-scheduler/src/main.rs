@@ -20,11 +20,16 @@ use diesel::query_dsl::RunQueryDsl;
 use models::*;
 use schema::posts::dsl::*;
 
+// TODO: 小驼峰返回值
+// WIN / UBUNTU
+
+// CAS 中央认证服务。
+
 fn main() {
     db::init();
 
     let connection = db::establish_connection();
-    // create_post(&connection, "title", "body", 1);
+    create_post(&connection, "title", "body", 1);
     delete_post(&connection, 1);
 
     let results = posts
