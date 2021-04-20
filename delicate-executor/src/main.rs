@@ -36,6 +36,9 @@ struct BindScheduler {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct RequestScheduler {
     name: String,
+    // TODO: Can store the domain name to store the domain name, because it is not sure how many machines on the server side.
+    // TODO: Can store the domain name to store the domain name, because it is not sure how many machines on the server side.
+    // TODO: Can store the domain name to store the domain name, because it is not sure how many machines on the server side.
     ip: IpAddr,
     port: u16,
     domin: String,
