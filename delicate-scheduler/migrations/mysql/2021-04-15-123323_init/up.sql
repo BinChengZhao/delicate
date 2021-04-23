@@ -65,6 +65,7 @@ CREATE TABLE `executor_group` (
 
 CREATE TABLE `executor_processor_group` (
 `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'Self-incrementing id',
+`name` varchar(128) NOT NULL COMMENT 'Executor-group-processor name',
 `group_id` bigint(20) NOT NULL DEFAULT '0' COMMENT 'Executor group id',
 `executor_id` bigint(20) NOT NULL DEFAULT '0' COMMENT 'Executor id',
 `weight` smallint(11) NOT NULL DEFAULT '0' COMMENT 'Execution weights of tasks between executor in a group',
@@ -80,26 +81,30 @@ CREATE TABLE `user_auth` (
   `identity_type` tinyint(4) unsigned NOT NULL DEFAULT '1' COMMENT '1:Mobie-number 2:Email 3:Username 4:LDAP 5:Other-OAuth',
   `identifier` varchar(50) NOT NULL DEFAULT '' COMMENT 'Mobie-number Email Username or unique identifier for third party applications',
   `certificate` varchar(20) NOT NULL DEFAULT '' COMMENT 'Password credentials (the station saves the password, the station does not save or save the token)',
+  `status` tinyint(4) NOT NULL DEFAULT '0' COMMENT 'Authentication status: 1:active, 2:disabled',
   `created_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Binding time',
   `updated_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Update binding time',
   PRIMARY KEY (`id`),
   UNIQUE KEY `only` (`user_id`,`identity_type`),
-  KEY `idx_user_id` (`user_id`) USING BTREE
+  UNIQUE KEY `identifier_idx` (`identifier`) USING BTREE,
+  KEY `user_id_idx` (`user_id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='User authorization';
 
 CREATE TABLE `user_base` (
   `user_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'user-id',
-  `register_source` tinyint(4) unsigned NOT NULL DEFAULT '0' COMMENT 'Registration source: 1:Mobie-number 2:Email 3: username',
   `user_name` varchar(32) NOT NULL DEFAULT '' COMMENT 'User account, must be unique',
   `nick_name` varchar(32) NOT NULL DEFAULT '' COMMENT 'User nickname',
   `mobile` varchar(16) NOT NULL DEFAULT '' COMMENT 'Mobie-number(unique)',
   `email` varchar(100) NOT NULL DEFAULT '' COMMENT 'Email(unique)',
   `face` varchar(255) NOT NULL DEFAULT '' COMMENT 'Avatar',
+  `status` tinyint(4) NOT NULL DEFAULT '0' COMMENT 'User Status: 2:Deleted',
   `created_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Creation time',
   `updated_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Modify time',
-  PRIMARY KEY (`user_id`)
+  PRIMARY KEY (`user_id`),
+  UNIQUE KEY `user_name_idx` (`user_name`) USING BTREE COMMENT 'User name, must be unique',
+  UNIQUE KEY `user_mobile_idx` (`mobile`) USING BTREE COMMENT 'Mobie-number(unique)',
+  UNIQUE KEY `user_email_idx` (`email`) USING BTREE COMMENT 'Email(unique)'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='User Base Information';
-
 
 CREATE TABLE `user_login_log` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
