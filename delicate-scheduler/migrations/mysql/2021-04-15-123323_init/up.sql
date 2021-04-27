@@ -109,9 +109,9 @@ CREATE TABLE `user_base` (
 CREATE TABLE `user_login_log` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `user_id` bigint(20) unsigned NOT NULL DEFAULT '0' COMMENT 'user-id',
-  `type` tinyint(3) unsigned NOT NULL DEFAULT '1' COMMENT 'Login method Third party/email/mobile etc.',
+  `login_type` tinyint(3) unsigned NOT NULL DEFAULT '1' COMMENT 'Login method Third party/email/mobile etc.',
   `command` tinyint(3) unsigned NOT NULL DEFAULT '1' COMMENT 'Operation type 1:Login success 2:Logout success 3:Login failure 4:Logout failure',
-  `lastip` varchar(32) NOT NULL DEFAULT '' COMMENT 'Login-ip',
+  `lastip` bigint(20) NOT NULL DEFAULT '0' COMMENT 'Login-ip',
   `created_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Creation time',
   PRIMARY KEY (`id`),
   KEY `idx_user_id_type_time` (`user_id`,`type`,`created_time`) USING BTREE,
@@ -124,7 +124,7 @@ CREATE TABLE `user_register_log` (
   `user_id` bigint(20) unsigned NOT NULL COMMENT 'user-id',
   `register_method` tinyint(2) unsigned NOT NULL COMMENT 'Registration method 1:Mobie-number 2:Email 3:Username',
   `register_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Registration Time',
-  `register_ip` varchar(16) NOT NULL DEFAULT '' COMMENT 'Registered IP',
+  `register_ip` bigint(20) NOT NULL DEFAULT '0' COMMENT 'Registered IP',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COMMENT='User Registration Log';
 

@@ -3,6 +3,9 @@ use diesel::prelude::*;
 use dotenv::dotenv;
 use std::env;
 
+pub(crate) mod schema;
+pub(crate) mod model;
+
 #[allow(dead_code)]
 pub fn establish_connection() -> MysqlConnection {
     dotenv().ok();

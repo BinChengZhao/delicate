@@ -5,11 +5,8 @@ extern crate dotenv;
 #[macro_use]
 extern crate diesel_migrations;
 
-pub(crate) mod models;
-pub(crate) mod schema;
 
 pub mod db;
-
 #[macro_use]
 pub(crate) mod macros;
 
@@ -17,19 +14,17 @@ pub(crate) use {cfg_mysql_support, cfg_postgres_support};
 
 use self::diesel::prelude::*;
 use diesel::query_dsl::RunQueryDsl;
-use models::*;
-use schema::posts::dsl::*;
+use db::model::*;
+use db::schema::posts::dsl::*;
 
-// TODO: 小驼峰返回值
-// WIN / UBUNTU
-
-// CAS 中央认证服务。
+// TODO: return front-end json is small hump patten.
 
 fn main() {
     db::init();
 
     let connection = db::establish_connection();
-    create_post(&connection, "title", "body", 1);
+    // create_post(&connection, "title", "body", 1);
+    // delete_post(&connection, 1);
     delete_post(&connection, 1);
 
     let results = posts
@@ -47,12 +42,12 @@ fn main() {
 }
 
 pub fn create_post<'a>(
-    conn: &PgConnection,
+    conn: &MysqlConnection,
     title_str: &'a str,
     body_str: &'a str,
     id_num: i64,
 ) -> usize {
-    use schema::posts;
+    use db::schema::posts;
 
     let new_post = NewPost {
         id: id_num,
@@ -66,8 +61,8 @@ pub fn create_post<'a>(
         .expect("Error saving new post")
 }
 
-pub fn update_post<'a>(conn: &PgConnection, id_num: i64) -> usize {
-    use schema::posts;
+pub fn update_post<'a>(conn: &MysqlConnection, id_num: i64) -> usize {
+    use db::schema::posts;
 
     diesel::update(posts::table)
         .filter(posts::id.eq(id_num))
@@ -76,13 +71,13 @@ pub fn update_post<'a>(conn: &PgConnection, id_num: i64) -> usize {
         .unwrap()
 }
 
-pub fn update_post_tilte<'a>(conn: &PgConnection, id_num: i64) -> usize {
+pub fn update_post_tilte<'a>(conn: &MysqlConnection, id_num: i64) -> usize {
     diesel::update(posts.find(id_num))
         .set(title.eq("update"))
         .execute(conn)
         .unwrap()
 }
 
-pub fn delete_post<'a>(conn: &PgConnection, id_num: i64) -> usize {
+pub fn delete_post<'a>(conn: &MysqlConnection, id_num: i64) -> usize {
     diesel::delete(posts.find(id_num)).execute(conn).unwrap()
 }
