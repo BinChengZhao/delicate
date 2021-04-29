@@ -114,7 +114,7 @@ CREATE TABLE `user_login_log` (
   `lastip` bigint(20) NOT NULL DEFAULT '0' COMMENT 'Login-ip',
   `created_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Creation time',
   PRIMARY KEY (`id`),
-  KEY `idx_user_id_type_time` (`user_id`,`type`,`created_time`) USING BTREE,
+  KEY `idx_user_id_type_time` (`user_id`,`login_type`,`created_time`) USING BTREE,
   KEY `idx_create_time` (`created_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Login Log';
 
