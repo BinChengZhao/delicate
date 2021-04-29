@@ -3,3 +3,4 @@
 
 [print_schema]
 file = "src/db/postgres/schema.rs"
+with_docs = true
