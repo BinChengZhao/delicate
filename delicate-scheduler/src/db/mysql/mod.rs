@@ -1,16 +1,26 @@
 use diesel::mysql::MysqlConnection;
 use diesel::prelude::*;
-use dotenv::dotenv;
+use diesel::r2d2::{Builder, ConnectionManager, Pool};
 use std::env;
 
-pub(crate) mod schema;
 pub(crate) mod model;
+pub(crate) mod schema;
+
+pub(crate) type ConnectionPool = Pool<ConnectionManager<MysqlConnection>>;
 
 #[allow(dead_code)]
-pub fn establish_connection() -> MysqlConnection {
-    dotenv().ok();
-
+pub(crate) fn establish_connection() -> MysqlConnection {
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     MysqlConnection::establish(&database_url)
         .expect(&format!("Error connecting to {}", database_url))
+}
+
+pub(crate) fn get_connection_pool() -> Pool<ConnectionManager<MysqlConnection>> {
+    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let manager: ConnectionManager<MysqlConnection> = ConnectionManager::new(database_url);
+    Builder::new()
+        .max_size(1024)
+        .min_idle(Some(256))
+        .build(manager)
+        .expect("Connection pool initialization failed")
 }

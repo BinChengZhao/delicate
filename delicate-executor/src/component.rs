@@ -9,7 +9,7 @@ use anyhow::{anyhow, Error as AnyError, Result as AnyResult};
 use rsa::pem;
 use rsa::RSAPrivateKey;
 
-use sysinfo::{Process as SysProcess, ProcessExt, RefreshKind, System, SystemExt};
+use sysinfo::{Process as SysProcess, RefreshKind, System, SystemExt};
 
 use async_lock::RwLock;
 
@@ -168,7 +168,6 @@ pub(crate) struct UnifiedResponseMessages<T: UniformData> {
     data: T,
 }
 
-
 impl<T: UniformData> UnifiedResponseMessages<T> {
     pub(crate) fn success() -> Self {
         UnifiedResponseMessages::default()
@@ -263,7 +262,7 @@ struct Process {
 }
 
 impl From<&SysProcess> for Process {
-    fn from(sys_process: &SysProcess) -> Self {
+    fn from(_sys_process: &SysProcess) -> Self {
         todo!();
         // Process {
         //     name: sys_process.name().to_string(),

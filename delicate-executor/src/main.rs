@@ -273,7 +273,6 @@ async fn bind_executor(
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let delay_timer = DelayTimerBuilder::default()
-        .tokio_runtime(None)
         .enable_status_report()
         .build();
 
