@@ -2,6 +2,7 @@
 #![warn(missing_docs, missing_debug_implementations, rust_2018_idioms)]
 
 //! delicate-scheduler.
+// TODO: diesel's io operations are offloaded to `actix_web::web::block`.
 
 #[macro_use]
 extern crate diesel;
@@ -38,9 +39,12 @@ async fn create_task(
 
     if let Ok(conn) = pool.get() {
         return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<()>>::into(
-            diesel::insert_into(task::table)
-                .values(&*task)
-                .execute(&conn),
+            web::block(move || {
+                diesel::insert_into(task::table)
+                    .values(&*task)
+                    .execute(&conn)
+            })
+            .await,
         ));
     }
 
