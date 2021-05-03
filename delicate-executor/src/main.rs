@@ -24,6 +24,7 @@ use component::*;
 
 type SharedBindScheduler = ShareData<BindScheduler>;
 type UnitUnifiedResponseMessages = UnifiedResponseMessages<()>;
+type StringUnifiedResponseMessages = UnifiedResponseMessages<String>;
 type SharedSystemMirror = ShareData<SystemMirror>;
 
 #[derive(Debug, Default)]
@@ -257,7 +258,7 @@ async fn bind_executor(
     let verify_result = request_bind_scheduler.verify(&delicate_conf.security_conf);
     if verify_result.is_err() {
         return HttpResponse::Ok()
-            .json(<AnyResult<String> as Into<UnitUnifiedResponseMessages>>::into(verify_result));
+            .json(<AnyResult<String> as Into<StringUnifiedResponseMessages>>::into(verify_result));
     }
 
     delicate_shared_scheduler
@@ -267,14 +268,12 @@ async fn bind_executor(
         .deref_mut()
         .replace((request_bind_scheduler, verify_result.unwrap()));
 
-    HttpResponse::Ok().json(UnitUnifiedResponseMessages::success())
+    HttpResponse::Ok().json(StringUnifiedResponseMessages::success())
 }
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    let delay_timer = DelayTimerBuilder::default()
-        .enable_status_report()
-        .build();
+    let delay_timer = DelayTimerBuilder::default().enable_status_report().build();
 
     let shared_delay_timer: SharedDelayTimer = ShareData::new(delay_timer);
     let shared_scheduler: SharedBindScheduler = ShareData::new(BindScheduler::default());

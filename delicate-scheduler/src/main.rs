@@ -21,7 +21,7 @@ use actix_web::web::{self, Data as ShareData};
 use actix_web::{post, App, HttpResponse, HttpServer};
 use diesel::prelude::*;
 
-use db::model::*;
+use db::model;
 use delay_timer::prelude::*;
 use diesel::query_dsl::RunQueryDsl;
 use dotenv::dotenv;
@@ -32,13 +32,13 @@ use dotenv::dotenv;
 
 #[post("/api/task/create")]
 async fn create_task(
-    task: web::Json<NewTask>,
+    task: web::Json<model::NewTask>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
     use db::schema::task;
 
     if let Ok(conn) = pool.get() {
-        return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<()>>::into(
+        return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
             web::block(move || {
                 diesel::insert_into(task::table)
                     .values(&*task)
@@ -49,6 +49,54 @@ async fn create_task(
     }
 
     HttpResponse::Ok().json(UnifiedResponseMessages::<()>::error())
+}
+
+#[post("/api/task/list")]
+async fn show_tasks(pool: ShareData<db::ConnectionPool>) -> HttpResponse {
+    use db::schema::task::{self, dsl::*};
+
+    if let Ok(conn) = pool.get() {
+        return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<Vec<model::Task>>>::into(
+            web::block(move || {
+                task.select((
+                    task::id,
+                    task::name,
+                    task::description,
+                    task::command,
+                    task::frequency,
+                    task::cron_expression,
+                    task::timeout,
+                    task::retry_times,
+                    task::retry_interval,
+                    task::maximun_parallel_runable_num,
+                    task::tag,
+                    task::status,
+                ))
+                .filter(task::status.ne(2))
+                .order(id.desc())
+                .load::<model::Task>(&conn)
+            })
+            .await,
+        ));
+    }
+
+    HttpResponse::Ok().json(UnifiedResponseMessages::<Vec<model::Task>>::error())
+}
+
+#[post("/api/task/delete")]
+async fn delete_tasks(
+    web::Path(task_id): web::Path<i64>,
+    pool: ShareData<db::ConnectionPool>,
+) -> HttpResponse {
+    use db::schema::task::dsl::*;
+
+    if let Ok(conn) = pool.get() {
+        return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
+            web::block(move || diesel::delete(task.find(task_id)).execute(&conn)).await,
+        ));
+    }
+
+    HttpResponse::Ok().json(UnifiedResponseMessages::<usize>::error())
 }
 
 #[actix_web::main]
@@ -72,6 +120,39 @@ async fn main() -> std::io::Result<()> {
     .bind("127.0.0.1:8090")?
     .run()
     .await
+}
+
+#[post("/api/task/update")]
+async fn update_task(
+    web::Json(task_value): web::Json<model::NewTask>,
+    pool: ShareData<db::ConnectionPool>,
+) -> HttpResponse {
+    use db::schema::task;
+
+    if let Ok(conn) = pool.get() {
+        return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
+            web::block(move || {
+                diesel::update(task::table.find(task_value.id))
+                    .set((
+                        task::name.eq(task_value.name),
+                        task::description.eq(task_value.description),
+                        task::command.eq(task_value.command),
+                        task::frequency.eq(task_value.frequency),
+                        task::cron_expression.eq(task_value.cron_expression),
+                        task::timeout.eq(task_value.timeout),
+                        task::retry_times.eq(task_value.retry_times),
+                        task::retry_interval.eq(task_value.retry_interval),
+                        task::maximun_parallel_runable_num
+                            .eq(task_value.maximun_parallel_runable_num),
+                        task::tag.eq(task_value.tag),
+                    ))
+                    .execute(&conn)
+            })
+            .await,
+        ));
+    }
+
+    HttpResponse::Ok().json(UnifiedResponseMessages::<usize>::error())
 }
 
 // pub fn update_post<'a>(conn: &MysqlConnection, id_num: i64) -> usize {
@@ -159,10 +240,10 @@ impl<T: UniformData> UnifiedResponseMessages<T> {
     }
 }
 
-impl<T, E: std::error::Error> From<Result<T, E>> for UnifiedResponseMessages<()> {
+impl<T: UniformData, E: std::error::Error> From<Result<T, E>> for UnifiedResponseMessages<T> {
     fn from(value: Result<T, E>) -> Self {
         match value {
-            Ok(_) => Self::success(),
+            Ok(d) => Self::success_with_data(d),
             Err(e) => Self::error().customized_error_msg(e.to_string()),
         }
     }
