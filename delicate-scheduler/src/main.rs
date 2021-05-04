@@ -1,4 +1,5 @@
 #![recursion_limit = "256"]
+#![allow(clippy::expect_fun_call)]
 #![warn(missing_docs, missing_debug_implementations, rust_2018_idioms)]
 
 //! delicate-scheduler.
@@ -52,31 +53,13 @@ async fn create_task(
 }
 
 #[post("/api/task/list")]
-async fn show_tasks(pool: ShareData<db::ConnectionPool>) -> HttpResponse {
-    use db::schema::task::{self, dsl::*};
-
+async fn show_tasks(
+    web::Json(query_params): web::Json<model::QueryParamsTask>,
+    pool: ShareData<db::ConnectionPool>,
+) -> HttpResponse {
     if let Ok(conn) = pool.get() {
         return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<Vec<model::Task>>>::into(
-            web::block(move || {
-                task.select((
-                    task::id,
-                    task::name,
-                    task::description,
-                    task::command,
-                    task::frequency,
-                    task::cron_expression,
-                    task::timeout,
-                    task::retry_times,
-                    task::retry_interval,
-                    task::maximun_parallel_runable_num,
-                    task::tag,
-                    task::status,
-                ))
-                .filter(task::status.ne(2))
-                .order(id.desc())
-                .load::<model::Task>(&conn)
-            })
-            .await,
+            web::block(move || query_params.query(&conn)).await,
         ));
     }
 
@@ -84,7 +67,7 @@ async fn show_tasks(pool: ShareData<db::ConnectionPool>) -> HttpResponse {
 }
 
 #[post("/api/task/delete")]
-async fn delete_tasks(
+async fn delete_task(
     web::Path(task_id): web::Path<i64>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
@@ -113,7 +96,10 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         App::new()
+            .service(show_tasks)
             .service(create_task)
+            .service(update_task)
+            .service(delete_task)
             .app_data(shared_delay_timer.clone())
             .app_data(shared_connection_pool.clone())
     })
@@ -155,27 +141,6 @@ async fn update_task(
     HttpResponse::Ok().json(UnifiedResponseMessages::<usize>::error())
 }
 
-// pub fn update_post<'a>(conn: &MysqlConnection, id_num: i64) -> usize {
-//     use db::schema::posts;
-
-//     diesel::update(posts::table)
-//         .filter(posts::id.eq(id_num))
-//         .set(published.eq(1))
-//         .execute(conn)
-//         .unwrap()
-// }
-
-// pub fn update_post_tilte<'a>(conn: &MysqlConnection, id_num: i64) -> usize {
-//     diesel::update(posts.find(id_num))
-//         .set(title.eq("update"))
-//         .execute(conn)
-//         .unwrap()
-// }
-
-// pub fn delete_post<'a>(conn: &MysqlConnection, id_num: i64) -> usize {
-//     diesel::delete(posts.find(id_num)).execute(conn).unwrap()
-// }
-
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 
@@ -192,6 +157,7 @@ pub(crate) struct UnifiedResponseMessages<T: UniformData> {
 }
 
 impl<T: UniformData> UnifiedResponseMessages<T> {
+    #[allow(dead_code)]
     pub(crate) fn success() -> Self {
         UnifiedResponseMessages::default()
     }
