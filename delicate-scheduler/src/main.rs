@@ -57,6 +57,7 @@ async fn show_tasks(
     web::Json(query_params): web::Json<model::QueryParamsTask>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
+    // TODO: Need pagination.
     if let Ok(conn) = pool.get() {
         return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<Vec<model::Task>>>::into(
             web::block(move || query_params.query(&conn)).await,
