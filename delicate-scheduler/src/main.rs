@@ -96,6 +96,7 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         App::new()
+            // TODO: Try use App::configure.
             .service(show_tasks)
             .service(create_task)
             .service(update_task)
@@ -113,28 +114,9 @@ async fn update_task(
     web::Json(task_value): web::Json<model::NewTask>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
-    use db::schema::task;
-
     if let Ok(conn) = pool.get() {
         return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
-            web::block(move || {
-                diesel::update(task::table.find(task_value.id))
-                    .set((
-                        task::name.eq(task_value.name),
-                        task::description.eq(task_value.description),
-                        task::command.eq(task_value.command),
-                        task::frequency.eq(task_value.frequency),
-                        task::cron_expression.eq(task_value.cron_expression),
-                        task::timeout.eq(task_value.timeout),
-                        task::retry_times.eq(task_value.retry_times),
-                        task::retry_interval.eq(task_value.retry_interval),
-                        task::maximun_parallel_runable_num
-                            .eq(task_value.maximun_parallel_runable_num),
-                        task::tag.eq(task_value.tag),
-                    ))
-                    .execute(&conn)
-            })
-            .await,
+            web::block(move || diesel::update(&task_value).set(&task_value).execute(&conn)).await,
         ));
     }
 

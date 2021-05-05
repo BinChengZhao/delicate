@@ -18,7 +18,7 @@ pub struct Task {
     status: i16,
 }
 
-#[derive(Insertable, Debug, Default, Serialize, Deserialize)]
+#[derive(Insertable, Identifiable, AsChangeset, Debug, Default, Serialize, Deserialize)]
 #[table_name = "task"]
 pub struct NewTask {
     pub(crate) id: i64,
