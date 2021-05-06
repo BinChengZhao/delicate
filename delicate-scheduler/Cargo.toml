@@ -26,6 +26,7 @@ dotenv = "^0.15.0"
 anyhow = "^1.0.38"
 flexi_logger = "^0.17"
 log = "^0.4"
+futures = "^0.3.14"
 
 [build-dependencies]
 autocfg = "1"

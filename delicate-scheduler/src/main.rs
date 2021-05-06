@@ -25,6 +25,9 @@ use {cfg_mysql_support, cfg_postgres_support};
 pub(crate) use prelude::*;
 
 // TODO: return front-end json is small hump patten.
+// TODO:
+// 1. pagination.
+// 2. session auth.
 
 #[actix_web::main]
 async fn main() -> AnyResut<()> {
@@ -52,6 +55,7 @@ async fn main() -> AnyResut<()> {
             .app_data(shared_delay_timer.clone())
             .app_data(shared_connection_pool.clone())
             .wrap(components::session::session_middleware())
+            .wrap(MiddlewareLogger::default())
     })
     .bind(
         env::var("SCHEDULER_LISTENING_ADDRESS")

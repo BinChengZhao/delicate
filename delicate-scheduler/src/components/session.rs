@@ -9,3 +9,64 @@ pub(crate) fn session_middleware() -> CookieSession {
     .domain(env::var("SCHEDULER_DOMAIN").expect("Without `SCHEDULER_DOMAIN` set in .env"))
     .name(env::var("SCHEDULER_NAME").expect("Without `SCHEDULER_NAME` set in .env"))
 }
+
+pub struct SessionAuth;
+
+impl<S, B> Transform<S> for SessionAuth
+where
+    S: Service<Request = ServiceRequest, Response = ServiceResponse<B>, Error = Error>,
+    S::Future: 'static,
+    B: 'static,
+{
+    type Request = ServiceRequest;
+    type Response = ServiceResponse<B>;
+    type Error = Error;
+    type InitError = ();
+    type Transform = SessionAuthMiddleware<S>;
+    type Future = Ready<Result<Self::Transform, Self::InitError>>;
+
+    fn new_transform(&self, service: S) -> Self::Future {
+        ok(SessionAuthMiddleware { service })
+    }
+}
+
+pub struct SessionAuthMiddleware<S> {
+    service: S,
+}
+
+impl<S, B> Service for SessionAuthMiddleware<S>
+where
+    S: Service<Request = ServiceRequest, Response = ServiceResponse<B>, Error = Error>,
+    S::Future: 'static,
+    B: 'static,
+{
+    type Request = ServiceRequest;
+    type Response = ServiceResponse<B>;
+    type Error = Error;
+    type Future = Pin<Box<dyn Future<Output = Result<Self::Response, Self::Error>>>>;
+
+    fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+        self.service.poll_ready(cx)
+    }
+
+    fn call(&mut self, req: ServiceRequest) -> Self::Future {
+        let session = req.get_session();
+
+        if let Ok(Some(_token)) = session.get::<String>("token") {
+            println!("Hi from start. You requested: {}", req.path());
+
+            let fut = self.service.call(req);
+
+            Box::pin(async move {
+                let res = fut.await?;
+
+                println!("Hi from response");
+                Ok(res)
+            })
+        } else {
+            Box::pin(async move {
+                Ok(req.error_response(HttpResponseBuilder::new(StatusCode::default())))
+            })
+        }
+    }
+}

@@ -5,10 +5,21 @@ pub(crate) use super::{cfg_mysql_support, cfg_postgres_support};
 pub(crate) use super::db::model;
 pub(crate) use std::env;
 pub(crate) use std::fmt::Debug;
+pub(crate) use std::pin::Pin;
+pub(crate) use std::task::{Context, Poll};
+
+pub(crate) use actix_web::dev::{
+    HttpResponseBuilder, Service, ServiceRequest, ServiceResponse, Transform,
+};
+pub(crate) use actix_web::{Error, Result};
+pub(crate) use futures::future::{ok, Ready};
+pub(crate) use futures::Future;
 
 pub(crate) use diesel::prelude::*;
 
-pub(crate) use actix_session::CookieSession;
+pub(crate) use actix_session::{CookieSession, UserSession};
+pub(crate) use actix_web::http::StatusCode;
+pub(crate) use actix_web::middleware::Logger as MiddlewareLogger;
 pub(crate) use actix_web::web::{self, Data as ShareData};
 pub(crate) use actix_web::{post, App, HttpResponse, HttpServer};
 
