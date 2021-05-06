@@ -18,10 +18,14 @@ mod macros;
 
 use {cfg_mysql_support, cfg_postgres_support};
 
+use actix_session::CookieSession;
 use actix_web::web::{self, Data as ShareData};
 use actix_web::{post, App, HttpResponse, HttpServer};
 use diesel::prelude::*;
+use flexi_logger::{Age, Cleanup, Criterion, LogTarget, Logger, Naming};
+use std::env;
 
+use anyhow::Result as AnyResut;
 use db::model;
 use delay_timer::prelude::*;
 use diesel::query_dsl::RunQueryDsl;
@@ -84,18 +88,28 @@ async fn delete_task(
 }
 
 #[actix_web::main]
-async fn main() -> std::io::Result<()> {
+async fn main() -> AnyResut<()> {
     dotenv().ok();
     db::init();
+    let logger = Logger::with_str("info")
+        .log_target(LogTarget::File)
+        .buffer_and_flush()
+        .rotate(
+            Criterion::Age(Age::Day), 
+            Naming::Timestamps,       
+            Cleanup::KeepLogFiles(10),
+        )
+        .start()?;
 
-    let connection_pool = db::get_connection_pool();
-
-    let delay_timer = DelayTimerBuilder::default().enable_status_report().build();
-
-    let shared_delay_timer = ShareData::new(delay_timer);
+        
+        let delay_timer = DelayTimerBuilder::default().enable_status_report().build();
+        let shared_delay_timer = ShareData::new(delay_timer);
+        
+        let connection_pool = db::get_connection_pool();
     let shared_connection_pool = ShareData::new(connection_pool);
 
-    HttpServer::new(move || {
+
+    let result = HttpServer::new(move || {
         App::new()
             // TODO: Try use App::configure.
             .service(show_tasks)
@@ -104,10 +118,26 @@ async fn main() -> std::io::Result<()> {
             .service(delete_task)
             .app_data(shared_delay_timer.clone())
             .app_data(shared_connection_pool.clone())
+            .wrap(
+                CookieSession::signed(
+                    &env::var("SESSION_TOKEN")
+                        .expect("Without `SESSION_TOKEN` set in .env")
+                        .into_bytes(),
+                )
+                .domain(
+                    env::var("SCHEDULER_DOMAIN").expect("Without `SCHEDULER_DOMAIN` set in .env"),
+                )
+                .name(env::var("SCHEDULER_NAME").expect("Without `SCHEDULER_NAME` set in .env"))
+                .secure(true),
+            )
     })
-    .bind("127.0.0.1:8090")?
+    .bind(env::var("SCHEDULER_LISTENING_ADDRESS").expect("Without `SCHEDULER_LISTENING_ADDRESS` set in .env"))?
     .run()
-    .await
+    .await;
+
+    // Finish processing the buffer log first, then process the result.
+    logger.shutdown();
+    Ok(result?)
 }
 
 #[post("/api/task/update")]
