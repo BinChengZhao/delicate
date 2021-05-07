@@ -1,6 +1,7 @@
 use super::schema::{task, task::dsl::*};
 use super::PoolMysqlConnection;
 use diesel::result::Error as DieselError;
+use super::prelude::*;
 
 #[derive(Queryable, Debug, Default, Clone, Serialize, Deserialize)]
 pub struct Task {
@@ -49,7 +50,6 @@ pub struct QueryParamsTask {
 
 impl QueryParamsTask {
     pub(crate) fn query(self, conn: &PoolMysqlConnection) -> Result<Vec<Task>, DieselError> {
-        use diesel::prelude::*;
 
         let mut statement_builder = task::table
             .into_boxed()

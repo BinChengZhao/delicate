@@ -1,3 +1,4 @@
+pub(crate) use super::prelude;
 use crate::*;
 
 // When introducing different mods based on conditional compilation,
@@ -10,6 +11,8 @@ cfg_mysql_support!(
     pub(crate) mod mysql;
     pub(crate) use mysql::model;
     pub(crate) use mysql::schema;
+    pub(crate) use mysql::extension;
+
 
     pub(crate) use mysql::{establish_connection, get_connection_pool, ConnectionPool};
     embed_migrations!("./migrations/mysql");
