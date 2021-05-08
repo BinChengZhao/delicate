@@ -75,6 +75,16 @@ CREATE TABLE `executor_processor_group` (
 PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE `task_bind` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'Self-incrementing id',
+  `task_id` bigint(20) NOT NULL DEFAULT '0' COMMENT 'Task-id',
+  `bind_id` bigint(20) NOT NULL DEFAULT '0' COMMENT 'Bind-id (executor_processor_group_id)',
+  `created_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Binding creation time',
+  PRIMARY KEY (`id`),
+  KEY `task_id_idx` (`task_id`) USING BTREE,
+  KEY `bind_id_idx` (`bind_id`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE `user_auth` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `user_id` bigint(20) unsigned NOT NULL DEFAULT '0' COMMENT 'user-id',

@@ -2,5 +2,5 @@
 # see diesel.rs/guides/configuring-diesel-cli
 
 [print_schema]
-file = "src/db/mysql/schema.rs"
+file = "./delicate-scheduler/src/db/mysql/schema.rs"
 with_docs = true
