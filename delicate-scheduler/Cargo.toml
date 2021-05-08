@@ -27,6 +27,7 @@ anyhow = "^1.0.38"
 flexi_logger = "^0.17"
 log = "^0.4"
 futures = "^0.3.14"
+chrono = { version = "^0.4", features = ["serde"]}
 
 [build-dependencies]
 autocfg = "1"

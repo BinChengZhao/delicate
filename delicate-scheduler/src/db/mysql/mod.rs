@@ -5,10 +5,9 @@ use std::env;
 
 pub(crate) use super::prelude;
 
+pub(crate) mod extension;
 pub(crate) mod model;
 pub(crate) mod schema;
-pub(crate) mod extension;
-
 
 pub(crate) type ConnectionPool = Pool<ConnectionManager<MysqlConnection>>;
 pub(crate) type PoolMysqlConnection = PooledConnection<ConnectionManager<MysqlConnection>>;

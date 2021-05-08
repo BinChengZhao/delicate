@@ -1,6 +1,5 @@
 use super::prelude::*;
 
-
 impl<T> QueryFragment<Mysql> for Paginated<T>
 where
     T: QueryFragment<Mysql>,
@@ -16,7 +15,6 @@ where
     }
 }
 
-
 impl<T: Query> Query for Paginated<T> {
     type SqlType = (T::SqlType, BigInt);
 }
@@ -29,7 +27,7 @@ pub(crate) trait Paginate: AsQuery + Sized {
             query: self.as_query(),
             page,
             per_page: DEFAULT_PER_PAGE,
-         }
+        }
     }
 }
 

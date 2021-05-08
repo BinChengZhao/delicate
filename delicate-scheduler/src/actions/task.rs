@@ -35,9 +35,9 @@ async fn show_tasks(
 ) -> HttpResponse {
     // TODO: Need pagination.
     if let Ok(conn) = pool.get() {
-        return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<Vec<model::Task>>>::into(
-            web::block(move || query_params.query(&conn)).await,
-        ));
+        // return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<Vec<model::Task>>>::into(
+        //     web::block(move || query_params.query(&conn)).await,
+        // ));
     }
 
     HttpResponse::Ok().json(UnifiedResponseMessages::<Vec<model::Task>>::error())

@@ -18,6 +18,7 @@ pub(crate) use actix_web::{Error, Result};
 pub(crate) use futures::future::{ok, Ready};
 pub(crate) use futures::Future;
 
+pub(crate) use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 pub(crate) use diesel::mysql::Mysql;
 pub(crate) use diesel::prelude::*;
 pub(crate) use diesel::query_builder::{AsQuery, AstPass, Query, QueryFragment};
