@@ -35,12 +35,46 @@ async fn show_tasks(
 ) -> HttpResponse {
     // TODO: Need pagination.
     if let Ok(conn) = pool.get() {
-        // return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<Vec<model::Task>>>::into(
-        //     web::block(move || query_params.query(&conn)).await,
-        // ));
+        // return HttpResponse::Ok().json(
+        //     Into::<UnifiedResponseMessages<model::PaginateTask>>::into(
+        // web::block(move || {
+        //query_params.query(&conn)
+        // let query_builder = model::TaskQueryBuilder::query_all_columns();
+
+        // TODO: The Task structure has fewer fields. Not all columns of the.
+        // Should use `NaiveTask` load;
+        // let tasks = query_params
+        //     .clone()
+        //     .query_filter(query_builder)
+        //     .paginate(query_params.page)
+        //     .load::<model::Task>(&conn);
+
+        // if let Err(tasks_err) = tasks {
+        //     return Err(tasks_err);
+        // }
+
+        // let per_page = query_params.per_page;
+        // let count_builder = model::TaskQueryBuilder::query_count();
+        // let count = query_params
+        //     .query_filter(count_builder)
+        //     .get_result::<i64>(&conn);
+
+        // if let Err(count_err) = tasks {
+        //     return Err(count_err);
+        // }
+
+        // Ok(model::task::PaginateTask::default()
+        //     .set_tasks(tasks.unwrap())
+        //     .set_per_page(per_page)
+        //     .set_total_page(count.unwrap()))
+        todo!();
+        // })
+        // .await,
+        // ),
+        // );
     }
 
-    HttpResponse::Ok().json(UnifiedResponseMessages::<Vec<model::Task>>::error())
+    HttpResponse::Ok().json(UnifiedResponseMessages::<model::PaginateTask>::error())
 }
 
 #[post("/api/task/update")]

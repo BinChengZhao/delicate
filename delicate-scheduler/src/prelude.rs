@@ -3,6 +3,7 @@ pub(crate) use super::db;
 pub(crate) use super::{cfg_mysql_support, cfg_postgres_support};
 
 pub(crate) use super::db::extension;
+pub(crate) use super::db::extension::*;
 pub(crate) use super::db::model;
 pub(crate) use super::db::schema;
 
@@ -23,7 +24,7 @@ pub(crate) use diesel::mysql::Mysql;
 pub(crate) use diesel::prelude::*;
 pub(crate) use diesel::query_builder::{AsQuery, AstPass, Query, QueryFragment};
 pub(crate) use diesel::query_dsl::methods::LoadQuery;
-pub(crate) use diesel::sql_types::*;
+pub(crate) use diesel::sql_types;
 
 pub(crate) use actix_session::{CookieSession, UserSession};
 pub(crate) use actix_web::http::StatusCode;

@@ -32,23 +32,7 @@ use extension::*;
 use schema::task;
 
 fn main() {
-    let sql = schema::task::table
-        .select((
-            task::id,
-            task::name,
-            task::description,
-            task::command,
-            task::frequency,
-            task::cron_expression,
-            task::timeout,
-            task::retry_times,
-            task::retry_interval,
-            task::maximun_parallel_runable_num,
-            task::tag,
-            task::status,
-        ))
-        .filter(task::status.ne(2))
-        .paginate(1);
+    let sql = model::task::TaskQueryBuilder::query_all_columns().paginate(1);
     dbg!(diesel::debug_query::<Mysql, _>(&sql));
     // diesel::select(schema::task::all_columns)
     // todo!();

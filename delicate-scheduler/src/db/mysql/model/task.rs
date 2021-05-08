@@ -1,7 +1,5 @@
 use super::prelude::*;
 use super::schema::{task, task_log};
-use super::PoolMysqlConnection;
-use diesel::result::Error as DieselError;
 
 #[derive(Queryable, Debug, Default, Clone, Serialize, Deserialize)]
 pub struct Task {
@@ -17,6 +15,25 @@ pub struct Task {
     maximun_parallel_runable_num: i16,
     tag: String,
     status: i16,
+}
+
+#[derive(Queryable, Debug, Clone)]
+
+pub struct NaiveTask {
+    id: i64,
+    name: String,
+    description: String,
+    command: String,
+    frequency: String,
+    cron_expression: String,
+    timeout: i16,
+    retry_times: i16,
+    retry_interval: i16,
+    maximun_parallel_runable_num: i16,
+    tag: String,
+    status: i16,
+    created_time: NaiveDateTime,
+    deleted_time: Option<NaiveDateTime>,
 }
 
 #[derive(Insertable, Identifiable, AsChangeset, Debug, Default, Serialize, Deserialize)]
@@ -37,7 +54,7 @@ pub struct NewTask {
 }
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
-pub struct QueryParamsTask {
+pub(crate) struct QueryParamsTask {
     id: Option<i64>,
     name: Option<String>,
     description: Option<String>,
@@ -46,26 +63,56 @@ pub struct QueryParamsTask {
     cron_expression: Option<String>,
     tag: Option<String>,
     status: Option<i16>,
+    pub(crate) per_page : i64,
+    pub(crate) page : i64,
 }
 
-// TODO: Constructing query fragments.
-impl QueryParamsTask {
-    pub(crate) fn query_all_columns(self) -> task::BoxedQuery<'static, Mysql>{
+
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+pub(crate) struct PaginateTask{
+    tasks : Vec<Task>,
+    per_page : i64,
+    total_page : i64
+}
+
+impl PaginateTask{
+    pub(crate) fn set_tasks(mut self, tasks:Vec<Task>) ->Self{
+        self.tasks = tasks;
+        self
+    }
+
+    pub(crate) fn set_per_page(mut self, per_page:i64) ->Self{
+        self.per_page = per_page;
+        self
+    }
+
+    pub(crate) fn set_total_page(mut self, total_page:i64) ->Self{
+        self.total_page = total_page;
+        self
+    }
+}
+
+pub(crate) struct TaskQueryBuilder;
+impl TaskQueryBuilder{
+    pub(crate) fn query_all_columns() -> task::BoxedQuery<'static, Mysql>{
         task::table
         .into_boxed()
         .select(task::all_columns)
     }
 
-    pub(crate) fn query_count(self)-> task::BoxedQuery<'static, Mysql, diesel::sql_types::Bigint>{
+    pub(crate) fn query_count()-> task::BoxedQuery<'static, Mysql, diesel::sql_types::Bigint>{
         task::table
         .into_boxed()
-        .count().filter(task::status.ne(2))
+        .count()
     }
+}
 
-    pub(crate) fn query(self) -> task::BoxedQuery<'static, Mysql> {
-        let mut statement_builder = task::table
-            .into_boxed()
-            .select(task::all_columns)
+
+// TODO: Constructing query fragments.
+impl QueryParamsTask {
+
+    pub(crate) fn query_filter<ST>(self, mut statement_builder : task::BoxedQuery<'static, Mysql, ST>) -> task::BoxedQuery<'static, Mysql, ST> {
+        statement_builder = statement_builder
             .filter(task::status.ne(2));
             // Maybe status 2 eq task-deleted status.
 
@@ -108,6 +155,7 @@ impl QueryParamsTask {
 
     }
 }
+
 
 #[derive(Queryable, Identifiable, AsChangeset, Debug, Clone, Serialize, Deserialize)]
 #[table_name = "task_log"]
