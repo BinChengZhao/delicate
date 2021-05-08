@@ -1,25 +1,10 @@
 use super::prelude::*;
 use super::schema::{task, task_log};
 
-#[derive(Queryable, Debug, Default, Clone, Serialize, Deserialize)]
+
+#[derive(Queryable, Debug, Clone, Serialize, Deserialize)]
+
 pub struct Task {
-    id: i64,
-    name: String,
-    description: String,
-    command: String,
-    frequency: String,
-    cron_expression: String,
-    timeout: i16,
-    retry_times: i16,
-    retry_interval: i16,
-    maximun_parallel_runable_num: i16,
-    tag: String,
-    status: i16,
-}
-
-#[derive(Queryable, Debug, Clone)]
-
-pub struct NaiveTask {
     id: i64,
     name: String,
     description: String,
@@ -86,8 +71,8 @@ impl PaginateTask{
         self
     }
 
-    pub(crate) fn set_total_page(mut self, total_page:i64) ->Self{
-        self.total_page = total_page;
+    pub(crate) fn set_total_page(mut self, total:i64) ->Self{
+        self.total_page = (total as f64 / self.per_page as f64).ceil() as i64;
         self
     }
 }
@@ -175,7 +160,7 @@ pub struct NaiveTaskLog {
 
 #[derive(Insertable, Debug, Clone, Serialize, Deserialize)]
 #[table_name = "task_log"]
-pub struct NaiveNewTaskLog {
+pub struct TaskLog {
     task_id: i64,
     record_id: i64,
     name: String,
@@ -192,23 +177,10 @@ pub struct NaiveNewTaskLog {
     executor_processor_host: i64,
 }
 
-#[derive(Debug, Default, Clone, Serialize, Deserialize)]
-pub struct TaskLog {
-    id: i64,
-    task_id: i64,
-    name: String,
-    description: String,
-    command: String,
-    frequency: String,
-    cron_expression: String,
-    maximun_parallel_runable_num: i16,
-    tag: String,
-    status: i16,
-    created_time: MysqlTimestamp,
-}
-
-#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+#[derive(Queryable, Identifiable, AsChangeset, Debug, Clone, Serialize, Deserialize)]
+#[table_name = "task_log"]
 pub struct NewTaskLog {
+    id: i64,
     task_id: i64,
     record_id: i64,
     name: String,
@@ -219,51 +191,10 @@ pub struct NewTaskLog {
     maximun_parallel_runable_num: i16,
     tag: String,
     status: i16,
-    created_time: MysqlTimestamp,
+    created_time: NaiveDateTime,
     executor_processor_id: i64,
     executor_processor_name: String,
     executor_processor_host: i64,
-}
-
-impl From<NaiveNewTaskLog> for NewTaskLog {
-    fn from(value: NaiveNewTaskLog) -> NewTaskLog {
-        let created_time = MysqlTimestamp(value.created_time);
-        NewTaskLog {
-            task_id: value.task_id,
-            record_id: value.record_id,
-            name: value.name,
-            description: value.description,
-            command: value.command,
-            frequency: value.frequency,
-            cron_expression: value.cron_expression,
-            maximun_parallel_runable_num: value.maximun_parallel_runable_num,
-            tag: value.tag,
-            status: value.status,
-            executor_processor_id: value.executor_processor_id,
-            executor_processor_name: value.executor_processor_name,
-            executor_processor_host: value.executor_processor_host,
-            created_time,
-        }
-    }
-}
-
-impl From<NaiveTaskLog> for TaskLog {
-    fn from(value: NaiveTaskLog) -> TaskLog {
-        let created_time = MysqlTimestamp(value.created_time);
-        TaskLog {
-            id: value.id,
-            task_id: value.task_id,
-            name: value.name,
-            description: value.description,
-            command: value.command,
-            frequency: value.frequency,
-            cron_expression: value.cron_expression,
-            maximun_parallel_runable_num: value.maximun_parallel_runable_num,
-            tag: value.tag,
-            status: value.status,
-            created_time,
-        }
-    }
 }
 
 
@@ -280,14 +211,3 @@ pub struct QueryParamsTaskLog {
 }
 
 
-#[derive(PartialEq, Debug, Eq, PartialOrd, Ord, Copy, Clone, Serialize, Deserialize)]
-pub struct MysqlTimestamp(NaiveDateTime);
-
-impl Default for MysqlTimestamp {
-    fn default() -> Self {
-        MysqlTimestamp(NaiveDateTime::new(
-            NaiveDate::from_ymd(0, 0, 0),
-            NaiveTime::from_hms(0, 0, 0),
-        ))
-    }
-}

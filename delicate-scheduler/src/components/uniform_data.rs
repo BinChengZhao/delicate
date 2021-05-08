@@ -1,11 +1,11 @@
 use super::prelude::*;
 
-pub(crate) trait UniformData: Default + Debug + Clone + Serialize {}
+pub(crate) trait UniformData: Debug + Clone + Serialize {}
 
-impl<T: Default + Debug + Clone + Serialize> UniformData for T {}
+impl<T: Debug + Clone + Serialize> UniformData for T {}
 
 /// Uniform public message response format.
-#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub(crate) struct UnifiedResponseMessages<T: UniformData> {
     code: i8,
     msg: String,
@@ -13,33 +13,17 @@ pub(crate) struct UnifiedResponseMessages<T: UniformData> {
 }
 
 impl<T: UniformData> UnifiedResponseMessages<T> {
-    #[allow(dead_code)]
-    pub(crate) fn success() -> Self {
-        UnifiedResponseMessages::default()
-    }
-
     pub(crate) fn success_with_data(data: T) -> Self {
-        UnifiedResponseMessages {
-            data,
-            ..Default::default()
-        }
-    }
-
-    pub(crate) fn error() -> Self {
-        UnifiedResponseMessages {
-            code: -1,
-            ..Default::default()
-        }
+        let msg = String::default();
+        let code = i8::default();
+        UnifiedResponseMessages { code, msg, data }
     }
 
     #[allow(dead_code)]
     pub(crate) fn error_with_data(data: T) -> Self {
         let code = -1;
-        UnifiedResponseMessages {
-            code,
-            data,
-            ..Default::default()
-        }
+        let msg = String::default();
+        UnifiedResponseMessages { code, msg, data }
     }
 
     pub(crate) fn customized_error_msg(mut self, msg: String) -> Self {
@@ -62,7 +46,21 @@ impl<T: UniformData> UnifiedResponseMessages<T> {
     }
 }
 
-impl<T: UniformData, E: std::error::Error> From<Result<T, E>> for UnifiedResponseMessages<T> {
+impl<T: UniformData + Default> UnifiedResponseMessages<T> {
+    pub(crate) fn error() -> Self {
+        let msg = String::default();
+        let data = T::default();
+        UnifiedResponseMessages {
+            code: -1,
+            msg,
+            data,
+        }
+    }
+}
+
+impl<T: UniformData + Default, E: std::error::Error> From<Result<T, E>>
+    for UnifiedResponseMessages<T>
+{
     fn from(value: Result<T, E>) -> Self {
         match value {
             Ok(d) => Self::success_with_data(d),

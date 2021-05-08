@@ -16,7 +16,7 @@ where
 }
 
 impl<T: Query> Query for Paginated<T> {
-    type SqlType = (T::SqlType);
+    type SqlType = T::SqlType;
 }
 
 impl<T> RunQueryDsl<MysqlConnection> for Paginated<T> {}
@@ -53,12 +53,6 @@ impl<T> Paginated<T> {
     where
         Self: LoadQuery<MysqlConnection, U>,
     {
-        // let per_page = self.per_page;
          self.load::<U>(conn)
-        // let results = self.load::<U>(conn)?;
-
-        // let total = *results.get(0).map(|(_, total)| total).unwrap_or(&0);
-        // let records = results.into_iter().map(|(record, _)| record).collect();
-        // let total_pages = (total as f64 / per_page as f64).ceil() as i64;
     }
 }

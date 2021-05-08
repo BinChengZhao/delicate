@@ -26,54 +26,43 @@ pub(crate) use prelude::*;
 
 // TODO: return front-end json is small hump patten.
 // TODO:
-// 1. pagination.
-// 2. session auth.
-use extension::*;
-use schema::task;
 
-fn main() {
-    let sql = model::task::TaskQueryBuilder::query_all_columns().paginate(1);
-    dbg!(diesel::debug_query::<Mysql, _>(&sql));
-    // diesel::select(schema::task::all_columns)
-    // todo!();
+#[actix_web::main]
+async fn main() -> AnyResut<()> {
+    dotenv().ok();
+    db::init();
+    let logger = Logger::with_str("info")
+        .log_target(LogTarget::File)
+        .buffer_and_flush()
+        .rotate(
+            Criterion::Age(Age::Day),
+            Naming::Timestamps,
+            Cleanup::KeepLogFiles(10),
+        )
+        .start()?;
+
+    let delay_timer = DelayTimerBuilder::default().enable_status_report().build();
+    let shared_delay_timer = ShareData::new(delay_timer);
+
+    let connection_pool = db::get_connection_pool();
+    let shared_connection_pool = ShareData::new(connection_pool);
+
+    let result = HttpServer::new(move || {
+        App::new()
+            .configure(actions::task::config)
+            .app_data(shared_delay_timer.clone())
+            .app_data(shared_connection_pool.clone())
+            .wrap(components::session::session_middleware())
+            .wrap(MiddlewareLogger::default())
+    })
+    .bind(
+        env::var("SCHEDULER_LISTENING_ADDRESS")
+            .expect("Without `SCHEDULER_LISTENING_ADDRESS` set in .env"),
+    )?
+    .run()
+    .await;
+
+    // Finish processing the buffer log first, then process the result.
+    logger.shutdown();
+    Ok(result?)
 }
-
-// #[actix_web::main]
-// async fn main() -> AnyResut<()> {
-//     dotenv().ok();
-//     db::init();
-//     let logger = Logger::with_str("info")
-//         .log_target(LogTarget::File)
-//         .buffer_and_flush()
-//         .rotate(
-//             Criterion::Age(Age::Day),
-//             Naming::Timestamps,
-//             Cleanup::KeepLogFiles(10),
-//         )
-//         .start()?;
-
-//     let delay_timer = DelayTimerBuilder::default().enable_status_report().build();
-//     let shared_delay_timer = ShareData::new(delay_timer);
-
-//     let connection_pool = db::get_connection_pool();
-//     let shared_connection_pool = ShareData::new(connection_pool);
-
-//     let result = HttpServer::new(move || {
-//         App::new()
-//             .configure(actions::task::config)
-//             .app_data(shared_delay_timer.clone())
-//             .app_data(shared_connection_pool.clone())
-//             .wrap(components::session::session_middleware())
-//             .wrap(MiddlewareLogger::default())
-//     })
-//     .bind(
-//         env::var("SCHEDULER_LISTENING_ADDRESS")
-//             .expect("Without `SCHEDULER_LISTENING_ADDRESS` set in .env"),
-//     )?
-//     .run()
-//     .await;
-
-//     // Finish processing the buffer log first, then process the result.
-//     logger.shutdown();
-//     Ok(result?)
-// }
