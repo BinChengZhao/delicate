@@ -3,6 +3,8 @@ use actix_web::{get, App, HttpResponse, HttpServer, Responder};
 
 use delay_timer::prelude::*;
 //TODO: delay-timer add `tokio_unblock_process_task_fn` to prelude
+//FIXME: It is possible that the tokio in delay-timer is not compatible
+//FIXME: With the tokio built into actix.
 use delay_timer::utils::convenience::functions::tokio_unblock_process_task_fn;
 use serde::{Deserialize, Serialize};
 
@@ -12,12 +14,11 @@ use async_lock::RwLock;
 
 use rsa::PaddingScheme;
 
+use std::convert::{From, Into, TryFrom, TryInto};
+use std::env;
 use std::net::IpAddr;
+use std::ops::DerefMut;
 use std::str::from_utf8;
-use std::{
-    convert::{From, Into, TryFrom, TryInto},
-    ops::DerefMut,
-};
 
 mod component;
 use component::*;
@@ -290,7 +291,10 @@ async fn main() -> std::io::Result<()> {
             .app_data(shared_scheduler.clone())
             .app_data(shared_system_mirror.clone())
     })
-    .bind("127.0.0.1:8090")?
+    .bind(
+        env::var("EXECUTOR_LISTENING_ADDRESS")
+            .expect("Without `EXECUTOR_LISTENING_ADDRESS` set in .env"),
+    )?
     .run()
     .await
 }

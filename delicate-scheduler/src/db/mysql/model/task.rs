@@ -93,7 +93,6 @@ impl TaskQueryBuilder{
 }
 
 
-// TODO: Constructing query fragments.
 impl QueryParamsTask {
 
     pub(crate) fn query_filter<ST>(self, mut statement_builder : task::BoxedQuery<'static, Mysql, ST>) -> task::BoxedQuery<'static, Mysql, ST> {
@@ -108,32 +107,33 @@ impl QueryParamsTask {
         if let Some(task_status) = self.status {
             statement_builder = statement_builder.filter(task::status.eq(task_status));
         } else {
+            //TODO: Addtion state in future.
             statement_builder = statement_builder.filter(task::status.ne(2));
         }
 
         if let Some(task_name) = self.name {
-            statement_builder = statement_builder.filter(task::name.eq(task_name));
+            statement_builder = statement_builder.filter(task::name.like(task_name));
         }
 
         if let Some(task_description) = self.description {
-            statement_builder = statement_builder.filter(task::description.eq(task_description));
+            statement_builder = statement_builder.filter(task::description.like(task_description));
         }
 
         if let Some(task_command) = self.command {
-            statement_builder = statement_builder.filter(task::command.eq(task_command));
+            statement_builder = statement_builder.filter(task::command.like(task_command));
         }
 
         if let Some(task_frequency) = self.frequency {
-            statement_builder = statement_builder.filter(task::frequency.eq(task_frequency));
+            statement_builder = statement_builder.filter(task::frequency.like(task_frequency));
         }
 
         if let Some(task_cron_expression) = self.cron_expression {
             statement_builder =
-                statement_builder.filter(task::cron_expression.eq(task_cron_expression));
+                statement_builder.filter(task::cron_expression.like(task_cron_expression));
         }
 
         if let Some(task_tag) = self.tag {
-            statement_builder = statement_builder.filter(task::tag.eq(task_tag));
+            statement_builder = statement_builder.filter(task::tag.like(task_tag));
         }
 
         statement_builder.order(task::id.desc())
@@ -177,6 +177,7 @@ pub struct TaskLog {
     executor_processor_host: i64,
 }
 
+// FIXME: Add new table `task_log_extend` to store process-child's (stdout and stderr) or (http task's response body).
 #[derive(Queryable, Identifiable, AsChangeset, Debug, Clone, Serialize, Deserialize)]
 #[table_name = "task_log"]
 pub struct NewTaskLog {
