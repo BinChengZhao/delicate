@@ -48,7 +48,7 @@ PRIMARY KEY ( `id` )
 CREATE TABLE `executor_processor` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'Self-incrementing id',
   `name` varchar(128) NOT NULL COMMENT 'Executor-processor name',
-  `host` bigint(20) NOT NULL DEFAULT '0' COMMENT 'Executor-processor host',
+  `host` varchar(32) NOT NULL DEFAULT '' COMMENT 'Executor-processor host',
   `port` smallint(6) NOT NULL DEFAULT '0' COMMENT 'Executor-processor port',
   `description` varchar(128) NOT NULL COMMENT 'Executor-processor description',
   `tag` varchar(32) NOT NULL DEFAULT '' COMMENT 'Executor-processor tag',
@@ -106,8 +106,8 @@ CREATE TABLE `user_auth` (
   KEY `user_id_idx` (`user_id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='User authorization';
 
-CREATE TABLE `user_base` (
-  `user_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'user-id',
+CREATE TABLE `user` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'user-id',
   `user_name` varchar(32) NOT NULL DEFAULT '' COMMENT 'User account, must be unique',
   `nick_name` varchar(32) NOT NULL DEFAULT '' COMMENT 'User nickname',
   `mobile` varchar(16) NOT NULL DEFAULT '' COMMENT 'Mobie-number(unique)',
@@ -116,7 +116,7 @@ CREATE TABLE `user_base` (
   `status` tinyint(4) NOT NULL DEFAULT '0' COMMENT 'User Status: 2:Deleted',
   `created_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Creation time',
   `updated_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Modify time',
-  PRIMARY KEY (`user_id`),
+  PRIMARY KEY (`id`),
   UNIQUE KEY `user_name_idx` (`user_name`) USING BTREE COMMENT 'User name, must be unique',
   UNIQUE KEY `user_mobile_idx` (`mobile`) USING BTREE COMMENT 'Mobie-number(unique)',
   UNIQUE KEY `user_email_idx` (`email`) USING BTREE COMMENT 'Email(unique)'
@@ -127,7 +127,7 @@ CREATE TABLE `user_login_log` (
   `user_id` bigint(20) unsigned NOT NULL DEFAULT '0' COMMENT 'user-id',
   `login_type` tinyint(3) unsigned NOT NULL DEFAULT '1' COMMENT 'Login method Third party/email/mobile etc.',
   `command` tinyint(3) unsigned NOT NULL DEFAULT '1' COMMENT 'Operation type 1:Login success 2:Logout success 3:Login failure 4:Logout failure',
-  `lastip` bigint(20) NOT NULL DEFAULT '0' COMMENT 'Login-ip',
+  `lastip` varchar(32) NOT NULL DEFAULT '' COMMENT 'Login-ip',
   `created_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Creation time',
   PRIMARY KEY (`id`),
   KEY `idx_user_id_type_time` (`user_id`,`login_type`,`created_time`) USING BTREE,
@@ -140,7 +140,7 @@ CREATE TABLE `user_register_log` (
   `user_id` bigint(20) unsigned NOT NULL COMMENT 'user-id',
   `register_method` tinyint(2) unsigned NOT NULL COMMENT 'Registration method 1:Mobie-number 2:Email 3:Username',
   `register_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Registration Time',
-  `register_ip` bigint(20) NOT NULL DEFAULT '0' COMMENT 'Registered IP',
+  `register_ip` varchar(32) NOT NULL DEFAULT '' COMMENT 'Registered IP',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COMMENT='User Registration Log';
 
