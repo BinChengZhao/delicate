@@ -83,6 +83,12 @@ impl RequestScheduler {
                     .ok_or_else(|| anyhow!("token missed for raw_token."))
             }
             SecurityLevel::Normal => {
+                // FIXME: 1. scheduler does not use RSA encryption for messages communicated with executor.
+                // FIXME:    Reason: RSA encryption and signature take longer time, about 1-2 ms.
+
+                // FIXME:  Therefore, we currently use the mode of passing messages + token for authentication.
+                // FIXME: The token is configured by env initialization, or generated when creating the node.
+
                 let padding = PaddingScheme::new_pkcs1v15_encrypt();
                 //|k|k.0.decrypt(padding, &self.raw_token.as_bytes()).err()
                 let rsa_private_key =  security_conf.rsa_private_key.as_ref().ok_or_else(||anyhow!("When the security level is Normal, the initialization `delicate-executor` must contain the secret key (DELICATE_SECURITY_KEY)"))?;

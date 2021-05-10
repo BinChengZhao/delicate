@@ -1,7 +1,8 @@
 use super::prelude::*;
 use super::schema::{user};
 
-
+// FIXME: The user's password is encrypted by sha-256 and stored in the database, with low MD5 security.
+// Using ring-crate.
 #[derive(Queryable, Identifiable, AsChangeset, Debug, Clone, Serialize, Deserialize)]
 #[table_name = "user"]
 
