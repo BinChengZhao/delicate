@@ -1,5 +1,5 @@
 use super::prelude::*;
-use super::schema::{task, task_log};
+use super::schema::{task};
 
 
 #[derive(Queryable, Debug, Clone, Serialize, Deserialize)]
@@ -140,75 +140,3 @@ impl QueryParamsTask {
 
     }
 }
-
-
-#[derive(Queryable, Identifiable, AsChangeset, Debug, Clone, Serialize, Deserialize)]
-#[table_name = "task_log"]
-pub struct NaiveTaskLog {
-    id: i64,
-    task_id: i64,
-    name: String,
-    description: String,
-    command: String,
-    frequency: String,
-    cron_expression: String,
-    maximun_parallel_runable_num: i16,
-    tag: String,
-    status: i16,
-    created_time: NaiveDateTime,
-}
-
-#[derive(Insertable, Debug, Clone, Serialize, Deserialize)]
-#[table_name = "task_log"]
-pub struct TaskLog {
-    task_id: i64,
-    record_id: i64,
-    name: String,
-    description: String,
-    command: String,
-    frequency: String,
-    cron_expression: String,
-    maximun_parallel_runable_num: i16,
-    tag: String,
-    status: i16,
-    created_time: NaiveDateTime,
-    executor_processor_id: i64,
-    executor_processor_name: String,
-    executor_processor_host: i64,
-}
-
-// FIXME: Add new table `task_log_extend` to store process-child's (stdout and stderr) or (http task's response body).
-#[derive(Queryable, Identifiable, AsChangeset, Debug, Clone, Serialize, Deserialize)]
-#[table_name = "task_log"]
-pub struct NewTaskLog {
-    id: i64,
-    task_id: i64,
-    record_id: i64,
-    name: String,
-    description: String,
-    command: String,
-    frequency: String,
-    cron_expression: String,
-    maximun_parallel_runable_num: i16,
-    tag: String,
-    status: i16,
-    created_time: NaiveDateTime,
-    executor_processor_id: i64,
-    executor_processor_name: String,
-    executor_processor_host: i64,
-}
-
-
-#[derive(Debug, Default, Clone, Serialize, Deserialize)]
-pub struct QueryParamsTaskLog {
-    name: Option<String>,
-    description: Option<String>,
-    command: Option<String>,
-    tag: Option<String>,
-    task_id: Option<i64>,
-    record_id: Option<i64>,
-    status: Option<i16>,
-    executor_processor_id: Option<i64>,
-}
-
-

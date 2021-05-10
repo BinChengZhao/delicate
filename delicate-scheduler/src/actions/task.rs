@@ -55,7 +55,7 @@ async fn show_tasks(
                         .query_filter(count_builder)
                         .get_result::<i64>(&conn);
 
-                    if let Err(count_err) = tasks {
+                    if let Err(count_err) = count {
                         return Err(count_err);
                     }
 
@@ -99,4 +99,48 @@ async fn delete_task(
     }
 
     HttpResponse::Ok().json(UnifiedResponseMessages::<usize>::error())
+}
+
+#[post("/api/task_log/list")]
+async fn show_task_logs(
+    web::Json(query_params): web::Json<model::QueryParamsTaskLog>,
+    pool: ShareData<db::ConnectionPool>,
+) -> HttpResponse {
+    if let Ok(conn) = pool.get() {
+        return HttpResponse::Ok().json(
+            Into::<UnifiedResponseMessages<model::PaginateTaskLogs>>::into(
+                web::block(move || {
+                    let query_builder = model::TaskLogQueryBuilder::query_all_columns();
+
+                    let task_logs = query_params
+                        .clone()
+                        .query_filter(query_builder)
+                        .paginate(query_params.page)
+                        .load::<model::NewTaskLog>(&conn);
+
+                    if let Err(task_logs_err) = task_logs {
+                        return Err(task_logs_err);
+                    }
+
+                    let per_page = query_params.per_page;
+                    let count_builder = model::TaskLogQueryBuilder::query_count();
+                    let count = query_params
+                        .query_filter(count_builder)
+                        .get_result::<i64>(&conn);
+
+                    if let Err(count_err) = count {
+                        return Err(count_err);
+                    }
+
+                    Ok(model::task_log::PaginateTaskLogs::default()
+                        .set_task_logs(task_logs.unwrap())
+                        .set_per_page(per_page)
+                        .set_total_page(count.unwrap()))
+                })
+                .await,
+            ),
+        );
+    }
+
+    HttpResponse::Ok().json(UnifiedResponseMessages::<model::PaginateTask>::error())
 }

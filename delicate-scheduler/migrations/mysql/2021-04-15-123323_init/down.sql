@@ -1,6 +1,7 @@
 -- This file should undo anything in `up.sql`
 DROP TABLE task;
 DROP TABLE task_log;
+DROP TABLE task_log_extend;
 DROP TABLE task_bind;
 DROP TABLE executor_processor;
 DROP TABLE executor_group;

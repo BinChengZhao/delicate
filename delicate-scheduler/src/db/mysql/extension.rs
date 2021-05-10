@@ -4,7 +4,7 @@ impl<T> QueryFragment<Mysql> for Paginated<T>
 where
     T: QueryFragment<Mysql>,
 {
-    fn walk_ast(&self, mut out: AstPass<Mysql>) -> QueryResult<()> {
+    fn walk_ast(&self, mut out: AstPass<'_, Mysql>) -> QueryResult<()> {
         self.query.walk_ast(out.reborrow())?;
         out.push_sql(" LIMIT ");
         out.push_bind_param::<sql_types::BigInt, _>(&self.per_page)?;
