@@ -1,8 +1,25 @@
 use super::prelude::*;
-use super::schema::{user};
+use super::schema::{user, user_auth};
+use validator::{Validate};
+use ring::digest::{SHA256, digest};
 
 // FIXME: The user's password is encrypted by sha-256 and stored in the database, with low MD5 security.
 // Using ring-crate.
+
+#[derive(Debug, Clone, Validate, Serialize, Deserialize)]
+pub struct QueryNewUser {
+    #[validate(length(min = 8))]
+    user_name: String,
+    #[validate(length(min = 1))]
+    nick_name: String,
+    #[validate(phone)]
+    mobile: String,
+    #[validate(email)]
+    email: String,
+    #[validate(length(min = 8))]
+    certificate: String,
+}
+
 #[derive(Queryable, Identifiable, AsChangeset, Debug, Clone, Serialize, Deserialize)]
 #[table_name = "user"]
 
@@ -25,6 +42,80 @@ pub struct NewUser {
     nick_name: String,
     mobile: String,
     email: String,
+}
+
+impl From<&QueryNewUser> for NewUser{
+    fn from(value:&QueryNewUser) -> NewUser{
+        NewUser{
+            user_name: value.user_name.clone(),
+            nick_name: value.nick_name.clone(),
+            mobile: value.mobile.clone(),
+            email: value.email.clone(),
+        }
+    }
+}
+
+pub struct NewUserAuths(pub [NewUserAuth;3]);
+//QueryNewUser
+
+impl From<(QueryNewUser, u64)> for NewUserAuths{
+    fn from((QueryNewUser{user_name, mobile, email, certificate, ..}, user_id):(QueryNewUser, u64)) -> NewUserAuths{
+        let user_auth_arr :[NewUserAuth;3] ;
+        let encrypted_certificate:String;
+        let encrypted_certificate_digest = digest(&SHA256, certificate.as_bytes());
+
+        unsafe{
+          encrypted_certificate = std::str::from_utf8_unchecked(encrypted_certificate_digest.as_ref()).to_string();
+        }
+
+        let mobile_auth = NewUserAuth{
+            user_id: user_id,
+            identity_type: 1,
+            identifier: mobile,
+            certificate: encrypted_certificate.clone(),
+            status: 1,
+        };
+        let email_auth = NewUserAuth{
+            user_id: user_id,
+            identity_type: 2,
+            identifier: email,
+            certificate: encrypted_certificate.clone(),
+            status: 1,
+        };
+        let username_auth = NewUserAuth{
+            user_id: user_id,
+            identity_type: 3,
+            identifier: user_name,
+            certificate: encrypted_certificate,
+            status: 1,
+        };
+
+        user_auth_arr = [mobile_auth, email_auth, username_auth];
+
+        NewUserAuths(user_auth_arr)
+    }
+}
+
+#[derive(Queryable, Identifiable, AsChangeset, Debug, Clone, Serialize, Deserialize)]
+#[table_name = "user_auth"]
+pub struct UserAuth {
+    id: i64,
+    user_id: u64,
+    identity_type: u8,
+    identifier: String,
+    certificate: String,
+    status: i8,
+    created_time: NaiveDateTime,
+    updated_time: NaiveDateTime,
+}
+
+#[derive(Insertable, Debug, Serialize, Deserialize)]
+#[table_name = "user_auth"]
+pub struct NewUserAuth {
+    user_id: u64,
+    identity_type: u8,
+    identifier: String,
+    certificate: String,
     status: i8,
 }
 

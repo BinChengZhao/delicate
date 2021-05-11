@@ -12,6 +12,7 @@ pub(crate) mod schema;
 pub(crate) type ConnectionPool = Pool<ConnectionManager<MysqlConnection>>;
 pub(crate) type PoolMysqlConnection = PooledConnection<ConnectionManager<MysqlConnection>>;
 
+
 #[allow(dead_code)]
 pub(crate) fn establish_connection() -> MysqlConnection {
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");

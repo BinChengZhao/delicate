@@ -36,33 +36,25 @@ async fn show_tasks(
     if let Ok(conn) = pool.get() {
         return HttpResponse::Ok().json(
             Into::<UnifiedResponseMessages<model::PaginateTask>>::into(
-                web::block(move || {
+                web::block::<_, _, diesel::result::Error>(move || {
                     let query_builder = model::TaskQueryBuilder::query_all_columns();
 
                     let tasks = query_params
                         .clone()
                         .query_filter(query_builder)
                         .paginate(query_params.page)
-                        .load::<model::Task>(&conn);
-
-                    if let Err(tasks_err) = tasks {
-                        return Err(tasks_err);
-                    }
+                        .load::<model::Task>(&conn)?;
 
                     let per_page = query_params.per_page;
                     let count_builder = model::TaskQueryBuilder::query_count();
                     let count = query_params
                         .query_filter(count_builder)
-                        .get_result::<i64>(&conn);
-
-                    if let Err(count_err) = count {
-                        return Err(count_err);
-                    }
+                        .get_result::<i64>(&conn)?;
 
                     Ok(model::task::PaginateTask::default()
-                        .set_tasks(tasks.unwrap())
+                        .set_tasks(tasks)
                         .set_per_page(per_page)
-                        .set_total_page(count.unwrap()))
+                        .set_total_page(count))
                 })
                 .await,
             ),
@@ -109,33 +101,25 @@ async fn show_task_logs(
     if let Ok(conn) = pool.get() {
         return HttpResponse::Ok().json(
             Into::<UnifiedResponseMessages<model::PaginateTaskLogs>>::into(
-                web::block(move || {
+                web::block::<_, _, diesel::result::Error>(move || {
                     let query_builder = model::TaskLogQueryBuilder::query_all_columns();
 
                     let task_logs = query_params
                         .clone()
                         .query_filter(query_builder)
                         .paginate(query_params.page)
-                        .load::<model::NewTaskLog>(&conn);
-
-                    if let Err(task_logs_err) = task_logs {
-                        return Err(task_logs_err);
-                    }
+                        .load::<model::NewTaskLog>(&conn)?;
 
                     let per_page = query_params.per_page;
                     let count_builder = model::TaskLogQueryBuilder::query_count();
                     let count = query_params
                         .query_filter(count_builder)
-                        .get_result::<i64>(&conn);
-
-                    if let Err(count_err) = count {
-                        return Err(count_err);
-                    }
+                        .get_result::<i64>(&conn)?;
 
                     Ok(model::task_log::PaginateTaskLogs::default()
-                        .set_task_logs(task_logs.unwrap())
+                        .set_task_logs(task_logs)
                         .set_per_page(per_page)
-                        .set_total_page(count.unwrap()))
+                        .set_total_page(count))
                 })
                 .await,
             ),

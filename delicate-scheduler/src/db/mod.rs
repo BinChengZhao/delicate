@@ -15,6 +15,7 @@ cfg_mysql_support!(
 
 
     pub(crate) use mysql::{establish_connection, get_connection_pool, ConnectionPool};
+    no_arg_sql_function!(last_insert_id, diesel::types::Unsigned<diesel::types::Bigint>);
     embed_migrations!("./migrations/mysql");
 
 );
