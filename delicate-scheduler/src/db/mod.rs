@@ -29,6 +29,8 @@ cfg_postgres_support!(
     embed_migrations!("./migrations/postgres");
 );
 
+// pub(crate) mod common;
+
 pub(crate) fn init() {
     let connection = establish_connection();
 
