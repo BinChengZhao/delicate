@@ -1,6 +1,5 @@
 use super::prelude::*;
-use super::schema::{task};
-
+use super::schema::task;
 
 #[derive(Queryable, Debug, Clone, Serialize, Deserialize)]
 
@@ -48,57 +47,52 @@ pub(crate) struct QueryParamsTask {
     cron_expression: Option<String>,
     tag: Option<String>,
     status: Option<i16>,
-    pub(crate) per_page : i64,
-    pub(crate) page : i64,
+    pub(crate) per_page: i64,
+    pub(crate) page: i64,
 }
-
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
-pub(crate) struct PaginateTask{
-    tasks : Vec<Task>,
-    per_page : i64,
-    total_page : i64
+pub(crate) struct PaginateTask {
+    tasks: Vec<Task>,
+    per_page: i64,
+    total_page: i64,
 }
 
-impl PaginateTask{
-    pub(crate) fn set_tasks(mut self, tasks:Vec<Task>) ->Self{
+impl PaginateTask {
+    pub(crate) fn set_tasks(mut self, tasks: Vec<Task>) -> Self {
         self.tasks = tasks;
         self
     }
 
-    pub(crate) fn set_per_page(mut self, per_page:i64) ->Self{
+    pub(crate) fn set_per_page(mut self, per_page: i64) -> Self {
         self.per_page = per_page;
         self
     }
 
-    pub(crate) fn set_total_page(mut self, total:i64) ->Self{
+    pub(crate) fn set_total_page(mut self, total: i64) -> Self {
         self.total_page = (total as f64 / self.per_page as f64).ceil() as i64;
         self
     }
 }
 
 pub(crate) struct TaskQueryBuilder;
-impl TaskQueryBuilder{
-    pub(crate) fn query_all_columns() -> task::BoxedQuery<'static, Mysql>{
-        task::table
-        .into_boxed()
-        .select(task::all_columns)
+impl TaskQueryBuilder {
+    pub(crate) fn query_all_columns() -> task::BoxedQuery<'static, Mysql> {
+        task::table.into_boxed().select(task::all_columns)
     }
 
-    pub(crate) fn query_count()-> task::BoxedQuery<'static, Mysql, diesel::sql_types::Bigint>{
-        task::table
-        .into_boxed()
-        .count()
+    pub(crate) fn query_count() -> task::BoxedQuery<'static, Mysql, diesel::sql_types::Bigint> {
+        task::table.into_boxed().count()
     }
 }
 
-
 impl QueryParamsTask {
-
-    pub(crate) fn query_filter<ST>(self, mut statement_builder : task::BoxedQuery<'static, Mysql, ST>) -> task::BoxedQuery<'static, Mysql, ST> {
-        statement_builder = statement_builder
-            .filter(task::status.ne(2));
-            // Maybe status 2 eq task-deleted status.
+    pub(crate) fn query_filter<ST>(
+        self,
+        mut statement_builder: task::BoxedQuery<'static, Mysql, ST>,
+    ) -> task::BoxedQuery<'static, Mysql, ST> {
+        statement_builder = statement_builder.filter(task::status.ne(2));
+        // Maybe status 2 eq task-deleted status.
 
         if let Some(task_id) = self.id {
             statement_builder = statement_builder.filter(task::id.eq(task_id));
@@ -137,6 +131,5 @@ impl QueryParamsTask {
         }
 
         statement_builder.order(task::id.desc())
-
     }
 }

@@ -53,6 +53,6 @@ impl<T> Paginated<T> {
     where
         Self: LoadQuery<MysqlConnection, U>,
     {
-         self.load::<U>(conn)
+        self.load::<U>(conn)
     }
 }

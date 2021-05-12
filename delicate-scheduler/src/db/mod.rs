@@ -9,13 +9,16 @@ use crate::*;
 
 cfg_mysql_support!(
     pub(crate) mod mysql;
+    pub(crate) use mysql::extension;
     pub(crate) use mysql::model;
     pub(crate) use mysql::schema;
-    pub(crate) use mysql::extension;
-
 
     pub(crate) use mysql::{establish_connection, get_connection_pool, ConnectionPool};
-    no_arg_sql_function!(last_insert_id, diesel::types::Unsigned<diesel::types::Bigint>);
+
+    no_arg_sql_function!(
+        last_insert_id,
+        diesel::types::Unsigned<diesel::types::Bigint>
+    );
     embed_migrations!("./migrations/mysql");
 
 );
@@ -29,7 +32,7 @@ cfg_postgres_support!(
     embed_migrations!("./migrations/postgres");
 );
 
-// pub(crate) mod common;
+pub(crate) mod common;
 
 pub(crate) fn init() {
     let connection = establish_connection();
