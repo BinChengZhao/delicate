@@ -52,6 +52,7 @@ async fn main() -> AnyResut<()> {
     let result = HttpServer::new(move || {
         App::new()
             .configure(actions::task::config)
+            .configure(actions::user::config)
             .app_data(shared_delay_timer.clone())
             .app_data(shared_connection_pool.clone())
             .wrap(components::session::session_middleware())

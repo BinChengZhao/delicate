@@ -108,7 +108,7 @@ async fn show_task_logs(
                         .clone()
                         .query_filter(query_builder)
                         .paginate(query_params.page)
-                        .load::<model::NewTaskLog>(&conn)?;
+                        .load::<model::TaskLog>(&conn)?;
 
                     let per_page = query_params.per_page;
                     let count_builder = model::TaskLogQueryBuilder::query_count();
@@ -128,3 +128,25 @@ async fn show_task_logs(
 
     HttpResponse::Ok().json(UnifiedResponseMessages::<model::PaginateTask>::error())
 }
+
+// TODO: Bulk operations are supported for log messages passed from delicate-executor.
+// #[post("/api/task_logs/create")]
+// async fn create_task_logs(
+//     task: web::Json<model::NewTask>,
+//     pool: ShareData<db::ConnectionPool>,
+// ) -> HttpResponse {
+//     use db::schema::task;
+
+//     if let Ok(conn) = pool.get() {
+//         return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
+//             web::block(move || {
+//                 diesel::insert_into(task::table)
+//                     .values(&*task)
+//                     .execute(&conn)
+//             })
+//             .await,
+//         ));
+//     }
+
+//     HttpResponse::Ok().json(UnifiedResponseMessages::<()>::error())
+// }

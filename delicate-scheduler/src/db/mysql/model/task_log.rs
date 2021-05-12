@@ -16,31 +16,16 @@ impl TaskLogQueryBuilder {
     Insertable, Queryable, Identifiable, AsChangeset, Debug, Clone, Serialize, Deserialize,
 )]
 #[table_name = "task_log_extend"]
-pub struct NaiveTaskLogExtend {
+pub struct TaskLogExtend {
     id: i64,
     stdout: String,
     stderr: String,
 }
 
-#[derive(Queryable, Identifiable, AsChangeset, Debug, Clone, Serialize, Deserialize)]
-#[table_name = "task_log"]
-pub struct NaiveTaskLog {
-    id: i64,
-    task_id: i64,
-    name: String,
-    description: String,
-    command: String,
-    frequency: String,
-    cron_expression: String,
-    maximun_parallel_runable_num: i16,
-    tag: String,
-    status: i16,
-    created_time: NaiveDateTime,
-}
 
 #[derive(Insertable, Debug, Clone, Serialize, Deserialize)]
 #[table_name = "task_log"]
-pub struct TaskLog {
+pub struct NewTaskLog {
     task_id: i64,
     record_id: i64,
     name: String,
@@ -59,7 +44,7 @@ pub struct TaskLog {
 
 #[derive(Queryable, Identifiable, AsChangeset, Debug, Clone, Serialize, Deserialize)]
 #[table_name = "task_log"]
-pub struct NewTaskLog {
+pub struct TaskLog {
     id: i64,
     task_id: i64,
     record_id: i64,
@@ -93,13 +78,13 @@ pub struct QueryParamsTaskLog {
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub(crate) struct PaginateTaskLogs {
-    task_logs: Vec<NewTaskLog>,
+    task_logs: Vec<TaskLog>,
     per_page: i64,
     total_page: i64,
 }
 
 impl PaginateTaskLogs {
-    pub(crate) fn set_task_logs(mut self, task_logs: Vec<NewTaskLog>) -> Self {
+    pub(crate) fn set_task_logs(mut self, task_logs: Vec<TaskLog>) -> Self {
         self.task_logs = task_logs;
         self
     }
