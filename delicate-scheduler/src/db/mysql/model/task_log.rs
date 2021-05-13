@@ -1,5 +1,5 @@
 use super::prelude::*;
-use super::schema::{task_log, task_log_extend};
+use super::schema::task_log;
 
 pub(crate) struct TaskLogQueryBuilder;
 impl TaskLogQueryBuilder {
@@ -12,16 +12,104 @@ impl TaskLogQueryBuilder {
     }
 }
 
-#[derive(
-    Insertable, Queryable, Identifiable, AsChangeset, Debug, Clone, Serialize, Deserialize,
-)]
-#[table_name = "task_log_extend"]
-pub struct TaskLogExtend {
-    id: i64,
-    stdout: String,
-    stderr: String,
+impl From<ExecutorEventCollection> for Vec<NewTaskLog> {
+    fn from(value: ExecutorEventCollection) -> Self {
+        let ExecutorEventCollection { events, .. } = value;
+        let logs = events.into_iter().map(|e| {});
+        todo!();
+    }
 }
 
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+pub(crate) struct ExecutorEventCollection {
+    events: Vec<ExecutorEvent>,
+    signature: String,
+    timestamp: i64,
+}
+
+// TODO:  `delay_timer::utils::status_report::PublicEvent::FinishTask` without task_id and record_id.
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+pub(crate) struct ExecutorEvent {
+    task_id: i64,
+    record_id: Option<i64>,
+    event_type: i64,
+    executor_processor_id: i64,
+    executor_processor_name: String,
+    executor_processor_host: String,
+    output: Option<FinishOutput>,
+}
+
+impl From<ExecutorEvent> for NewTaskLog {
+    fn from(
+        ExecutorEvent {
+            task_id,
+            record_id,
+            event_type,
+            executor_processor_id,
+            executor_processor_name,
+            executor_processor_host,
+            output,
+        }: ExecutorEvent,
+    ) -> Self {
+        let mut stdout: Option<String> = None;
+        let mut stderr: Option<String> = None;
+        let mut status: i32 = 1;
+
+        if let Some(output) = output {
+            match output {
+                FinishOutput::ProcessOutput(ChildOutput {
+                    child_status,
+                    child_stdout,
+                    child_stderr,
+                }) => {
+                    unsafe {
+                        stdout = Some(String::from_utf8_unchecked(child_stdout));
+                        stderr = Some(String::from_utf8_unchecked(child_stderr));
+                    }
+                    // FIXME: It's not real status.
+                    status = child_status;
+
+                    // stdout = child.stdout;
+                }
+                FinishOutput::ExceptionOutput(exception_output) => {
+                    stdout = Some(String::new());
+                    stderr = Some(exception_output);
+                    // FIXME: It's not real status.
+                    status = 8;
+                }
+            };
+        }
+
+        // FIXME: It's not real time.
+        let created_time = NaiveDateTime::from_timestamp(1, 1);
+        // NewTaskLog{
+        //     task_id,
+        //     record_id,
+        //     executor_processor_id,
+        //     executor_processor_name,
+        //     executor_processor_host,
+        //     stdout,
+        //     stderr,
+        //     status,
+        //     created_time
+        // }
+
+        todo!()
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub(crate) enum FinishOutput {
+    ProcessOutput(ChildOutput),
+    ExceptionOutput(String),
+}
+
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+pub(crate) struct ChildOutput {
+    pub(crate) child_status: i32,
+    pub(crate) child_stdout: Vec<u8>,
+    pub(crate) child_stderr: Vec<u8>,
+}
 
 #[derive(Insertable, Debug, Clone, Serialize, Deserialize)]
 #[table_name = "task_log"]
@@ -40,6 +128,8 @@ pub struct NewTaskLog {
     executor_processor_id: i64,
     executor_processor_name: String,
     executor_processor_host: i64,
+    stdout: Option<String>,
+    stderr: Option<String>,
 }
 
 #[derive(Queryable, Identifiable, AsChangeset, Debug, Clone, Serialize, Deserialize)]
@@ -60,6 +150,8 @@ pub struct TaskLog {
     executor_processor_id: i64,
     executor_processor_name: String,
     executor_processor_host: i64,
+    stdout: String,
+    stderr: String,
 }
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]

@@ -129,10 +129,12 @@ async fn show_task_logs(
     HttpResponse::Ok().json(UnifiedResponseMessages::<model::PaginateTask>::error())
 }
 
-// TODO: Bulk operations are supported for log messages passed from delicate-executor.
-// #[post("/api/task_logs/create")]
+// Expose api, not for log adding, but for event replies
+// Depending on the event, scheduler records/updates different logs.
+// Bulk operations are supported for log messages passed from delicate-executor.
+// #[post("/api/task_logs/event_trigger")]
 // async fn create_task_logs(
-//     task: web::Json<model::NewTask>,
+//     task: web::Json<model::ExecutorEventCollection>,
 //     pool: ShareData<db::ConnectionPool>,
 // ) -> HttpResponse {
 //     use db::schema::task;

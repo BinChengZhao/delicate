@@ -32,18 +32,14 @@ CREATE TABLE `task_log` (
   `executor_processor_id` bigint(20) NOT NULL COMMENT 'Executor processor id',
   `executor_processor_name` varchar(255) NOT NULL COMMENT 'Executor processor name (snapshot)',
   `executor_processor_host` bigint(20) NOT NULL COMMENT 'Executor processor host',
+ 	`stdout` text NOT NULL COMMENT 'process-child-stdout or http response',
+	`stderr` text NOT NULL COMMENT 'process-child-stderr',
   PRIMARY KEY (`id`),
   KEY `task_id_idx` (`task_id`) USING BTREE,
   KEY `record_id_idx` (`record_id`) USING BTREE,
   KEY `executor_processor_id_idx` (`executor_processor_id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE `task_log_extend` (
-	`id` BIGINT ( 20 ) NOT NULL COMMENT 'Task-log id',
-	`stdout` text NOT NULL COMMENT 'process-child-stdout or http response',
-	`stderr` text NOT NULL COMMENT 'process-child-stderr',
-PRIMARY KEY ( `id` ) 
-) ENGINE = INNODB DEFAULT CHARSET = utf8mb4;
 
 CREATE TABLE `executor_processor` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'Self-incrementing id',
