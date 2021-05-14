@@ -31,7 +31,7 @@ CREATE TABLE `task_log` (
   `created_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Task log creation time',
   `executor_processor_id` bigint(20) NOT NULL COMMENT 'Executor processor id',
   `executor_processor_name` varchar(255) NOT NULL COMMENT 'Executor processor name (snapshot)',
-  `executor_processor_host` bigint(20) NOT NULL COMMENT 'Executor processor host',
+  `executor_processor_host` varchar(32) NOT NULL DEFAULT '' COMMENT 'Executor processor host',
  	`stdout` text NOT NULL COMMENT 'process-child-stdout or http response',
 	`stderr` text NOT NULL COMMENT 'process-child-stderr',
   PRIMARY KEY (`id`),
