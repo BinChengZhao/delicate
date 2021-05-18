@@ -217,8 +217,10 @@ impl<T: UniformData> UnifiedResponseMessages<T> {
     }
 }
 
-impl<T: UniformData> From<AnyResult<T>> for UnifiedResponseMessages<T> {
-    fn from(value: AnyResult<T>) -> Self {
+impl<T: UniformData + Default, E: std::error::Error> From<Result<T, E>>
+    for UnifiedResponseMessages<T>
+{
+    fn from(value: Result<T, E>) -> Self {
         match value {
             Ok(d) => Self::success_with_data(d),
             Err(e) => Self::error().customized_error_msg(e.to_string()),

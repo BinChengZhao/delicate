@@ -55,7 +55,7 @@ impl From<ExecutorEvent> for NewTaskLog {
     ) -> Self {
         let mut stdout: Option<String> = None;
         let mut stderr: Option<String> = None;
-        let mut status: i16 = state::task_log::RUNNING;
+        let mut status: i16 = state::task_log::State::RUNNING as i16;
 
 
         if let Some(output) = output {
@@ -70,16 +70,16 @@ impl From<ExecutorEvent> for NewTaskLog {
                         stderr = Some(String::from_utf8_unchecked(child_stderr));
                     }
                     if child_status != 0 {
-                        status = state::task_log::ABNORMAL_ENDING;
+                        status = state::task_log::State::AbnormalEnding as i16;
                     }else{
-                        status = state::task_log::NORMAL_ENDING;
+                        status = state::task_log::State::NormalEnding as i16;
                     }
 
                 }
                 FinishOutput::ExceptionOutput(exception_output) => {
                     stdout = Some(String::new());
                     stderr = Some(exception_output);
-                    status = state::task_log::ABNORMAL_ENDING;
+                    status = state::task_log::State::AbnormalEnding  as i16;
 
                 }
             };
@@ -87,7 +87,7 @@ impl From<ExecutorEvent> for NewTaskLog {
 
         // TODO: It's (7) not real type-value.
         if event_type == 7 {
-            status = state::task_log::TIMEOUT_ENDING;
+            status = state::task_log::State::TimeoutEnding  as i16;
         }
 
         let timestamp_secs = (record_id >> 22)/1000;

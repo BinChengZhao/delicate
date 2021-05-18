@@ -263,10 +263,10 @@ async fn bind_executor(
     delicate_conf: web::Data<DelicateConf>,
 ) -> impl Responder {
     let verify_result = request_bind_scheduler.verify(&delicate_conf.security_conf);
-    if verify_result.is_err() {
-        return HttpResponse::Ok()
-            .json(<AnyResult<String> as Into<StringUnifiedResponseMessages>>::into(verify_result));
-    }
+    // if verify_result.is_err() {
+    //     return HttpResponse::Ok()
+    //         .json(<AnyResult<String> as Into<StringUnifiedResponseMessages>>::into(verify_result));
+    // }
 
     delicate_shared_scheduler
         .inner
