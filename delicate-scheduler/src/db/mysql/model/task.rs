@@ -101,8 +101,8 @@ impl QueryParamsTask {
         if let Some(task_status) = self.status {
             statement_builder = statement_builder.filter(task::status.eq(task_status));
         } else {
-            //TODO: Addtion state in future.
-            statement_builder = statement_builder.filter(task::status.ne(2));
+            statement_builder =
+                statement_builder.filter(task::status.ne(state::task::State::Deleted as i16));
         }
 
         if let Some(task_name) = self.name {

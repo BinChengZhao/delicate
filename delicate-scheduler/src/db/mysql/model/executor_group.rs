@@ -90,8 +90,8 @@ impl QueryParamsExecutorGroup {
         if let Some(task_status) = self.status {
             statement_builder = statement_builder.filter(executor_group::status.eq(task_status));
         } else {
-            //TODO: Addtion state in future.
-            statement_builder = statement_builder.filter(executor_group::status.ne(2));
+            statement_builder = statement_builder
+                .filter(executor_group::status.ne(state::executor_group::State::Forbidden as i16));
         }
 
         if let Some(executor_group_name) = self.name {

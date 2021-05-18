@@ -194,8 +194,8 @@ impl QueryParamsUser {
         if let Some(status) = self.status {
             statement_builder = statement_builder.filter(user::status.eq(status));
         } else {
-            //TODO: Addtion state in future.
-            statement_builder = statement_builder.filter(user::status.ne(2));
+            statement_builder =
+                statement_builder.filter(user::status.ne(state::user::State::Forbidden as i8));
         }
 
         if let Some(user_name) = self.user_name {

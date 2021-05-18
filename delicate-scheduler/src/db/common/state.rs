@@ -1,8 +1,8 @@
 pub mod task {
     pub enum State {
         NotEnabled = 1,
-         Enabled = 2,
-         Deleted = 3,
+        Enabled = 2,
+        Deleted = 3,
     }
 }
 
@@ -14,6 +14,7 @@ pub mod task_log {
         AbnormalEnding = 3,
         TimeoutEnding = 4,
         TmanualCancellation = 5,
+        Unknown = 81,
     }
 }
 

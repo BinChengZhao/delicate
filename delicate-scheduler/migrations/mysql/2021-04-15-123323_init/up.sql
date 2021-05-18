@@ -28,6 +28,7 @@ CREATE TABLE `task_log` (
   `tag` varchar(32) NOT NULL DEFAULT '' COMMENT 'Task tag (snapshot)',
   `status` smallint(6) NOT NULL DEFAULT '0' COMMENT 'Status',
   `created_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Task log creation time',
+  `updated_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Update Task log time',
   `executor_processor_id` bigint(20) NOT NULL COMMENT 'Executor processor id',
   `executor_processor_name` varchar(255) NOT NULL COMMENT 'Executor processor name (snapshot)',
   `executor_processor_host` varchar(32) NOT NULL DEFAULT '' COMMENT 'Executor processor host',

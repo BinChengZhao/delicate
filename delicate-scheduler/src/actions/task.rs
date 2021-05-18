@@ -132,23 +132,54 @@ async fn show_task_logs(
 // Expose api, not for log adding, but for event replies
 // Depending on the event, scheduler records/updates different logs.
 // Bulk operations are supported for log messages passed from delicate-executor.
-// #[post("/api/task_logs/event_trigger")]
-// async fn create_task_logs(
-//     task: web::Json<model::ExecutorEventCollection>,
-//     pool: ShareData<db::ConnectionPool>,
-// ) -> HttpResponse {
-//     use db::schema::task;
+#[post("/api/task_logs/event_trigger")]
+async fn create_task_logs(
+    web::Json(events_collection): web::Json<model::ExecutorEventCollection>,
+    pool: ShareData<db::ConnectionPool>,
+) -> HttpResponse {
+    use db::common::types::EventType;
+    use db::schema::task_log;
 
-//     if let Ok(conn) = pool.get() {
-//         return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
-//             web::block(move || {
-//                 diesel::insert_into(task::table)
-//                     .values(&*task)
-//                     .execute(&conn)
-//             })
-//             .await,
-//         ));
-//     }
+    if !events_collection.verify_signature("") {
+        return HttpResponse::Ok().json(
+            UnifiedResponseMessages::<usize>::error()
+                .customized_error_msg(String::from("Signature verification failure.")),
+        );
+    }
 
-//     HttpResponse::Ok().json(UnifiedResponseMessages::<()>::error())
-// }
+    if let Ok(conn) = pool.get() {
+        return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
+            web::block::<_, _, diesel::result::Error>(move || {
+                conn.transaction(|| {
+                    let mut effect_num = 0;
+                    let model::ExecutorEventCollection { events, .. } = events_collection;
+                    let mut new_task_logs: Vec<model::NewTaskLog> = Vec::new();
+                    let mut supply_task_logs: Vec<model::SupplyTaskLog> = Vec::new();
+
+                    events
+                        .into_iter()
+                        .for_each(|e| match Into::<EventType>::into(e.event_type) {
+                            EventType::TaskPerform => new_task_logs.push(e.into()),
+                            EventType::Unknown => {}
+                            _ => supply_task_logs.push(e.into()),
+                        });
+
+                    effect_num += diesel::insert_into(task_log::table)
+                        .values(&new_task_logs[..])
+                        .execute(&conn)?;
+
+                    for supply_task_log in supply_task_logs {
+                        effect_num += diesel::update(&supply_task_log)
+                            .set(&supply_task_log)
+                            .execute(&conn)?;
+                    }
+
+                    Ok(effect_num)
+                })
+            })
+            .await,
+        ));
+    }
+
+    HttpResponse::Ok().json(UnifiedResponseMessages::<usize>::error())
+}

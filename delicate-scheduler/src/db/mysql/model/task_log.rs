@@ -15,26 +15,29 @@ impl TaskLogQueryBuilder {
 impl From<ExecutorEventCollection> for Vec<NewTaskLog> {
     fn from(value: ExecutorEventCollection) -> Self {
         let ExecutorEventCollection { events, .. } = value;
-         events.into_iter().map(|e| {
-            e.into()
-        }).collect()
-
+        events.into_iter().map(|e| e.into()).collect()
     }
 }
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub(crate) struct ExecutorEventCollection {
-    events: Vec<ExecutorEvent>,
+    pub(crate) events: Vec<ExecutorEvent>,
     signature: String,
     timestamp: i64,
 }
 
-// TODO:  `delay_timer::utils::status_report::PublicEvent::FinishTask` without task_id and record_id.
+impl ExecutorEventCollection {
+    pub(crate) fn verify_signature(&self, token: &str) -> bool {
+        todo!();
+    }
+}
+
+// TODO:  `delay_timer::utils::status_report::PublicEvent::FinishTask` without task_id and id.
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub(crate) struct ExecutorEvent {
     task_id: i64,
-    record_id: i64,
-    event_type: i64,
+    id: i64,
+    pub(crate) event_type: i16,
     executor_processor_id: i64,
     executor_processor_name: String,
     executor_processor_host: String,
@@ -44,19 +47,43 @@ pub(crate) struct ExecutorEvent {
 impl From<ExecutorEvent> for NewTaskLog {
     fn from(
         ExecutorEvent {
+            id,
             task_id,
-            record_id,
             event_type,
             executor_processor_id,
             executor_processor_name,
             executor_processor_host,
-            output,
+            ..
         }: ExecutorEvent,
     ) -> Self {
-        let mut stdout: Option<String> = None;
-        let mut stderr: Option<String> = None;
-        let mut status: i16 = state::task_log::State::RUNNING as i16;
+        let state: state::task_log::State = Into::<types::EventType>::into(event_type).into();
 
+        let status = state as i16;
+
+        NewTaskLog {
+            task_id,
+            id,
+            executor_processor_id,
+            executor_processor_name,
+            executor_processor_host,
+            status,
+            ..Default::default()
+        }
+    }
+}
+
+impl From<ExecutorEvent> for SupplyTaskLog {
+    fn from(
+        ExecutorEvent {
+            event_type,
+            id,
+            output,
+            ..
+        }: ExecutorEvent,
+    ) -> Self {
+        let mut stdout: String = String::new();
+        let mut stderr: String = String::new();
+        let mut state: state::task_log::State = Into::<types::EventType>::into(event_type).into();
 
         if let Some(output) = output {
             match output {
@@ -66,59 +93,27 @@ impl From<ExecutorEvent> for NewTaskLog {
                     child_stderr,
                 }) => {
                     unsafe {
-                        stdout = Some(String::from_utf8_unchecked(child_stdout));
-                        stderr = Some(String::from_utf8_unchecked(child_stderr));
+                        stdout = String::from_utf8_unchecked(child_stdout);
+                        stderr = String::from_utf8_unchecked(child_stderr);
                     }
                     if child_status != 0 {
-                        status = state::task_log::State::AbnormalEnding as i16;
-                    }else{
-                        status = state::task_log::State::NormalEnding as i16;
+                        state = state::task_log::State::AbnormalEnding;
                     }
-
                 }
                 FinishOutput::ExceptionOutput(exception_output) => {
-                    stdout = Some(String::new());
-                    stderr = Some(exception_output);
-                    status = state::task_log::State::AbnormalEnding  as i16;
-
+                    stderr = exception_output;
+                    state = state::task_log::State::AbnormalEnding;
                 }
             };
         }
 
-        // TODO: It's (7) not real type-value.
-        if event_type == 7 {
-            status = state::task_log::State::TimeoutEnding  as i16;
-        }
+        let status = state as i16;
 
-        let timestamp_secs = (record_id >> 22)/1000;
-        let created_time = NaiveDateTime::from_timestamp(timestamp_secs, 0);
-
-
-        let name = String::new();
-        let description = String::new();
-        let command = String::new();
-        let frequency = String::new();
-        let cron_expression = String::new();
-        let tag = String::new();
-        let maximun_parallel_runable_num = 0;
-
-        NewTaskLog {
-            task_id,
-            record_id,
-            executor_processor_id,
-            executor_processor_name,
-            executor_processor_host,
+        SupplyTaskLog {
+            id,
             stdout,
             stderr,
             status,
-            created_time,
-            name,
-            description,
-            command,
-            frequency,
-            cron_expression,
-            tag,
-            maximun_parallel_runable_num,
         }
     }
 }
@@ -136,39 +131,15 @@ pub(crate) struct ChildOutput {
     pub(crate) child_stderr: Vec<u8>,
 }
 
-// TODO: Add a primary key, which can be generated by record_id + executor_processor_id.
 // TODO: Use `replace_into` instead of `insert_into` to process data.
 
-// TODO: Or make record_id unique.
 // delay_timer Add api to support modifying machine node id of `SnowflakeIdGenerator`.
 // Then i send executor_processor_id to there.
-#[derive(Insertable, Debug, Clone, Serialize, Deserialize)]
-#[table_name = "task_log"]
-pub struct NewTaskLog {
-    task_id: i64,
-    record_id: i64,
-    name: String,
-    description: String,
-    command: String,
-    frequency: String,
-    cron_expression: String,
-    maximun_parallel_runable_num: i16,
-    tag: String,
-    status: i16,
-    created_time: NaiveDateTime,
-    executor_processor_id: i64,
-    executor_processor_name: String,
-    executor_processor_host: String,
-    stdout: Option<String>,
-    stderr: Option<String>,
-}
-
 #[derive(Queryable, Identifiable, AsChangeset, Debug, Clone, Serialize, Deserialize)]
 #[table_name = "task_log"]
 pub struct TaskLog {
     id: i64,
     task_id: i64,
-    record_id: i64,
     name: String,
     description: String,
     command: String,
@@ -178,9 +149,39 @@ pub struct TaskLog {
     tag: String,
     status: i16,
     created_time: NaiveDateTime,
+    updated_time: NaiveDateTime,
     executor_processor_id: i64,
     executor_processor_name: String,
     executor_processor_host: String,
+    stdout: String,
+    stderr: String,
+}
+
+#[derive(
+    Insertable, Queryable, Identifiable, AsChangeset, Debug, Clone, Serialize, Deserialize, Default,
+)]
+#[table_name = "task_log"]
+pub struct NewTaskLog {
+    id: i64,
+    task_id: i64,
+    name: String,
+    description: String,
+    command: String,
+    frequency: String,
+    cron_expression: String,
+    maximun_parallel_runable_num: i16,
+    tag: String,
+    status: i16,
+    executor_processor_id: i64,
+    executor_processor_name: String,
+    executor_processor_host: String,
+}
+
+#[derive(Queryable, Identifiable, AsChangeset, Debug, Clone, Serialize, Deserialize)]
+#[table_name = "task_log"]
+pub struct SupplyTaskLog {
+    id: i64,
+    status: i16,
     stdout: String,
     stderr: String,
 }
@@ -192,7 +193,7 @@ pub struct QueryParamsTaskLog {
     command: Option<String>,
     tag: Option<String>,
     task_id: Option<i64>,
-    record_id: Option<i64>,
+    id: Option<i64>,
     status: Option<i16>,
     executor_processor_id: Option<i64>,
     pub(crate) per_page: i64,
@@ -235,15 +236,12 @@ impl QueryParamsTaskLog {
             statement_builder = statement_builder.filter(task_log::task_id.eq(task_id));
         }
 
-        if let Some(record_id) = self.record_id {
-            statement_builder = statement_builder.filter(task_log::record_id.eq(record_id));
+        if let Some(id) = self.id {
+            statement_builder = statement_builder.filter(task_log::id.eq(id));
         }
 
         if let Some(status) = self.status {
             statement_builder = statement_builder.filter(task_log::status.eq(status));
-        } else {
-            //TODO: Addtion state in future.
-            statement_builder = statement_builder.filter(task_log::status.ne(2));
         }
 
         if let Some(task_name) = self.name {

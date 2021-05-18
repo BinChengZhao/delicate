@@ -11,8 +11,6 @@ extern crate diesel;
 extern crate serde;
 #[macro_use]
 extern crate diesel_migrations;
-#[macro_use]
-extern crate validator;
 
 pub(crate) mod actions;
 pub(crate) mod components;

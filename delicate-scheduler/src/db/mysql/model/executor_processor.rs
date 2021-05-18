@@ -98,8 +98,9 @@ impl QueryParamsExecutorProcessor {
             statement_builder =
                 statement_builder.filter(executor_processor::status.eq(task_status));
         } else {
-            //TODO: Addtion state in future.
-            statement_builder = statement_builder.filter(executor_processor::status.ne(2));
+            statement_builder = statement_builder.filter(
+                executor_processor::status.ne(state::executor_processor::State::Forbidden as i16),
+            );
         }
 
         if let Some(executor_processor_name) = self.name {
