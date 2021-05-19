@@ -162,15 +162,15 @@ pub struct TaskLog {
 )]
 #[table_name = "task_log"]
 pub struct NewTaskLog {
-    id: i64,
+    pub(crate) id: i64,
     pub(crate) task_id: i64,
-    name: String,
-    description: String,
-    command: String,
-    frequency: String,
-    cron_expression: String,
-    maximun_parallel_runable_num: i16,
-    tag: String,
+    pub(crate) name: String,
+    pub(crate) description: String,
+    pub(crate) command: String,
+    pub(crate) frequency: String,
+    pub(crate) cron_expression: String,
+    pub(crate) maximun_parallel_runable_num: i16,
+    pub(crate) tag: String,
     status: i16,
     executor_processor_id: i64,
     executor_processor_name: String,

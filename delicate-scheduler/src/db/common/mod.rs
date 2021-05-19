@@ -10,6 +10,12 @@ pub(crate) mod types {
         Unknown = 81,
     }
 
+    pub(crate) enum IdentityType {
+        Mobile = 1,
+        Email = 2,
+        Username = 3,
+    }
+
     impl From<i16> for EventType {
         fn from(value: i16) -> Self {
             match value {

@@ -88,13 +88,14 @@ impl PaginateTask {
     }
 }
 
+type SupplyTaskType = (Bigint, VarChar, VarChar, VarChar, VarChar, VarChar, VarChar);
 pub(crate) struct TaskQueryBuilder;
 impl TaskQueryBuilder {
     pub(crate) fn query_all_columns() -> task::BoxedQuery<'static, Mysql> {
         task::table.into_boxed().select(task::all_columns)
     }
 
-    pub(crate) fn query_supply_task_log() -> task::BoxedQuery<'static, Mysql, (Bigint, VarChar, VarChar, VarChar, VarChar, VarChar, VarChar)> {
+    pub(crate) fn query_supply_task_log() -> task::BoxedQuery<'static, Mysql, SupplyTaskType> {
         task::table.into_boxed().select((task::id,task::name, task::description, task::command, task::frequency, task::cron_expression, task::tag))
     }
 

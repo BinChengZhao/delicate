@@ -1,6 +1,4 @@
 use super::prelude::*;
-use validator::{Validate, ValidationErrors};
-
 pub(crate) fn config(cfg: &mut web::ServiceConfig) {
     cfg.service(create_user)
         .service(show_users)

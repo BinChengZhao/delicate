@@ -1,8 +1,6 @@
 use super::prelude::*;
 use super::schema::{user, user_auth};
 use ring::digest::{digest, SHA256};
-use validator::Validate;
-
 // FIXME: The user's password is encrypted by sha-256 and stored in the database, with low MD5 security.
 // Using ring-crate.
 
@@ -82,21 +80,21 @@ impl From<(QueryNewUser, u64)> for NewUserAuths {
 
         let mobile_auth = NewUserAuth {
             user_id,
-            identity_type: 1,
+            identity_type: types::IdentityType::Mobile as u8,
             identifier: mobile,
             certificate: encrypted_certificate.clone(),
             status: 1,
         };
         let email_auth = NewUserAuth {
             user_id,
-            identity_type: 2,
+            identity_type: types::IdentityType::Email as u8,
             identifier: email,
             certificate: encrypted_certificate.clone(),
             status: 1,
         };
         let username_auth = NewUserAuth {
             user_id,
-            identity_type: 3,
+            identity_type: types::IdentityType::Username as u8,
             identifier: user_name,
             certificate: encrypted_certificate,
             status: 1,

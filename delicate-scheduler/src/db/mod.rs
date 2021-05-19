@@ -13,7 +13,7 @@ cfg_mysql_support!(
     pub(crate) use mysql::model;
     pub(crate) use mysql::schema;
 
-    pub(crate) use mysql::{establish_connection, get_connection_pool, ConnectionPool};
+    pub(crate) use mysql::{establish_connection, get_connection_pool, ConnectionPool, PoolConnection};
 
     no_arg_sql_function!(
         last_insert_id,
