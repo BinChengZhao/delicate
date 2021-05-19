@@ -81,21 +81,21 @@ impl From<(QueryNewUser, u64)> for NewUserAuths {
         }
 
         let mobile_auth = NewUserAuth {
-            user_id: user_id,
+            user_id,
             identity_type: 1,
             identifier: mobile,
             certificate: encrypted_certificate.clone(),
             status: 1,
         };
         let email_auth = NewUserAuth {
-            user_id: user_id,
+            user_id,
             identity_type: 2,
             identifier: email,
             certificate: encrypted_certificate.clone(),
             status: 1,
         };
         let username_auth = NewUserAuth {
-            user_id: user_id,
+            user_id,
             identity_type: 3,
             identifier: user_name,
             certificate: encrypted_certificate,

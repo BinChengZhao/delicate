@@ -27,7 +27,7 @@ pub(crate) struct ExecutorEventCollection {
 }
 
 impl ExecutorEventCollection {
-    pub(crate) fn verify_signature(&self, token: &str) -> bool {
+    pub(crate) fn verify_signature(&self, _token: &str) -> bool {
         todo!();
     }
 }

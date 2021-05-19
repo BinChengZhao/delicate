@@ -10,6 +10,9 @@ pub(crate) fn session_middleware() -> CookieSession {
     .name(env::var("SCHEDULER_NAME").expect("Without `SCHEDULER_NAME` set in .env"))
 }
 
+// The public middleware output type.
+type MiddlewareFuture<T, E> = Pin<Box<dyn Future<Output = Result<T, E>>>>;
+
 pub struct SessionAuth;
 
 impl<S, B> Transform<S> for SessionAuth
@@ -43,7 +46,7 @@ where
     type Request = ServiceRequest;
     type Response = ServiceResponse<B>;
     type Error = Error;
-    type Future = Pin<Box<dyn Future<Output = Result<Self::Response, Self::Error>>>>;
+    type Future = MiddlewareFuture<Self::Response, Self::Error>;
 
     fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
         self.service.poll_ready(cx)

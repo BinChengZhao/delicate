@@ -1,4 +1,5 @@
 pub mod task {
+    #[allow(dead_code)]
     pub enum State {
         NotEnabled = 1,
         Enabled = 2,
@@ -8,6 +9,7 @@ pub mod task {
 
 pub mod task_log {
 
+    #[allow(dead_code)]
     pub enum State {
         Running = 1,
         NormalEnding = 2,
@@ -20,6 +22,7 @@ pub mod task_log {
 
 pub mod user {
 
+    #[allow(dead_code)]
     pub enum State {
         Health = 1,
         Forbidden = 2,
@@ -27,6 +30,7 @@ pub mod user {
 }
 
 pub mod user_auth {
+    #[allow(dead_code)]
     pub enum State {
         Health = 1,
         Forbidden = 2,
@@ -34,6 +38,7 @@ pub mod user_auth {
 }
 
 pub mod executor_processor {
+    #[allow(dead_code)]
     pub enum State {
         Health = 1,
         Forbidden = 2,
@@ -41,6 +46,7 @@ pub mod executor_processor {
 }
 
 pub mod executor_group {
+    #[allow(dead_code)]
     pub enum State {
         Health = 1,
         Forbidden = 2,
