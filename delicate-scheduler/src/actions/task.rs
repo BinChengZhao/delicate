@@ -138,7 +138,7 @@ async fn create_task_logs(
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
     use db::common::types::EventType;
-    use db::schema::task_log;
+    use db::schema::{task, task_log};
 
     if !events_collection.verify_signature("") {
         return HttpResponse::Ok().json(
@@ -163,6 +163,14 @@ async fn create_task_logs(
                             EventType::Unknown => {}
                             _ => supply_task_logs.push(e.into()),
                         });
+
+                    let task_ids: Vec<i64> = new_task_logs.iter().map(|e| e.task_id).collect();
+                    // let tasks = task::table
+
+                    let tasks: Vec<model::task::SupplyTask> =
+                        model::TaskQueryBuilder::query_supply_task_log()
+                            .filter(task::id.eq_any(&task_ids[..]))
+                            .load::<model::task::SupplyTask>(&conn)?;
 
                     effect_num += diesel::insert_into(task_log::table)
                         .values(&new_task_logs[..])

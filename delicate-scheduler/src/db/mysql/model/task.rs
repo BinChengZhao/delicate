@@ -1,5 +1,6 @@
 use super::prelude::*;
 use super::schema::task;
+use diesel::sql_types::{VarChar, Bigint};
 
 #[derive(Queryable, Debug, Clone, Serialize, Deserialize)]
 
@@ -35,6 +36,18 @@ pub struct NewTask {
     pub(crate) maximun_parallel_runable_num: i16,
     pub(crate) tag: String,
     pub(crate) status: i16,
+}
+
+#[derive(Queryable, Identifiable, AsChangeset, Debug, Default, Serialize, Deserialize)]
+#[table_name = "task"]
+pub struct SupplyTask {
+    pub(crate) id: i64,
+    pub(crate) name: String,
+    pub(crate) description: String,
+    pub(crate) command: String,
+    pub(crate) frequency: String,
+    pub(crate) cron_expression: String,
+    pub(crate) tag: String,
 }
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
@@ -81,7 +94,11 @@ impl TaskQueryBuilder {
         task::table.into_boxed().select(task::all_columns)
     }
 
-    pub(crate) fn query_count() -> task::BoxedQuery<'static, Mysql, diesel::sql_types::Bigint> {
+    pub(crate) fn query_supply_task_log() -> task::BoxedQuery<'static, Mysql, (Bigint, VarChar, VarChar, VarChar, VarChar, VarChar, VarChar)> {
+        task::table.into_boxed().select((task::id,task::name, task::description, task::command, task::frequency, task::cron_expression, task::tag))
+    }
+
+    pub(crate) fn query_count() -> task::BoxedQuery<'static, Mysql, Bigint> {
         task::table.into_boxed().count()
     }
 }

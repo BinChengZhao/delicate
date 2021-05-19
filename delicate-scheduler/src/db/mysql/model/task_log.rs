@@ -163,7 +163,7 @@ pub struct TaskLog {
 #[table_name = "task_log"]
 pub struct NewTaskLog {
     id: i64,
-    task_id: i64,
+    pub(crate) task_id: i64,
     name: String,
     description: String,
     command: String,
