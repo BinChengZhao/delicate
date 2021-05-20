@@ -1,11 +1,8 @@
-// use super::prelude::*;
-// use super::schema::task_log;
+use super::prelude::*;
 
-// #[derive(Queryable, Debug, Clone, Serialize, Deserialize)]
-// #[table_name = "task_log"]
-// pub struct TaskState {
-//     id: i64,
-//     created_time: NaiveDateTime,
-//     status: i16,
-//     // count: u64,
-// }
+#[derive(Queryable, Debug, Clone, Serialize, Deserialize)]
+pub struct TaskState {
+    created_time: NaiveDateTime,
+    status: i16,
+    count: i64,
+}

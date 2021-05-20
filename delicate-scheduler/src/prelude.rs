@@ -20,7 +20,6 @@ pub(crate) use futures::future::{ok, Ready};
 pub(crate) use futures::Future;
 
 pub(crate) use chrono::NaiveDateTime;
-pub(crate) use diesel::dsl;
 pub(crate) use diesel::mysql::Mysql;
 pub(crate) use diesel::prelude::*;
 pub(crate) use diesel::query_builder::{AsQuery, AstPass, Query, QueryFragment};

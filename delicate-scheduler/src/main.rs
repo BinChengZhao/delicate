@@ -54,6 +54,7 @@ async fn main() -> AnyResut<()> {
             .configure(actions::task_log::config)
             .configure(actions::executor_group::config)
             .configure(actions::executor_processor::config)
+            .configure(actions::data_reports::config)
             .app_data(shared_delay_timer.clone())
             .app_data(shared_connection_pool.clone())
             .wrap(components::session::session_middleware())
