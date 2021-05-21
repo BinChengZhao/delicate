@@ -17,8 +17,9 @@ cfg_mysql_support!(
 
     no_arg_sql_function!(
         last_insert_id,
-        diesel::types::Unsigned<diesel::types::Bigint>
+        sql_types::Unsigned<sql_types::Bigint>
     );
+
     embed_migrations!("./migrations/mysql");
 
 );

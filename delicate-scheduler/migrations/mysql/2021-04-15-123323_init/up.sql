@@ -36,7 +36,9 @@ CREATE TABLE `task_log` (
 	`stderr` text NOT NULL COMMENT 'process-child-stderr',
   PRIMARY KEY (`id`),
   KEY `task_id_idx` (`task_id`) USING BTREE,
-  KEY `executor_processor_id_idx` (`executor_processor_id`) USING BTREE
+  KEY `executor_processor_id_idx` (`executor_processor_id`) USING BTREE,
+  KEY `created_time_idx` (`created_time`) USING BTREE,
+  KEY `updated_time_idx` (`updated_time`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 

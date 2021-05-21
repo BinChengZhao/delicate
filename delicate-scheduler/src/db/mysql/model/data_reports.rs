@@ -1,8 +1,8 @@
 use super::prelude::*;
 
 #[derive(Queryable, Debug, Clone, Serialize, Deserialize)]
-pub struct TaskState {
-    created_time: NaiveDateTime,
-    status: i16,
-    count: i64,
+pub(crate) struct TaskState {
+    hour_num: i16,
+    pub(crate) status: i16,
+    total: i64,
 }
