@@ -36,7 +36,7 @@ async fn show_one_day_tasks_state(pool: ShareData<db::ConnectionPool>) -> HttpRe
                             ),
                         ))
                         .filter(task_log::created_time.between(past_day, now))
-                        .group_by(diesel::dsl::sql::<()>("h"))
+                        .group_by(diesel::dsl::sql::<()>("hour_num"))
                         .load(&conn)?;
 
                     create_count
@@ -60,7 +60,7 @@ async fn show_one_day_tasks_state(pool: ShareData<db::ConnectionPool>) -> HttpRe
                             State::TimeoutEnding as i16,
                             State::TmanualCancellation as i16,
                         ]))
-                        .group_by((diesel::dsl::sql::<()>("h"), task_log::status))
+                        .group_by((diesel::dsl::sql::<()>("hour_num"), task_log::status))
                         .load(&conn)?;
 
                     let all_task_state_counts: Vec<model::TaskState> = create_count

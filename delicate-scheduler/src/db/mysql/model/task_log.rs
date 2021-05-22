@@ -1,5 +1,5 @@
 use super::prelude::*;
-use super::schema::task_log;
+use super::schema::{task_log, task_log_extend};
 
 pub(crate) struct TaskLogQueryBuilder;
 impl TaskLogQueryBuilder {
@@ -72,11 +72,12 @@ impl From<ExecutorEvent> for NewTaskLog {
     }
 }
 
-impl From<ExecutorEvent> for SupplyTaskLog {
+impl From<ExecutorEvent> for (SupplyTaskLog, SupplyTaskLogExtend) {
     fn from(
         ExecutorEvent {
             event_type,
             id,
+            task_id,
             output,
             ..
         }: ExecutorEvent,
@@ -109,12 +110,15 @@ impl From<ExecutorEvent> for SupplyTaskLog {
 
         let status = state as i16;
 
-        SupplyTaskLog {
+        (SupplyTaskLog {
             id,
+            status,
+        }, SupplyTaskLogExtend {
+            id,
+            task_id,
             stdout,
             stderr,
-            status,
-        }
+        })
     }
 }
 
@@ -133,8 +137,6 @@ pub(crate) struct ChildOutput {
 
 // TODO: Use `replace_into` instead of `insert_into` to process data.
 
-// delay_timer Add api to support modifying machine node id of `SnowflakeIdGenerator`.
-// Then i send executor_processor_id to there.
 #[derive(Queryable, Identifiable, AsChangeset, Debug, Clone, Serialize, Deserialize)]
 #[table_name = "task_log"]
 pub struct TaskLog {
@@ -153,6 +155,13 @@ pub struct TaskLog {
     executor_processor_id: i64,
     executor_processor_name: String,
     executor_processor_host: String,
+}
+
+#[derive(Insertable, Queryable, Identifiable, AsChangeset, Debug, Clone, Serialize, Deserialize)]
+#[table_name = "task_log_extend"]
+pub struct TaskLogExtend {
+    id: i64,
+    task_id: i64,
     stdout: String,
     stderr: String,
 }
@@ -181,7 +190,14 @@ pub struct NewTaskLog {
 #[table_name = "task_log"]
 pub struct SupplyTaskLog {
     id: i64,
-    status: i16,
+    status: i16
+}
+
+#[derive(Insertable, Queryable, Identifiable, AsChangeset, Debug, Clone, Serialize, Deserialize)]
+#[table_name = "task_log_extend"]
+pub struct SupplyTaskLogExtend {
+    id: i64,
+    task_id: i64,
     stdout: String,
     stderr: String,
 }

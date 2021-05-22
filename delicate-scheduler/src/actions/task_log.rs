@@ -27,7 +27,10 @@ async fn create_task_logs(
                     let mut effect_num = 0;
                     let model::ExecutorEventCollection { events, .. } = events_collection;
                     let mut new_task_logs: Vec<model::NewTaskLog> = Vec::new();
-                    let mut supply_task_logs: Vec<model::SupplyTaskLog> = Vec::new();
+                    let mut supply_task_logs: Vec<(
+                        model::SupplyTaskLog,
+                        model::SupplyTaskLogExtend,
+                    )> = Vec::new();
 
                     events
                         .into_iter()
@@ -38,11 +41,8 @@ async fn create_task_logs(
                         });
 
                     effect_num += batch_insert_task_logs(&conn, new_task_logs)?;
-                    for supply_task_log in supply_task_logs {
-                        effect_num += diesel::update(&supply_task_log)
-                            .set(&supply_task_log)
-                            .execute(&conn)?;
-                    }
+
+                    effect_num += batch_update_task_logs(&conn, supply_task_logs)?;
 
                     Ok(effect_num)
                 })
@@ -124,4 +124,28 @@ fn batch_insert_task_logs(
     }
 
     Ok(0)
+}
+
+fn batch_update_task_logs(
+    conn: &db::PoolConnection,
+    supply_task_logs: Vec<(model::SupplyTaskLog, model::SupplyTaskLogExtend)>,
+) -> QueryResult<usize> {
+    use db::schema::task_log_extend;
+
+    let mut effect_num = 0;
+
+    for supply_task_log in supply_task_logs.iter() {
+        effect_num += diesel::update(&supply_task_log.0)
+            .set(&supply_task_log.0)
+            .execute(conn)?;
+    }
+
+    let supply_task_logs_extend: Vec<model::SupplyTaskLogExtend> =
+        supply_task_logs.into_iter().map(|(_, t)| t).collect();
+
+    diesel::insert_into(task_log_extend::table)
+        .values(&supply_task_logs_extend[..])
+        .execute(conn)?;
+
+    Ok(effect_num)
 }
