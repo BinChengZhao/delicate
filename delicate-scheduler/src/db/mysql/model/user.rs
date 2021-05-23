@@ -1,8 +1,6 @@
 use super::prelude::*;
 use super::schema::{user, user_auth};
 use ring::digest::{digest, SHA256};
-// FIXME: The user's password is encrypted by sha-256 and stored in the database, with low MD5 security.
-// Using ring-crate.
 
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 pub struct QueryNewUser {
@@ -83,21 +81,21 @@ impl From<(QueryNewUser, u64)> for NewUserAuths {
             identity_type: types::IdentityType::Mobile as u8,
             identifier: mobile,
             certificate: encrypted_certificate.clone(),
-            status: 1,
+            status: state::user_auth::State::Health as i8,
         };
         let email_auth = NewUserAuth {
             user_id,
             identity_type: types::IdentityType::Email as u8,
             identifier: email,
             certificate: encrypted_certificate.clone(),
-            status: 1,
+            status: state::user_auth::State::Health as i8,
         };
         let username_auth = NewUserAuth {
             user_id,
             identity_type: types::IdentityType::Username as u8,
             identifier: user_name,
             certificate: encrypted_certificate,
-            status: 1,
+            status: state::user_auth::State::Health as i8,
         };
 
         user_auth_arr = [mobile_auth, email_auth, username_auth];
@@ -127,6 +125,13 @@ pub struct NewUserAuth {
     identifier: String,
     certificate: String,
     status: i8,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UserAuthLogin {
+    pub(crate) login_type: u8,
+    pub(crate) account: String,
+    pub(crate) password: String,
 }
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]

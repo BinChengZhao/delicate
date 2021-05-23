@@ -109,3 +109,46 @@ async fn delete_user(
 
     HttpResponse::Ok().json(UnifiedResponseMessages::<usize>::error())
 }
+
+#[post("/api/user/login")]
+async fn login_user(
+    web::Json(model::UserAuthLogin {
+        login_type,
+        account,
+        password,
+    }): web::Json<model::UserAuthLogin>,
+    session: Session,
+    pool: ShareData<db::ConnectionPool>,
+) -> HttpResponse {
+    use model::schema::user_auth;
+
+    if let Ok(conn) = pool.get() {
+        
+        let user_auth_result = web::block::<_, _, diesel::result::Error>(move || {
+            user_auth::table
+                .select(user_auth::all_columns)
+                .filter(user_auth::identity_type.eq(login_type))
+                .filter(user_auth::identifier.eq(account))
+                .filter(user_auth::certificate.eq(password))
+                .first::<model::UserAuth>(&conn)
+        })
+        .await;
+
+        if let Ok(_user_auth) = user_auth_result {
+            return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<()>>::into(
+                session.set("login_time", get_timestamp()),
+            ));
+        } else {
+            return HttpResponse::Ok().json(UnifiedResponseMessages::<()>::error());
+        }
+    }
+
+    HttpResponse::Ok().json(UnifiedResponseMessages::<()>::error())
+}
+
+#[post("/api/user/logout")]
+async fn logout_user(session: Session) -> HttpResponse {
+    HttpResponse::Ok().json(UnifiedResponseMessages::<()>::success_with_data(
+        session.purge(),
+    ))
+}
