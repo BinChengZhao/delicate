@@ -2,10 +2,11 @@ use super::prelude::*;
 use super::schema::task;
 use diesel::sql_types::{VarChar, Bigint};
 
-#[derive(Queryable, Debug, Clone, Serialize, Deserialize)]
+#[derive(Queryable, Insertable, Clone, Identifiable, AsChangeset, Debug, Serialize, Deserialize)]
+#[table_name = "task"]
 
 pub struct Task {
-    id: i64,
+    pub(crate)  id: i64,
     name: String,
     description: String,
     command: String,
@@ -21,10 +22,9 @@ pub struct Task {
     deleted_time: Option<NaiveDateTime>,
 }
 
-#[derive(Insertable, Identifiable, AsChangeset, Debug, Default, Serialize, Deserialize)]
+#[derive(Insertable, Debug, Default, Serialize, Deserialize)]
 #[table_name = "task"]
 pub struct NewTask {
-    pub(crate) id: i64,
     pub(crate) name: String,
     pub(crate) description: String,
     pub(crate) command: String,
@@ -41,6 +41,12 @@ pub struct NewTask {
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct NewTaskBody {
     pub(crate) new_task: NewTask,
+    pub(crate) binding_ids: Vec<i64>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UpdateTaskBody {
+    pub(crate) task: Task,
     pub(crate) binding_ids: Vec<i64>,
 }
 

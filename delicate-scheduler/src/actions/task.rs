@@ -9,17 +9,30 @@ pub(crate) fn config(cfg: &mut web::ServiceConfig) {
 
 #[post("/api/task/create")]
 async fn create_task(
-    task: web::Json<model::NewTask>,
+    web::Json(model::NewTaskBody {
+        new_task,
+        binding_ids,
+    }): web::Json<model::NewTaskBody>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
-    use db::schema::task;
+    use db::schema::{task, task_bind};
 
     // TODO: Update there.
     if let Ok(conn) = pool.get() {
         return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
-            web::block(move || {
+            web::block::<_, _, diesel::result::Error>(move || {
                 diesel::insert_into(task::table)
-                    .values(&*task)
+                    .values(&new_task)
+                    .execute(&conn)?;
+                let task_id = diesel::select(db::last_insert_id).get_result::<u64>(&conn)? as i64;
+
+                let new_task_binds: Vec<model::NewTaskBind> = binding_ids
+                    .into_iter()
+                    .map(|bind_id| model::NewTaskBind { task_id, bind_id })
+                    .collect();
+
+                diesel::insert_into(task_bind::table)
+                    .values(&new_task_binds)
                     .execute(&conn)
             })
             .await,
@@ -67,12 +80,46 @@ async fn show_tasks(
 
 #[post("/api/task/update")]
 async fn update_task(
-    web::Json(task_value): web::Json<model::NewTask>,
+    web::Json(model::UpdateTaskBody { task, binding_ids }): web::Json<model::UpdateTaskBody>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
+    use db::schema::task_bind;
+    use std::collections::HashSet;
+
     if let Ok(conn) = pool.get() {
         return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
-            web::block(move || diesel::update(&task_value).set(&task_value).execute(&conn)).await,
+            web::block::<_, _, diesel::result::Error>(move || {
+                diesel::update(&task).set(&task).execute(&conn)?;
+
+                let original_task_binds: HashSet<i64> = task_bind::table
+                    .select(task_bind::bind_id)
+                    .filter(task_bind::task_id.eq(task.id))
+                    .load(&conn)?
+                    .into_iter()
+                    .collect();
+
+                let current_task_binds: HashSet<i64> = binding_ids.into_iter().collect();
+
+                let task_id = task.id;
+
+                let removed_task_binds: Vec<model::NewTaskBind> = original_task_binds
+                    .clone()
+                    .difference(&current_task_binds)
+                    .into_iter()
+                    .map(|b| *b)
+                    .map(|bind_id| model::NewTaskBind { bind_id, task_id })
+                    .collect();
+
+                let append_task_binds: Vec<model::NewTaskBind> = current_task_binds
+                    .difference(&original_task_binds)
+                    .into_iter()
+                    .map(|b| *b)
+                    .map(|bind_id| model::NewTaskBind { bind_id, task_id })
+                    .collect();
+
+                todo!();
+            })
+            .await,
         ));
     }
 

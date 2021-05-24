@@ -11,10 +11,9 @@ pub struct TaskBind {
     created_time: NaiveDateTime,
 }
 
-#[derive(Insertable, AsChangeset, Debug, Serialize, Deserialize)]
+#[derive(Insertable, Queryable, AsChangeset, Debug, Serialize, Deserialize, Eq, PartialEq, Hash)]
 #[table_name = "task_bind"]
 pub struct NewTaskBind {
-    task_id: i64,
-    bind_id: i64,
-    created_time: NaiveDateTime,
+   pub(crate) task_id: i64,
+   pub(crate) bind_id: i64,
 }
