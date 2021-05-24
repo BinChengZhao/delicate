@@ -113,7 +113,7 @@ CREATE TABLE `user_auth` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='User authorization';
 
 CREATE TABLE `user` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'user-id',
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'user-id',
   `user_name` varchar(32) NOT NULL DEFAULT '' COMMENT 'User account, must be unique',
   `nick_name` varchar(32) NOT NULL DEFAULT '' COMMENT 'User nickname',
   `mobile` varchar(16) NOT NULL DEFAULT '' COMMENT 'Mobie-number(unique)',

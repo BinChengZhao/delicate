@@ -96,7 +96,7 @@ async fn update_user(
 
 #[post("/api/user/delete")]
 async fn delete_user(
-    web::Path(user_id): web::Path<i64>,
+    web::Path(user_id): web::Path<u64>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
     use db::schema::user::dsl::*;

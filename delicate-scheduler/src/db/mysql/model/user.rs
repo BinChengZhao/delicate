@@ -20,7 +20,7 @@ pub struct QueryNewUser {
 #[table_name = "user"]
 
 pub struct User {
-    id: i64,
+    id: u64,
     user_name: String,
     nick_name: String,
     mobile: String,
@@ -136,7 +136,7 @@ pub struct UserAuthLogin {
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub(crate) struct QueryParamsUser {
-    id: Option<i64>,
+    id: Option<u64>,
     user_name: Option<String>,
     nick_name: Option<String>,
     mobile: Option<String>,
