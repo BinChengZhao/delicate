@@ -138,7 +138,7 @@ struct TaskConf {
     /// it can be use to deadline (excution-time + maximum_running_time).
     maximum_running_time: u64,
     /// Maximum parallel runable num (optional).
-    maximun_parallel_runable_num: u64,
+    maximun_parallel_runnable_num: u64,
     /// Time zone for cron-expression iteration time.
     schedule_iterator_time_zone: u8,
 }
@@ -189,7 +189,7 @@ impl TryFrom<TaskConf> for Task {
             .set_task_id(task_conf.task_id)
             .set_frequency(frequency)
             .set_maximum_running_time(task_conf.maximum_running_time)
-            .set_maximun_parallel_runable_num(task_conf.maximun_parallel_runable_num)
+            .set_maximun_parallel_runable_num(task_conf.maximun_parallel_runnable_num)
             .spawn(tokio_unblock_process_task_fn(
                 task_conf.command_string.clone(),
             ))?;

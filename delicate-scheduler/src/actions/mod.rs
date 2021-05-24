@@ -1,5 +1,6 @@
 pub(crate) use super::prelude;
 
+pub(crate) mod components;
 pub(crate) mod data_reports;
 pub(crate) mod executor_group;
 pub(crate) mod executor_processor;

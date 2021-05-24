@@ -15,6 +15,14 @@ pub struct ExecutorProcessorBind {
     deleted_time: Option<NaiveDateTime>,
 }
 
+#[derive(Queryable, AsChangeset, Identifiable, Debug, Clone, Serialize, Deserialize)]
+#[table_name = "executor_processor_bind"]
+
+pub struct ExecutorBinding {
+    id: i64,
+    name: String,
+}
+
 #[derive(Insertable, AsChangeset, Debug, Serialize, Deserialize)]
 #[table_name = "executor_processor_bind"]
 pub struct NewExecutorProcessorBind {
@@ -69,6 +77,12 @@ impl ExecutorProcessorBindQueryBuilder {
         executor_processor_bind::table
             .into_boxed()
             .select(executor_processor_bind::all_columns)
+    }
+
+    pub(crate) fn query_binding_columns() -> executor_processor_bind::BoxedQuery<'static, Mysql, (sql_types::Bigint, sql_types::VarChar)> {
+        executor_processor_bind::table
+            .into_boxed()
+            .select((executor_processor_bind::id, executor_processor_bind::name))
     }
 
     pub(crate) fn query_count(

@@ -123,7 +123,6 @@ async fn login_user(
     use model::schema::user_auth;
 
     if let Ok(conn) = pool.get() {
-        
         let user_auth_result = web::block::<_, _, diesel::result::Error>(move || {
             user_auth::table
                 .select(user_auth::all_columns)
