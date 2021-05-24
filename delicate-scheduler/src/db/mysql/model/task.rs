@@ -38,6 +38,12 @@ pub struct NewTask {
     pub(crate) status: i16,
 }
 
+#[derive(Debug, Default, Serialize, Deserialize)]
+pub struct NewTaskBody {
+    pub(crate) new_task: NewTask,
+    pub(crate) binding_ids: Vec<i64>,
+}
+
 #[derive(Queryable, Identifiable, AsChangeset, Debug, Default, Serialize, Deserialize)]
 #[table_name = "task"]
 pub struct SupplyTask {
