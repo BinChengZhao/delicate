@@ -68,7 +68,7 @@ async fn show_executor_processors(
 
 #[post("/api/executor_processor/update")]
 async fn update_executor_processor(
-    web::Json(executor_processor): web::Json<model::ExecutorProcessor>,
+    web::Json(executor_processor): web::Json<model::UpdateExecutorProcessor>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
     if let Ok(conn) = pool.get() {
@@ -86,7 +86,9 @@ async fn update_executor_processor(
 }
 #[post("/api/executor_processor/delete")]
 async fn delete_executor_processor(
-    web::Path(executor_processor_id): web::Path<i64>,
+    web::Json(model::ExecutorProcessorId {
+        executor_processor_id,
+    }): web::Json<model::ExecutorProcessorId>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
     use db::schema::executor_processor::dsl::*;

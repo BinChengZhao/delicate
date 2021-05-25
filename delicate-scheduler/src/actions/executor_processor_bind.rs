@@ -68,7 +68,7 @@ async fn show_executor_processor_binds(
 
 #[post("/api/executor_processor_bind/update")]
 async fn update_executor_processor_bind(
-    web::Json(executor_processor_bind): web::Json<model::ExecutorProcessorBind>,
+    web::Json(executor_processor_bind): web::Json<model::UpdateExecutorProcessorBind>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
     if let Ok(conn) = pool.get() {
@@ -86,7 +86,9 @@ async fn update_executor_processor_bind(
 }
 #[post("/api/executor_processor_bind/delete")]
 async fn delete_executor_processor_bind(
-    web::Path(executor_processor_bind_id): web::Path<i64>,
+    web::Json(model::ExecutorProcessorBindId {
+        executor_processor_bind_id,
+    }): web::Json<model::ExecutorProcessorBindId>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
     use db::schema::executor_processor_bind::dsl::*;

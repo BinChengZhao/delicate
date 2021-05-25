@@ -31,6 +31,19 @@ pub struct NewExecutorProcessor {
     deleted_time: Option<NaiveDateTime>,
 }
 
+#[derive(Queryable, Identifiable, AsChangeset, Debug, Clone, Serialize, Deserialize)]
+#[table_name = "executor_processor"]
+
+pub struct UpdateExecutorProcessor {
+    id: i64,
+    name: String,
+    host: String,
+    port: i16,
+    machine_id: i16,
+    description: String,
+    tag: String,
+}
+
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub(crate) struct QueryParamsExecutorProcessor {
     id: Option<i64>,
@@ -43,6 +56,12 @@ pub(crate) struct QueryParamsExecutorProcessor {
     status: Option<i16>,
     pub(crate) per_page: i64,
     pub(crate) page: i64,
+}
+
+#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
+
+pub struct ExecutorProcessorId{
+   pub(crate) executor_processor_id : i64
 }
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]

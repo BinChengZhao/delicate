@@ -17,3 +17,9 @@ pub struct NewTaskBind {
    pub(crate) task_id: i64,
    pub(crate) bind_id: i64,
 }
+
+#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
+
+pub struct TaskBindId{
+   pub(crate) task_bind_id : i64
+}

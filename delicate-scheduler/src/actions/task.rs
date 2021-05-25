@@ -162,7 +162,7 @@ async fn delete_task(
 
 #[post("/api/task/run")]
 async fn run_task(
-    web::Path(task_id): web::Path<i64>,
+    web::Json(model::TaskId { task_id }): web::Json<model::TaskId>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
     use actix_web::client::Client;

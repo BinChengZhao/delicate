@@ -40,6 +40,18 @@ pub struct NewUser {
     email: String,
 }
 
+#[derive(Queryable, Identifiable, AsChangeset, Debug, Clone, Serialize, Deserialize)]
+#[table_name = "user"]
+
+pub struct UpdateUser {
+    id: u64,
+    user_name: String,
+    nick_name: String,
+    mobile: String,
+    email: String,
+    face: String,
+}
+
 impl From<&QueryNewUser> for NewUser {
     fn from(value: &QueryNewUser) -> NewUser {
         NewUser {

@@ -66,7 +66,7 @@ async fn show_executor_groups(
 
 #[post("/api/executor_group/update")]
 async fn update_executor_group(
-    web::Json(executor_group): web::Json<model::ExecutorGroup>,
+    web::Json(executor_group): web::Json<model::UpdateExecutorGroup>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
     if let Ok(conn) = pool.get() {
@@ -84,7 +84,7 @@ async fn update_executor_group(
 }
 #[post("/api/executor_group/delete")]
 async fn delete_executor_group(
-    web::Path(executor_group_id): web::Path<i64>,
+    web::Json(model::ExecutorGroupId { executor_group_id }): web::Json<model::ExecutorGroupId>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
     use db::schema::executor_group::dsl::*;

@@ -18,6 +18,17 @@ pub struct ExecutorProcessorBind {
 #[derive(Queryable, AsChangeset, Identifiable, Debug, Clone, Serialize, Deserialize)]
 #[table_name = "executor_processor_bind"]
 
+pub struct UpdateExecutorProcessorBind {
+    id: i64,
+    name: String,
+    group_id: i64,
+    executor_id: i64,
+    weight: i16,
+}
+
+#[derive(Queryable, AsChangeset, Identifiable, Debug, Clone, Serialize, Deserialize)]
+#[table_name = "executor_processor_bind"]
+
 pub struct ExecutorBinding {
     id: i64,
     name: String,
@@ -30,9 +41,6 @@ pub struct NewExecutorProcessorBind {
     group_id: i64,
     executor_id: i64,
     weight: i16,
-    status: i16,
-    created_time: NaiveDateTime,
-    deleted_time: NaiveDateTime,
 }
 
 
@@ -45,6 +53,11 @@ pub(crate) struct QueryParamsExecutorProcessorBind {
     status: Option<i16>,
     pub(crate) per_page: i64,
     pub(crate) page: i64,
+}
+
+#[derive(Insertable, Debug, Serialize, Deserialize)]
+pub struct ExecutorProcessorBindId {
+   pub(crate) executor_processor_bind_id: i64,
 }
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]

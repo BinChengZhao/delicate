@@ -82,7 +82,7 @@ async fn show_users(
 
 #[post("/api/user/update")]
 async fn update_user(
-    web::Json(user_value): web::Json<model::User>,
+    web::Json(user_value): web::Json<model::UpdateUser>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
     if let Ok(conn) = pool.get() {

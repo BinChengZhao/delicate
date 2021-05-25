@@ -14,6 +14,16 @@ pub struct ExecutorGroup {
     deleted_time: Option<NaiveDateTime>,
 }
 
+#[derive(Queryable, Identifiable, AsChangeset, Debug, Clone, Serialize, Deserialize)]
+#[table_name = "executor_group"]
+
+pub struct UpdateExecutorGroup {
+    id: i64,
+    name: String,
+    description: String,
+    tag: String,
+}
+
 #[derive(Insertable, Debug, Default, Serialize, Deserialize)]
 #[table_name = "executor_group"]
 pub struct NewExecutorGroup {
@@ -43,6 +53,13 @@ pub(crate) struct PaginateExecutorGroup {
     per_page: i64,
     total_page: i64,
 }
+
+#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
+
+pub struct ExecutorGroupId{
+   pub(crate) executor_group_id : i64
+}
+
 
 impl PaginateExecutorGroup {
     pub(crate) fn set_tasks(mut self, executor_groups: Vec<ExecutorGroup>) -> Self {
