@@ -17,7 +17,6 @@ async fn create_task(
 ) -> HttpResponse {
     use db::schema::{task, task_bind};
 
-    // TODO: Update there.
     if let Ok(conn) = pool.get() {
         return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
             web::block::<_, _, diesel::result::Error>(move || {
@@ -141,18 +140,24 @@ async fn update_task(
 }
 #[post("/api/task/delete")]
 async fn delete_task(
-    web::Path(task_id): web::Path<i64>,
+    web::Json(model::TaskId { task_id }): web::Json<model::TaskId>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
-    use db::schema::task::dsl::*;
+    use db::schema::{task, task_bind};
 
     if let Ok(conn) = pool.get() {
-        return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
-            web::block(move || diesel::delete(task.find(task_id)).execute(&conn)).await,
+        return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<()>>::into(
+            web::block::<_, _, diesel::result::Error>(move || {
+                diesel::delete(task::table.find(task_id)).execute(&conn)?;
+                diesel::delete(task_bind::table.filter(task_bind::task_id.eq(task_id)))
+                    .execute(&conn)?;
+                Ok(())
+            })
+            .await,
         ));
     }
 
-    HttpResponse::Ok().json(UnifiedResponseMessages::<usize>::error())
+    HttpResponse::Ok().json(UnifiedResponseMessages::<()>::error())
 }
 
 #[post("/api/task/run")]

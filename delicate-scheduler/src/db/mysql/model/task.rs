@@ -35,7 +35,29 @@ pub struct NewTask {
     pub(crate) retry_interval: i16,
     pub(crate) maximun_parallel_runnable_num: i16,
     pub(crate) tag: String,
-    pub(crate) status: i16,
+}
+
+#[derive(Queryable, Insertable, Clone, Identifiable, AsChangeset, Debug, Serialize, Deserialize)]
+#[table_name = "task"]
+
+pub struct UpdateTask {
+    pub(crate) id: i64,
+    name: String,
+    description: String,
+    command: String,
+    frequency: String,
+    cron_expression: String,
+    timeout: i16,
+    retry_times: i16,
+    retry_interval: i16,
+    maximun_parallel_runnable_num: i16,
+    tag: String,
+}
+
+#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
+
+pub struct TaskId{
+   pub(crate) task_id : i64
 }
 
 #[derive(Debug, Default, Serialize, Deserialize)]
@@ -46,7 +68,7 @@ pub struct NewTaskBody {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct UpdateTaskBody {
-    pub(crate) task: Task,
+    pub(crate) task: UpdateTask,
     pub(crate) binding_ids: Vec<i64>,
 }
 
