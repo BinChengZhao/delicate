@@ -49,7 +49,6 @@ pub struct UpdateUser {
     nick_name: String,
     mobile: String,
     email: String,
-    face: String,
 }
 
 impl From<&QueryNewUser> for NewUser {
@@ -153,7 +152,6 @@ pub(crate) struct QueryParamsUser {
     nick_name: Option<String>,
     mobile: Option<String>,
     email: Option<String>,
-    face: Option<String>,
     status: Option<i8>,
     pub(crate) per_page: i64,
     pub(crate) page: i64,
@@ -164,6 +162,11 @@ pub(crate) struct PaginateUser {
     users: Vec<User>,
     per_page: i64,
     total_page: i64,
+}
+
+#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
+pub(crate) struct UserId {
+   pub(crate) user_id: u64,
 }
 
 impl PaginateUser {

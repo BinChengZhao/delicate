@@ -22,6 +22,7 @@ pub struct UpdateExecutorGroup {
     name: String,
     description: String,
     tag: String,
+    status: i16,
 }
 
 #[derive(Insertable, Debug, Default, Serialize, Deserialize)]
@@ -30,7 +31,6 @@ pub struct NewExecutorGroup {
     pub(crate) name: String,
     pub(crate) description: String,
     pub(crate) tag: String,
-    pub(crate) status: i16,
 }
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
@@ -38,9 +38,6 @@ pub(crate) struct QueryParamsExecutorGroup {
     id: Option<i64>,
     name: Option<String>,
     description: Option<String>,
-    command: Option<String>,
-    frequency: Option<String>,
-    cron_expression: Option<String>,
     tag: Option<String>,
     status: Option<i16>,
     pub(crate) per_page: i64,

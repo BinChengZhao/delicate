@@ -96,14 +96,17 @@ async fn update_user(
 
 #[post("/api/user/delete")]
 async fn delete_user(
-    web::Path(user_id): web::Path<u64>,
+    web::Json(model::UserId { user_id }): web::Json<model::UserId>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
-    use db::schema::user::dsl::*;
+    use db::schema::user;
 
     if let Ok(conn) = pool.get() {
         return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
-            web::block(move || diesel::delete(user.find(user_id)).execute(&conn)).await,
+            web::block(move || {
+                diesel::delete(user::table.filter(user::id.eq(user_id))).execute(&conn)
+            })
+            .await,
         ));
     }
 

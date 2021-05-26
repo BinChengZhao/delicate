@@ -684,10 +684,3 @@ allow_tables_to_appear_in_same_query!(
     user_login_log,
     user_register_log,
 );
-
-
-joinable!(task_bind -> task (task_id));
-joinable!(task_bind -> executor_processor_bind (bind_id));
-joinable!(executor_processor_bind -> executor_processor (executor_id));
-joinable!(executor_processor_bind -> executor_group (group_id));
-joinable!(user_auth -> user (user_id));

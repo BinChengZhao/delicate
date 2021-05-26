@@ -21,14 +21,11 @@ pub struct ExecutorProcessor {
 #[table_name = "executor_processor"]
 pub struct NewExecutorProcessor {
     name: String,
+    description: String,
     host: String,
     port: i16,
     machine_id: i16,
-    description: String,
     tag: String,
-    status: i16,
-    created_time: NaiveDateTime,
-    deleted_time: Option<NaiveDateTime>,
 }
 
 #[derive(Queryable, Identifiable, AsChangeset, Debug, Clone, Serialize, Deserialize)]
@@ -37,10 +34,10 @@ pub struct NewExecutorProcessor {
 pub struct UpdateExecutorProcessor {
     id: i64,
     name: String,
+    description: String,
     host: String,
     port: i16,
     machine_id: i16,
-    description: String,
     tag: String,
 }
 
@@ -49,10 +46,9 @@ pub(crate) struct QueryParamsExecutorProcessor {
     id: Option<i64>,
     name: Option<String>,
     description: Option<String>,
-    command: Option<String>,
-    frequency: Option<String>,
-    cron_expression: Option<String>,
+    host: Option<String>,
     tag: Option<String>,
+    machine_id: Option<i16>,
     status: Option<i16>,
     pub(crate) per_page: i64,
     pub(crate) page: i64,

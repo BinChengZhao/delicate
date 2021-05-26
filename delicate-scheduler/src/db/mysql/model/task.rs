@@ -90,7 +90,6 @@ pub(crate) struct QueryParamsTask {
     name: Option<String>,
     description: Option<String>,
     command: Option<String>,
-    frequency: Option<String>,
     cron_expression: Option<String>,
     tag: Option<String>,
     status: Option<i16>,
@@ -167,10 +166,6 @@ impl QueryParamsTask {
 
         if let Some(task_command) = self.command {
             statement_builder = statement_builder.filter(task::command.like(task_command));
-        }
-
-        if let Some(task_frequency) = self.frequency {
-            statement_builder = statement_builder.filter(task::frequency.like(task_frequency));
         }
 
         if let Some(task_cron_expression) = self.cron_expression {

@@ -50,12 +50,11 @@ pub(crate) struct QueryParamsExecutorProcessorBind {
     group_id: Option<i64>,
     executor_id: Option<i64>,
     name: Option<String>,
-    status: Option<i16>,
     pub(crate) per_page: i64,
     pub(crate) page: i64,
 }
 
-#[derive(Insertable, Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ExecutorProcessorBindId {
    pub(crate) executor_processor_bind_id: i64,
 }
@@ -130,10 +129,6 @@ impl QueryParamsExecutorProcessorBind {
         if let Some(executor_processor_bind_name) = self.name {
             statement_builder =
                 statement_builder.filter(executor_processor_bind::name.like(executor_processor_bind_name));
-        }
-        if let Some(task_status) = self.status {
-            statement_builder =
-                statement_builder.filter(executor_processor_bind::status.eq(task_status));
         }
 
         statement_builder.order(executor_processor_bind::id.desc())
