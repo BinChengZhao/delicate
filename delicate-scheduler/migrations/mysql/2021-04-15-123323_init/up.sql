@@ -57,7 +57,6 @@ CREATE TABLE `executor_processor` (
   `machine_id` smallint(6) NOT NULL DEFAULT '0' COMMENT 'Unique machine id of the executor, Max is 1024',
   `description` varchar(128) NOT NULL COMMENT 'Executor-processor description',
   `tag` varchar(32) NOT NULL DEFAULT '' COMMENT 'Executor-processor tag',
-  `status` smallint(6) NOT NULL DEFAULT '1' COMMENT 'Status',
   `created_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Executor-processor creation time',
   `deleted_time` timestamp NULL DEFAULT NULL COMMENT 'Executor-processor delition time',
   PRIMARY KEY (`id`),
@@ -69,7 +68,6 @@ CREATE TABLE `executor_group` (
   `name` varchar(128) NOT NULL COMMENT 'Executor-group name',
   `description` varchar(128) NOT NULL COMMENT 'Executor-group description',
   `tag` varchar(32) NOT NULL DEFAULT '' COMMENT 'Executor-group tag',
-  `status` smallint(6) NOT NULL DEFAULT '1' COMMENT 'Status',
   `created_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Executor-group creation time',
   `deleted_time` timestamp NULL DEFAULT NULL COMMENT 'Executor-group delition time',
   PRIMARY KEY (`id`)
@@ -81,9 +79,7 @@ CREATE TABLE `executor_processor_bind` (
 `group_id` bigint(20) NOT NULL DEFAULT '0' COMMENT 'Executor group id',
 `executor_id` bigint(20) NOT NULL DEFAULT '0' COMMENT 'Executor id',
 `weight` smallint(11) NOT NULL DEFAULT '0' COMMENT 'Execution weights of tasks between executor in a group',
-`status` smallint(6) NOT NULL DEFAULT '1' COMMENT 'Status',
 `created_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Executor-processor-group creation time',
-`deleted_time` timestamp NULL DEFAULT NULL COMMENT 'Executor-processor-group delition time',
 PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
 

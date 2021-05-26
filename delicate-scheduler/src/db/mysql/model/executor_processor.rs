@@ -12,7 +12,6 @@ pub struct ExecutorProcessor {
     machine_id: i16,
     description: String,
     tag: String,
-    status: i16,
     created_time: NaiveDateTime,
     deleted_time: Option<NaiveDateTime>,
 }
@@ -49,15 +48,14 @@ pub(crate) struct QueryParamsExecutorProcessor {
     host: Option<String>,
     tag: Option<String>,
     machine_id: Option<i16>,
-    status: Option<i16>,
     pub(crate) per_page: i64,
     pub(crate) page: i64,
 }
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize)]
 
-pub struct ExecutorProcessorId{
-   pub(crate) executor_processor_id : i64
+pub struct ExecutorProcessorId {
+    pub(crate) executor_processor_id: i64,
 }
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
@@ -103,21 +101,9 @@ impl QueryParamsExecutorProcessor {
         self,
         mut statement_builder: executor_processor::BoxedQuery<'static, Mysql, ST>,
     ) -> executor_processor::BoxedQuery<'static, Mysql, ST> {
-        statement_builder = statement_builder.filter(executor_processor::status.ne(2));
-        // Maybe status 2 eq task-deleted status.
-
         if let Some(executor_processor_id) = self.id {
             statement_builder =
                 statement_builder.filter(executor_processor::id.eq(executor_processor_id));
-        }
-
-        if let Some(task_status) = self.status {
-            statement_builder =
-                statement_builder.filter(executor_processor::status.eq(task_status));
-        } else {
-            statement_builder = statement_builder.filter(
-                executor_processor::status.ne(state::executor_processor::State::Forbidden as i16),
-            );
         }
 
         if let Some(executor_processor_name) = self.name {

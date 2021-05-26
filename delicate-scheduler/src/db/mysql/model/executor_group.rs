@@ -9,7 +9,6 @@ pub struct ExecutorGroup {
     name: String,
     description: String,
     tag: String,
-    status: i16,
     created_time: NaiveDateTime,
     deleted_time: Option<NaiveDateTime>,
 }
@@ -22,7 +21,6 @@ pub struct UpdateExecutorGroup {
     name: String,
     description: String,
     tag: String,
-    status: i16,
 }
 
 #[derive(Insertable, Debug, Default, Serialize, Deserialize)]
@@ -39,7 +37,6 @@ pub(crate) struct QueryParamsExecutorGroup {
     name: Option<String>,
     description: Option<String>,
     tag: Option<String>,
-    status: Option<i16>,
     pub(crate) per_page: i64,
     pub(crate) page: i64,
 }
@@ -53,10 +50,9 @@ pub(crate) struct PaginateExecutorGroup {
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize)]
 
-pub struct ExecutorGroupId{
-   pub(crate) executor_group_id : i64
+pub struct ExecutorGroupId {
+    pub(crate) executor_group_id: i64,
 }
-
 
 impl PaginateExecutorGroup {
     pub(crate) fn set_tasks(mut self, executor_groups: Vec<ExecutorGroup>) -> Self {
@@ -94,18 +90,8 @@ impl QueryParamsExecutorGroup {
         self,
         mut statement_builder: executor_group::BoxedQuery<'static, Mysql, ST>,
     ) -> executor_group::BoxedQuery<'static, Mysql, ST> {
-        statement_builder = statement_builder.filter(executor_group::status.ne(2));
-        // Maybe status 2 eq task-deleted status.
-
         if let Some(executor_group_id) = self.id {
             statement_builder = statement_builder.filter(executor_group::id.eq(executor_group_id));
-        }
-
-        if let Some(task_status) = self.status {
-            statement_builder = statement_builder.filter(executor_group::status.eq(task_status));
-        } else {
-            statement_builder = statement_builder
-                .filter(executor_group::status.ne(state::executor_group::State::Forbidden as i16));
         }
 
         if let Some(executor_group_name) = self.name {

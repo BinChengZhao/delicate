@@ -1,12 +1,14 @@
 use super::prelude::*;
 use super::schema::task;
-use diesel::sql_types::{VarChar, Bigint};
+use diesel::sql_types::{Bigint, VarChar};
 
-#[derive(Queryable, Insertable, Clone, Identifiable, AsChangeset, Debug, Serialize, Deserialize)]
+#[derive(
+    Queryable, Insertable, Clone, Identifiable, AsChangeset, Debug, Serialize, Deserialize,
+)]
 #[table_name = "task"]
 
 pub struct Task {
-    pub(crate)  id: i64,
+    pub(crate) id: i64,
     name: String,
     description: String,
     command: String,
@@ -37,7 +39,9 @@ pub struct NewTask {
     pub(crate) tag: String,
 }
 
-#[derive(Queryable, Insertable, Clone, Identifiable, AsChangeset, Debug, Serialize, Deserialize)]
+#[derive(
+    Queryable, Insertable, Clone, Identifiable, AsChangeset, Debug, Serialize, Deserialize,
+)]
 #[table_name = "task"]
 
 pub struct UpdateTask {
@@ -56,8 +60,8 @@ pub struct UpdateTask {
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize)]
 
-pub struct TaskId{
-   pub(crate) task_id : i64
+pub struct TaskId {
+    pub(crate) task_id: i64,
 }
 
 #[derive(Debug, Default, Serialize, Deserialize)]
@@ -129,7 +133,15 @@ impl TaskQueryBuilder {
     }
 
     pub(crate) fn query_supply_task_log() -> task::BoxedQuery<'static, Mysql, SupplyTaskType> {
-        task::table.into_boxed().select((task::id,task::name, task::description, task::command, task::frequency, task::cron_expression, task::tag))
+        task::table.into_boxed().select((
+            task::id,
+            task::name,
+            task::description,
+            task::command,
+            task::frequency,
+            task::cron_expression,
+            task::tag,
+        ))
     }
 
     pub(crate) fn query_count() -> task::BoxedQuery<'static, Mysql, Bigint> {

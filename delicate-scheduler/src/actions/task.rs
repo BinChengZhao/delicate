@@ -175,7 +175,6 @@ async fn run_task(
                 .inner_join(executor_processor_bind::table.inner_join(executor_processor::table))
                 .select((host, port))
                 .filter(task_bind::task_id.eq(task_id))
-                .filter(status.eq(state::executor_processor::State::Health as i16))
                 .load(&conn)
         })
         .await;

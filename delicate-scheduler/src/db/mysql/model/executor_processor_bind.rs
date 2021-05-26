@@ -1,5 +1,5 @@
 use super::prelude::*;
-use super::schema::{executor_processor_bind};
+use super::schema::executor_processor_bind;
 
 #[derive(Queryable, AsChangeset, Identifiable, Debug, Clone, Serialize, Deserialize)]
 #[table_name = "executor_processor_bind"]
@@ -10,9 +10,7 @@ pub struct ExecutorProcessorBind {
     group_id: i64,
     executor_id: i64,
     weight: i16,
-    status: i16,
     created_time: NaiveDateTime,
-    deleted_time: Option<NaiveDateTime>,
 }
 
 #[derive(Queryable, AsChangeset, Identifiable, Debug, Clone, Serialize, Deserialize)]
@@ -43,7 +41,6 @@ pub struct NewExecutorProcessorBind {
     weight: i16,
 }
 
-
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub(crate) struct QueryParamsExecutorProcessorBind {
     id: Option<i64>,
@@ -56,7 +53,7 @@ pub(crate) struct QueryParamsExecutorProcessorBind {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ExecutorProcessorBindId {
-   pub(crate) executor_processor_bind_id: i64,
+    pub(crate) executor_processor_bind_id: i64,
 }
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
@@ -67,7 +64,10 @@ pub(crate) struct PaginateExecutorProcessorBind {
 }
 
 impl PaginateExecutorProcessorBind {
-    pub(crate) fn set_tasks(mut self, executor_processor_binds: Vec<ExecutorProcessorBind>) -> Self {
+    pub(crate) fn set_tasks(
+        mut self,
+        executor_processor_binds: Vec<ExecutorProcessorBind>,
+    ) -> Self {
         self.executor_processor_binds = executor_processor_binds;
         self
     }
@@ -91,7 +91,9 @@ impl ExecutorProcessorBindQueryBuilder {
             .select(executor_processor_bind::all_columns)
     }
 
-    pub(crate) fn query_binding_columns() -> executor_processor_bind::BoxedQuery<'static, Mysql, (sql_types::Bigint, sql_types::VarChar)> {
+    pub(crate) fn query_binding_columns(
+    ) -> executor_processor_bind::BoxedQuery<'static, Mysql, (sql_types::Bigint, sql_types::VarChar)>
+    {
         executor_processor_bind::table
             .into_boxed()
             .select((executor_processor_bind::id, executor_processor_bind::name))
@@ -108,27 +110,25 @@ impl QueryParamsExecutorProcessorBind {
         self,
         mut statement_builder: executor_processor_bind::BoxedQuery<'static, Mysql, ST>,
     ) -> executor_processor_bind::BoxedQuery<'static, Mysql, ST> {
-        statement_builder = statement_builder.filter(executor_processor_bind::status.ne(2));
-        // Maybe status 2 eq task-deleted status.
-
         if let Some(executor_processor_bind_id) = self.id {
-            statement_builder =
-                statement_builder.filter(executor_processor_bind::id.eq(executor_processor_bind_id));
+            statement_builder = statement_builder
+                .filter(executor_processor_bind::id.eq(executor_processor_bind_id));
         }
 
         if let Some(executor_processor_bind_group_id) = self.group_id {
-            statement_builder =
-                statement_builder.filter(executor_processor_bind::group_id.eq(executor_processor_bind_group_id));
+            statement_builder = statement_builder
+                .filter(executor_processor_bind::group_id.eq(executor_processor_bind_group_id));
         }
 
         if let Some(executor_processor_bind_executor_id) = self.executor_id {
-            statement_builder =
-                statement_builder.filter(executor_processor_bind::executor_id.eq(executor_processor_bind_executor_id));
+            statement_builder = statement_builder.filter(
+                executor_processor_bind::executor_id.eq(executor_processor_bind_executor_id),
+            );
         }
-        
+
         if let Some(executor_processor_bind_name) = self.name {
-            statement_builder =
-                statement_builder.filter(executor_processor_bind::name.like(executor_processor_bind_name));
+            statement_builder = statement_builder
+                .filter(executor_processor_bind::name.like(executor_processor_bind_name));
         }
 
         statement_builder.order(executor_processor_bind::id.desc())

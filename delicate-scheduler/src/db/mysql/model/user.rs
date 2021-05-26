@@ -166,7 +166,7 @@ pub(crate) struct PaginateUser {
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub(crate) struct UserId {
-   pub(crate) user_id: u64,
+    pub(crate) user_id: u64,
 }
 
 impl PaginateUser {

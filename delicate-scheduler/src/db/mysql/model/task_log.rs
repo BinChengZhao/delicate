@@ -110,15 +110,15 @@ impl From<ExecutorEvent> for (SupplyTaskLog, SupplyTaskLogExtend) {
 
         let status = state as i16;
 
-        (SupplyTaskLog {
-            id,
-            status,
-        }, SupplyTaskLogExtend {
-            id,
-            task_id,
-            stdout,
-            stderr,
-        })
+        (
+            SupplyTaskLog { id, status },
+            SupplyTaskLogExtend {
+                id,
+                task_id,
+                stdout,
+                stderr,
+            },
+        )
     }
 }
 
@@ -157,7 +157,9 @@ pub struct TaskLog {
     executor_processor_host: String,
 }
 
-#[derive(Insertable, Queryable, Identifiable, AsChangeset, Debug, Clone, Serialize, Deserialize)]
+#[derive(
+    Insertable, Queryable, Identifiable, AsChangeset, Debug, Clone, Serialize, Deserialize,
+)]
 #[table_name = "task_log_extend"]
 pub struct TaskLogExtend {
     id: i64,
@@ -190,10 +192,12 @@ pub struct NewTaskLog {
 #[table_name = "task_log"]
 pub struct SupplyTaskLog {
     id: i64,
-    status: i16
+    status: i16,
 }
 
-#[derive(Insertable, Queryable, Identifiable, AsChangeset, Debug, Clone, Serialize, Deserialize)]
+#[derive(
+    Insertable, Queryable, Identifiable, AsChangeset, Debug, Clone, Serialize, Deserialize,
+)]
 #[table_name = "task_log_extend"]
 pub struct SupplyTaskLogExtend {
     id: i64,
