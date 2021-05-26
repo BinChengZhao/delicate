@@ -90,6 +90,27 @@ async fn show_task_logs(
     HttpResponse::Ok().json(UnifiedResponseMessages::<model::PaginateTask>::error())
 }
 
+#[post("/api/task_instance/kill")]
+async fn task_instance_kill(
+    web::Json(model::RecordId { record_id }): web::Json<model::RecordId>,
+    pool: ShareData<db::ConnectionPool>,
+) -> HttpResponse {
+    use db::schema::task_log;
+
+    if let Ok(conn) = pool.get() {
+        return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<()>>::into(
+            web::block::<_, _, diesel::result::Error>(move || {
+                // TODO: Select task_log.
+                todo!();
+                Ok(())
+            })
+            .await,
+        ));
+    }
+
+    HttpResponse::Ok().json(UnifiedResponseMessages::<()>::error())
+}
+
 fn batch_insert_task_logs(
     conn: &db::PoolConnection,
     mut new_task_logs: Vec<model::NewTaskLog>,

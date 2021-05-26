@@ -165,7 +165,35 @@ async fn run_task(
     web::Json(model::TaskId { task_id }): web::Json<model::TaskId>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
-    use actix_web::client::Client;
+    use db::schema::executor_processor::dsl::*;
+    use db::schema::{executor_processor, executor_processor_bind, task_bind};
+
+    if let Ok(conn) = pool.get() {
+        // TODO: Select task.
+
+        let _executor_processor_result: Result<Vec<(String, i16)>, _> = web::block(move || {
+            task_bind::table
+                .inner_join(executor_processor_bind::table.inner_join(executor_processor::table))
+                .select((host, port))
+                .filter(task_bind::task_id.eq(task_id))
+                .load(&conn)
+        })
+        .await;
+
+        // TODO: Send task.
+
+        let mut _client = RequestClient::default();
+        todo!();
+    }
+
+    HttpResponse::Ok().json(UnifiedResponseMessages::<usize>::error())
+}
+
+#[post("/api/task/manual_trigger")]
+async fn manual_trigger_task(
+    web::Json(model::TaskId { task_id }): web::Json<model::TaskId>,
+    pool: ShareData<db::ConnectionPool>,
+) -> HttpResponse {
     use db::schema::executor_processor::dsl::*;
     use db::schema::{executor_processor, executor_processor_bind, task_bind};
 
@@ -179,9 +207,9 @@ async fn run_task(
         })
         .await;
 
-        // TODO: Send task.
+        // TODO: manual_trigger task.
 
-        let mut _client = Client::default();
+        let mut _client = RequestClient::default();
         todo!();
     }
 

@@ -227,6 +227,12 @@ pub(crate) struct PaginateTaskLogs {
     total_page: i64,
 }
 
+#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
+
+pub struct RecordId {
+    pub(crate) record_id: i64,
+}
+
 impl PaginateTaskLogs {
     pub(crate) fn set_task_logs(mut self, task_logs: Vec<TaskLog>) -> Self {
         self.task_logs = task_logs;

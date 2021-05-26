@@ -27,6 +27,7 @@ pub(crate) use diesel::query_dsl::methods::LoadQuery;
 pub(crate) use diesel::sql_types;
 
 pub(crate) use actix_session::{CookieSession, Session, UserSession};
+pub(crate) use actix_web::client::Client as RequestClient;
 pub(crate) use actix_web::http::StatusCode;
 pub(crate) use actix_web::middleware::Logger as MiddlewareLogger;
 pub(crate) use actix_web::web::{self, Data as ShareData};
