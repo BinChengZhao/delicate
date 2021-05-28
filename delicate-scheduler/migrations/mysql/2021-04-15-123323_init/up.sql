@@ -57,6 +57,8 @@ CREATE TABLE `executor_processor` (
   `machine_id` smallint(6) NOT NULL DEFAULT '0' COMMENT 'Unique machine id of the executor, Max is 1024',
   `description` varchar(128) NOT NULL COMMENT 'Executor-processor description',
   `tag` varchar(32) NOT NULL DEFAULT '' COMMENT 'Executor-processor tag',
+  `status` smallint(6) NOT NULL DEFAULT '1' COMMENT 'Status',
+  `token`  varchar(64) NOT NULL DEFAULT '' COMMENT 'The token that is dynamically generated when the executor binds to the scheduler and is used for api authentication.',
   `created_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Executor-processor creation time',
   `deleted_time` timestamp NULL DEFAULT NULL COMMENT 'Executor-processor delition time',
   PRIMARY KEY (`id`),

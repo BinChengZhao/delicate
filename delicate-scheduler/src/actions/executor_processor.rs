@@ -104,3 +104,6 @@ async fn delete_executor_processor(
 
     HttpResponse::Ok().json(UnifiedResponseMessages::<usize>::error())
 }
+
+// FIXME: Add bind executor api for scheduler.
+// Update `status` and `token`.

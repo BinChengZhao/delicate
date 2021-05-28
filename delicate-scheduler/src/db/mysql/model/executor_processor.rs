@@ -12,6 +12,8 @@ pub struct ExecutorProcessor {
     machine_id: i16,
     description: String,
     tag: String,
+    status: i16,
+    token: String,
     created_time: NaiveDateTime,
     deleted_time: Option<NaiveDateTime>,
 }

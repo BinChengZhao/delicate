@@ -1,6 +1,5 @@
 use super::prelude::*;
 use super::schema::{user, user_auth};
-use ring::digest::{digest, SHA256};
 
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 pub struct QueryNewUser {

@@ -33,10 +33,13 @@ pub(crate) use actix_web::middleware::Logger as MiddlewareLogger;
 pub(crate) use actix_web::web::{self, Data as ShareData};
 pub(crate) use actix_web::{get, post, App, HttpResponse, HttpServer};
 
+pub(crate) use flexi_logger::{Age, Cleanup, Criterion, LogTarget, Logger, Naming};
 pub(crate) use log::info;
 pub(crate) use rand::rngs::OsRng;
-pub(crate) use rsa::{PublicKey, RSAPublicKey, RSAPrivateKey, PaddingScheme, hash};
-pub(crate) use flexi_logger::{Age, Cleanup, Criterion, LogTarget, Logger, Naming};
+pub(crate) use ring::digest::{digest, SHA256};
+pub(crate) use rsa::{
+    errors::Result as RsaResult, hash, PaddingScheme, PublicKey, RSAPrivateKey, RSAPublicKey,
+};
 pub(crate) use serde::{Deserialize, Serialize};
 
 pub(crate) use anyhow::Result as AnyResut;

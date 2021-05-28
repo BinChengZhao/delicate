@@ -40,8 +40,9 @@ pub mod user_auth {
 pub mod executor_processor {
     #[allow(dead_code)]
     pub enum State {
-        Health = 1,
-        Forbidden = 2,
+        NotEnabled = 1,
+        Enabled = 2,
+        Abnormal = 3,
     }
 }
 
