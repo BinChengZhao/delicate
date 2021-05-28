@@ -105,5 +105,41 @@ async fn delete_executor_processor(
     HttpResponse::Ok().json(UnifiedResponseMessages::<usize>::error())
 }
 
-// FIXME: Add bind executor api for scheduler.
 // Update `status` and `token`.
+
+#[post("/api/executor_processor/activate")]
+async fn activate_executor_processor(
+    web::Json(model::ExecutorProcessorId {
+        executor_processor_id,
+    }): web::Json<model::ExecutorProcessorId>,
+    pool: ShareData<db::ConnectionPool>,
+) -> HttpResponse {
+    use db::schema::executor_processor;
+
+    if let Ok(conn) = pool.get() {
+        return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<()>>::into(
+            web::block::<_, _, diesel::result::Error>(move || {
+                let model::ExecutorProcessor {
+                    id,
+                    name,
+                    host,
+                    machine_id,
+                    ..
+                }: model::ExecutorProcessor = executor_processor::table
+                    .find(executor_processor_id)
+                    .first(&conn)?;
+
+                let mut client = RequestClient::default();
+                let url = "http://".to_string() + &host;
+                let signed_scheduler = security::SignedScheduler::default();
+                // let response = client.post(url).send_json(signed_scheduler).await?;
+                // TODO: .
+
+                todo!();
+            })
+            .await,
+        ));
+    }
+
+    HttpResponse::Ok().json(UnifiedResponseMessages::<()>::error())
+}

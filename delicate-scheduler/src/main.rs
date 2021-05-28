@@ -15,6 +15,7 @@ extern crate diesel_migrations;
 pub(crate) mod actions;
 pub(crate) mod components;
 pub(crate) mod db;
+pub(crate) mod error;
 pub(crate) mod prelude;
 
 #[macro_use]

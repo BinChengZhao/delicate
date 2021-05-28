@@ -3,13 +3,25 @@ use crate::prelude::*;
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub(crate) struct Scheduler {
     pub(crate) host: String,
+    pub(crate) time: i64,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub(crate) struct SignedScheduler {
+    pub(crate) scheduler: Scheduler,
     pub(crate) signature: Vec<u8>,
 }
 
-impl Scheduler {
-    pub(crate) fn sign_self(&mut self, priv_key: &RSAPrivateKey) -> RsaResult<()> {
+impl SignedScheduler {
+    pub(crate) fn sign_self(
+        &mut self,
+        priv_key: &RSAPrivateKey,
+    ) -> Result<(), crate::error::BindExecutorError> {
+        let json_str = to_json_string(&self.scheduler)?;
+
         self.signature =
-            priv_key.sign(PaddingScheme::new_pkcs1v15_sign(None), self.host.as_bytes())?;
+            priv_key.sign(PaddingScheme::new_pkcs1v15_sign(None), json_str.as_bytes())?;
+
         Ok(())
     }
 }

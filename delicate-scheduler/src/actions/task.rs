@@ -171,10 +171,10 @@ async fn run_task(
     if let Ok(conn) = pool.get() {
         // TODO: Select task.
 
-        let _executor_processor_result: Result<Vec<(String, i16)>, _> = web::block(move || {
+        let _executor_processor_result: Result<Vec<String>, _> = web::block(move || {
             task_bind::table
                 .inner_join(executor_processor_bind::table.inner_join(executor_processor::table))
-                .select((host, port))
+                .select(host)
                 .filter(task_bind::task_id.eq(task_id))
                 .load(&conn)
         })
@@ -198,10 +198,10 @@ async fn manual_trigger_task(
     use db::schema::{executor_processor, executor_processor_bind, task_bind};
 
     if let Ok(conn) = pool.get() {
-        let _executor_processor_result: Result<Vec<(String, i16)>, _> = web::block(move || {
+        let _executor_processor_result: Result<Vec<String>, _> = web::block(move || {
             task_bind::table
                 .inner_join(executor_processor_bind::table.inner_join(executor_processor::table))
-                .select((host, port))
+                .select(host)
                 .filter(task_bind::task_id.eq(task_id))
                 .load(&conn)
         })

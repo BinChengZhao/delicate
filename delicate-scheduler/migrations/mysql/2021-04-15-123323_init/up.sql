@@ -53,7 +53,6 @@ CREATE TABLE `executor_processor` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'Self-incrementing id',
   `name` varchar(128) NOT NULL COMMENT 'Executor-processor name',
   `host` varchar(32) NOT NULL DEFAULT '' COMMENT 'Executor-processor host',
-  `port` smallint(6) NOT NULL DEFAULT '0' COMMENT 'Executor-processor port',
   `machine_id` smallint(6) NOT NULL DEFAULT '0' COMMENT 'Unique machine id of the executor, Max is 1024',
   `description` varchar(128) NOT NULL COMMENT 'Executor-processor description',
   `tag` varchar(32) NOT NULL DEFAULT '' COMMENT 'Executor-processor tag',

@@ -17,13 +17,13 @@ pub struct SessionAuth;
 
 impl<S, B> Transform<S> for SessionAuth
 where
-    S: Service<Request = ServiceRequest, Response = ServiceResponse<B>, Error = Error>,
+    S: Service<Request = ServiceRequest, Response = ServiceResponse<B>, Error = ActixWebError>,
     S::Future: 'static,
     B: 'static,
 {
     type Request = ServiceRequest;
     type Response = ServiceResponse<B>;
-    type Error = Error;
+    type Error = ActixWebError;
     type InitError = ();
     type Transform = SessionAuthMiddleware<S>;
     type Future = Ready<Result<Self::Transform, Self::InitError>>;
@@ -39,13 +39,13 @@ pub struct SessionAuthMiddleware<S> {
 
 impl<S, B> Service for SessionAuthMiddleware<S>
 where
-    S: Service<Request = ServiceRequest, Response = ServiceResponse<B>, Error = Error>,
+    S: Service<Request = ServiceRequest, Response = ServiceResponse<B>, Error = ActixWebError>,
     S::Future: 'static,
     B: 'static,
 {
     type Request = ServiceRequest;
     type Response = ServiceResponse<B>;
-    type Error = Error;
+    type Error = ActixWebError;
     type Future = MiddlewareFuture<Self::Response, Self::Error>;
 
     fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
