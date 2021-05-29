@@ -1,5 +1,5 @@
 use super::prelude::*;
-
+use db::schema::executor_processor;
 pub(crate) fn config(cfg: &mut web::ServiceConfig) {
     cfg.service(show_executor_processors)
         .service(create_executor_processor)
@@ -12,8 +12,6 @@ async fn create_executor_processor(
     web::Json(executor_processor): web::Json<model::NewExecutorProcessor>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
-    use db::schema::executor_processor;
-
     if let Ok(conn) = pool.get() {
         return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
             web::block(move || {
@@ -114,15 +112,21 @@ async fn activate_executor_processor(
     }): web::Json<model::ExecutorProcessorId>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
+    do_activate(pool, executor_processor_id).await;
     HttpResponse::Ok().json(UnifiedResponseMessages::<()>::error())
 }
-
 async fn do_activate(
+    pool: ShareData<db::ConnectionPool>,
+    executor_processor_id: i64,
+) -> Result<(), error::BindExecutorError> {
+    let bind_info = activate_executor(pool.get()?, executor_processor_id).await?;
+    activate_executor_row(pool.get()?, executor_processor_id, bind_info).await;
+    Ok(())
+}
+async fn activate_executor(
     conn: db::PoolConnection,
     executor_processor_id: i64,
-) -> actix_web_error::Result<()> {
-    use db::schema::executor_processor;
-
+) -> Result<security::BindResponse, error::BindExecutorError> {
     let query = web::block::<_, model::UpdateExecutorProcessor, diesel::result::Error>(move || {
         executor_processor::table
             .find(executor_processor_id)
@@ -139,7 +143,6 @@ async fn do_activate(
     .await?;
 
     let model::UpdateExecutorProcessor {
-        id,
         name,
         host,
         machine_id,
@@ -148,13 +151,50 @@ async fn do_activate(
 
     let client = RequestClient::default();
     let url = "http://".to_string() + &host + "/bind";
-    let signed_scheduler = security::SignedBindRequest::default();
+
+    // TODO: Update private_key.
+    let mut rng = OsRng;
+    let bits = 2048;
+    let private_key = RSAPrivateKey::new(&mut rng, bits).expect("failed to generate a key");
+
+    let signed_scheduler = security::BindRequest::default()
+        .set_executor_name(name)
+        .set_scheduler_host(host)
+        .set_executor_machine_id(machine_id)
+        .set_time(get_timestamp())
+        .sign(&private_key)?;
+
     let response = client
         .post(url)
         .send_json(&signed_scheduler)
         .await?
         .json::<security::BindResponse>()
         .await?;
+
+    Ok(response)
+}
+
+async fn activate_executor_row(
+    conn: db::PoolConnection,
+    executor_processor_id: i64,
+    bind_info: security::BindResponse,
+) -> actix_web_error::Result<()> {
+    use db::schema::executor_processor::dsl::{executor_processor, status, token};
+
+    // TODO:
+    // Consider caching tokens to be used when collecting executor-events, and health checks.
+    // This will avoid querying the database.
+    // However, cached record operations cannot be placed in the context of the operation db update token.
+
+    web::block::<_, usize, diesel::result::Error>(move || {
+        diesel::update(executor_processor.find(executor_processor_id))
+            .set((
+                token.eq(&bind_info.token),
+                status.eq(state::executor_processor::State::Enabled as i16),
+            ))
+            .execute(&conn)
+    })
+    .await?;
 
     Ok(())
 }

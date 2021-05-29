@@ -3,8 +3,9 @@ use crate::prelude::*;
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub(crate) struct BindRequest {
     pub(crate) scheduler_host: String,
+    pub(crate) executor_name: String,
     pub(crate) executor_machine_id: i16,
-    pub(crate) time: i64,
+    pub(crate) time: u64,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -13,17 +14,40 @@ pub(crate) struct SignedBindRequest {
     pub(crate) signature: Vec<u8>,
 }
 
-impl SignedBindRequest {
-    pub(crate) fn sign_self(
-        &mut self,
-        priv_key: &RSAPrivateKey,
-    ) -> Result<(), crate::error::BindExecutorError> {
-        let json_str = to_json_string(&self.bind_request)?;
+impl BindRequest {
+    pub(crate) fn set_scheduler_host(mut self, scheduler_host: String) -> Self {
+        self.scheduler_host = scheduler_host;
+        self
+    }
 
-        self.signature =
+    pub(crate) fn set_executor_name(mut self, executor_name: String) -> Self {
+        self.executor_name = executor_name;
+        self
+    }
+
+    pub(crate) fn set_executor_machine_id(mut self, executor_machine_id: i16) -> Self {
+        self.executor_machine_id = executor_machine_id;
+        self
+    }
+
+    pub(crate) fn set_time(mut self, time: u64) -> Self {
+        self.time = time;
+        self
+    }
+
+    pub(crate) fn sign(
+        mut self,
+        priv_key: &RSAPrivateKey,
+    ) -> Result<SignedBindRequest, crate::error::BindExecutorError> {
+        let json_str = to_json_string(&self)?;
+
+        let signature =
             priv_key.sign(PaddingScheme::new_pkcs1v15_sign(None), json_str.as_bytes())?;
 
-        Ok(())
+        Ok(SignedBindRequest {
+            bind_request: self,
+            signature,
+        })
     }
 }
 
