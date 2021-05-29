@@ -1,28 +1,52 @@
 use crate::prelude::*;
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
-pub(crate) struct Scheduler {
-    pub(crate) host: String,
+pub(crate) struct BindRequest {
+    pub(crate) scheduler_host: String,
+    pub(crate) executor_machine_id: i16,
     pub(crate) time: i64,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
-pub(crate) struct SignedScheduler {
-    pub(crate) scheduler: Scheduler,
+pub(crate) struct SignedBindRequest {
+    pub(crate) bind_request: BindRequest,
     pub(crate) signature: Vec<u8>,
 }
 
-impl SignedScheduler {
+impl SignedBindRequest {
     pub(crate) fn sign_self(
         &mut self,
         priv_key: &RSAPrivateKey,
     ) -> Result<(), crate::error::BindExecutorError> {
-        let json_str = to_json_string(&self.scheduler)?;
+        let json_str = to_json_string(&self.bind_request)?;
 
         self.signature =
             priv_key.sign(PaddingScheme::new_pkcs1v15_sign(None), json_str.as_bytes())?;
 
         Ok(())
+    }
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub(crate) struct BindResponse {
+    pub(crate) token: String,
+    pub(crate) time: i64,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub(crate) struct EncryptedBindResponse {
+    pub(crate) bind_response: Vec<u8>,
+}
+
+impl EncryptedBindResponse {
+    pub(crate) fn decrypt_self(
+        mut self,
+        priv_key: &RSAPrivateKey,
+    ) -> Result<BindResponse, crate::error::BindExecutorError> {
+        // Decrypt
+        let padding = PaddingScheme::new_pkcs1v15_encrypt();
+        let dec_data = priv_key.decrypt(padding, &self.bind_response)?;
+        Ok(json_from_slice(&dec_data)?)
     }
 }
 

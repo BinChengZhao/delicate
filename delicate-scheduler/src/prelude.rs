@@ -1,6 +1,7 @@
 pub(crate) use super::components::security;
 pub(crate) use super::components::uniform_data::*;
 pub(crate) use super::db;
+pub(crate) use super::error;
 pub(crate) use super::{cfg_mysql_support, cfg_postgres_support};
 
 pub(crate) use super::db::common::{state, types};
@@ -28,7 +29,10 @@ pub(crate) use diesel::query_dsl::methods::LoadQuery;
 pub(crate) use diesel::sql_types;
 
 pub(crate) use actix_session::{CookieSession, Session, UserSession};
-pub(crate) use actix_web::client::Client as RequestClient;
+pub(crate) use actix_web::client::{
+    Client as RequestClient, SendRequestError as ClientSendRequestError,
+};
+pub(crate) use actix_web::error as actix_web_error;
 pub(crate) use actix_web::http::StatusCode;
 pub(crate) use actix_web::middleware::Logger as MiddlewareLogger;
 pub(crate) use actix_web::web::{self, Data as ShareData};
@@ -42,7 +46,9 @@ pub(crate) use rsa::{
     errors as ras_error, hash, PaddingScheme, PublicKey, RSAPrivateKey, RSAPublicKey,
 };
 pub(crate) use serde::{Deserialize, Serialize};
-pub(crate) use serde_json::{error as serde_json_error, to_string as to_json_string};
+pub(crate) use serde_json::{
+    error as serde_json_error, from_slice as json_from_slice, to_string as to_json_string,
+};
 
 pub(crate) use anyhow::Result as AnyResut;
 pub(crate) use delay_timer::prelude::*;

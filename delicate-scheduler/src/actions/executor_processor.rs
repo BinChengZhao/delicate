@@ -114,32 +114,47 @@ async fn activate_executor_processor(
     }): web::Json<model::ExecutorProcessorId>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
+    HttpResponse::Ok().json(UnifiedResponseMessages::<()>::error())
+}
+
+async fn do_activate(
+    conn: db::PoolConnection,
+    executor_processor_id: i64,
+) -> actix_web_error::Result<()> {
     use db::schema::executor_processor;
 
-    if let Ok(conn) = pool.get() {
-        return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<()>>::into(
-            web::block::<_, _, diesel::result::Error>(move || {
-                let model::ExecutorProcessor {
-                    id,
-                    name,
-                    host,
-                    machine_id,
-                    ..
-                }: model::ExecutorProcessor = executor_processor::table
-                    .find(executor_processor_id)
-                    .first(&conn)?;
+    let query = web::block::<_, model::UpdateExecutorProcessor, diesel::result::Error>(move || {
+        executor_processor::table
+            .find(executor_processor_id)
+            .select((
+                executor_processor::id,
+                executor_processor::name,
+                executor_processor::description,
+                executor_processor::host,
+                executor_processor::machine_id,
+                executor_processor::tag,
+            ))
+            .first(&conn)
+    })
+    .await?;
 
-                let mut client = RequestClient::default();
-                let url = "http://".to_string() + &host;
-                let signed_scheduler = security::SignedScheduler::default();
-                // let response = client.post(url).send_json(signed_scheduler).await?;
-                // TODO: .
+    let model::UpdateExecutorProcessor {
+        id,
+        name,
+        host,
+        machine_id,
+        ..
+    }: model::UpdateExecutorProcessor = query;
 
-                todo!();
-            })
-            .await,
-        ));
-    }
+    let client = RequestClient::default();
+    let url = "http://".to_string() + &host + "/bind";
+    let signed_scheduler = security::SignedBindRequest::default();
+    let response = client
+        .post(url)
+        .send_json(&signed_scheduler)
+        .await?
+        .json::<security::BindResponse>()
+        .await?;
 
-    HttpResponse::Ok().json(UnifiedResponseMessages::<()>::error())
+    Ok(())
 }

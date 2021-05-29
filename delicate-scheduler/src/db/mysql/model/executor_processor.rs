@@ -27,16 +27,16 @@ pub struct NewExecutorProcessor {
     tag: String,
 }
 
-#[derive(Queryable, Identifiable, AsChangeset, Debug, Clone, Serialize, Deserialize)]
+#[derive(Queryable, Identifiable, AsChangeset, Debug, Default, Clone, Serialize, Deserialize)]
 #[table_name = "executor_processor"]
 
 pub struct UpdateExecutorProcessor {
-    id: i64,
-    name: String,
-    description: String,
-    host: String,
-    machine_id: i16,
-    tag: String,
+    pub(crate) id: i64,
+    pub(crate) name: String,
+    pub(crate) description: String,
+    pub(crate) host: String,
+    pub(crate) machine_id: i16,
+    pub(crate) tag: String,
 }
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
