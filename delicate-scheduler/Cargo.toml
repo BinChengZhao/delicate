@@ -34,6 +34,8 @@ rsa = "^0.4.0"
 rand = "^0.8.3"
 validator = { version = "^0.13", features = ["phone", "derive"] }
 
+# Use `cached"` for caching in the future.
+
 [build-dependencies]
 autocfg = "1"
 dotenv = "0.15.0"

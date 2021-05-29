@@ -100,12 +100,25 @@ async fn task_instance_kill(
     if let Ok(conn) = pool.get() {
         return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<()>>::into(
             web::block::<_, _, diesel::result::Error>(move || {
-                // TODO: Select task_log.
-                todo!();
+                let host = task_log::table
+                    .find(record_id)
+                    .filter(task_log::status.eq(state::task_log::State::Running as i16))
+                    .select(task_log::executor_processor_host)
+                    .first::<String>(&conn)?;
                 Ok(())
             })
             .await,
         ));
+
+        // let client = RequestClient::default();
+        // let url = "http://".to_string() + &host + "/cancel";
+
+        // let response = client
+        //     .post(url)
+        //     .send_json(&i32)
+        //     .await?
+        //     .json::<security::BindResponse>()
+        //     .await?;
     }
 
     HttpResponse::Ok().json(UnifiedResponseMessages::<()>::error())

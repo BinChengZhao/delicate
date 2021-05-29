@@ -9,9 +9,12 @@ pub(crate) use super::db::extension::*;
 pub(crate) use super::db::model;
 
 pub(crate) use chrono::Duration as ChronoDuration;
+pub(crate) use std::convert::{TryFrom, TryInto};
 pub(crate) use std::env;
 pub(crate) use std::fmt::Debug;
+pub(crate) use std::fs;
 pub(crate) use std::pin::Pin;
+pub(crate) use std::str::FromStr;
 pub(crate) use std::task::{Context, Poll};
 
 pub(crate) use actix_web::dev::{
@@ -43,7 +46,7 @@ pub(crate) use log::info;
 pub(crate) use rand::rngs::OsRng;
 pub(crate) use ring::digest::{digest, SHA256};
 pub(crate) use rsa::{
-    errors as ras_error, hash, PaddingScheme, PublicKey, RSAPrivateKey, RSAPublicKey,
+    errors as ras_error, hash, pem, PaddingScheme, PublicKey, RSAPrivateKey, RSAPublicKey,
 };
 pub(crate) use serde::{Deserialize, Serialize};
 pub(crate) use serde_json::{

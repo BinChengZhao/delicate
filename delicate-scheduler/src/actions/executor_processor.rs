@@ -112,15 +112,16 @@ async fn activate_executor_processor(
     }): web::Json<model::ExecutorProcessorId>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
-    do_activate(pool, executor_processor_id).await;
-    HttpResponse::Ok().json(UnifiedResponseMessages::<()>::error())
+    let uniform_data: UnifiedResponseMessages<()> =
+        do_activate(pool, executor_processor_id).await.into();
+    HttpResponse::Ok().json(uniform_data)
 }
 async fn do_activate(
     pool: ShareData<db::ConnectionPool>,
     executor_processor_id: i64,
 ) -> Result<(), error::BindExecutorError> {
     let bind_info = activate_executor(pool.get()?, executor_processor_id).await?;
-    activate_executor_row(pool.get()?, executor_processor_id, bind_info).await;
+    activate_executor_row(pool.get()?, executor_processor_id, bind_info).await?;
     Ok(())
 }
 async fn activate_executor(
@@ -178,7 +179,7 @@ async fn activate_executor_row(
     conn: db::PoolConnection,
     executor_processor_id: i64,
     bind_info: security::BindResponse,
-) -> actix_web_error::Result<()> {
+) -> Result<(), error::BindExecutorError> {
     use db::schema::executor_processor::dsl::{executor_processor, status, token};
 
     // TODO:

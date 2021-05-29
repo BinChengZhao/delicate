@@ -221,6 +221,7 @@ async fn remove_task(
     HttpResponse::Ok().json(response) // <- send response
 }
 
+// TODO: Recive by json.
 #[get("/cancel_task/{task_id}/{record_id}")]
 async fn cancel_task(
     web::Path((task_id, record_id)): web::Path<(u64, i64)>,

@@ -1,4 +1,5 @@
 use crate::prelude::*;
+use error::InitSchedulerError;
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub(crate) struct BindRequest {
@@ -36,7 +37,7 @@ impl BindRequest {
     }
 
     pub(crate) fn sign(
-        mut self,
+        self,
         priv_key: &RSAPrivateKey,
     ) -> Result<SignedBindRequest, crate::error::BindExecutorError> {
         let json_str = to_json_string(&self)?;
@@ -64,13 +65,93 @@ pub(crate) struct EncryptedBindResponse {
 
 impl EncryptedBindResponse {
     pub(crate) fn decrypt_self(
-        mut self,
+        self,
         priv_key: &RSAPrivateKey,
     ) -> Result<BindResponse, crate::error::BindExecutorError> {
         // Decrypt
         let padding = PaddingScheme::new_pkcs1v15_encrypt();
         let dec_data = priv_key.decrypt(padding, &self.bind_response)?;
         Ok(json_from_slice(&dec_data)?)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub(crate) struct SecurityPrivateKey(RSAPrivateKey);
+
+impl SecurityPrivateKey {
+    /// Get delicate-executor's security private-key from env.
+    pub(crate) fn get_app_rsa_private_key() -> Result<Self, InitSchedulerError> {
+        let key_path = env::var_os("DELICATE_SECURITY_PRIVATE_KEY").ok_or(
+            InitSchedulerError::MisEnvVar(String::from("DELICATE_SECURITY_PRIVATE_KEY")),
+        )?;
+
+        let key_pem = fs::read(key_path)?;
+        let key: RSAPrivateKey = pem::parse(key_pem)?.try_into()?;
+        Ok(SecurityPrivateKey(key))
+    }
+}
+
+#[derive(Debug, Clone)]
+pub(crate) struct SchedulerSecurityConf {
+    pub(crate) security_level: SecurityLevel,
+    pub(crate) rsa_private_key: Option<SecurityPrivateKey>,
+}
+
+impl Default for SchedulerSecurityConf {
+    fn default() -> Self {
+        let security_level = SecurityLevel::get_app_security_level();
+        let rsa_private_key = SecurityPrivateKey::get_app_rsa_private_key();
+
+        assert!(
+            matches!(security_level, SecurityLevel::Normal if rsa_private_key.is_err()), "When the security level is Normal, the initialization `delicate-scheduler` must contain the secret key (DELICATE_SECURITY_PRIVATE_KEY)"
+        );
+
+        Self {
+            security_level: SecurityLevel::get_app_security_level(),
+            rsa_private_key: rsa_private_key.ok(),
+        }
+    }
+}
+
+/// Delicate's security level.
+/// The distinction in security level is reflected at `bind_executor-api`.
+#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
+pub(crate) enum SecurityLevel {
+    /// There are no strict restrictions.
+    ZeroRestriction,
+    /// Normal security validation, encrypted validation is required at `bind_executor-api`.
+    Normal,
+}
+
+impl SecurityLevel {
+    /// Get delicate-scheduler's security level from env.
+    pub(crate) fn get_app_security_level() -> Self {
+        env::var_os("DELICATE_SECURITY_LEVEL").map_or(SecurityLevel::default(), |e| {
+            e.to_str()
+                .map(|s| u16::from_str(s).ok())
+                .flatten()
+                .map(|e| e.try_into().ok())
+                .flatten()
+                .expect("Environment Variables `DELICATE_SECURITY_LEVEL` missed.")
+        })
+    }
+}
+
+impl Default for SecurityLevel {
+    fn default() -> Self {
+        SecurityLevel::ZeroRestriction
+    }
+}
+
+impl TryFrom<u16> for SecurityLevel {
+    type Error = InitSchedulerError;
+
+    fn try_from(value: u16) -> Result<SecurityLevel, InitSchedulerError> {
+        match value {
+            0 => Ok(SecurityLevel::ZeroRestriction),
+            1 => Ok(SecurityLevel::Normal),
+            _ => Err(InitSchedulerError::MisEnvVar(String::from("SecurityLevel"))),
+        }
     }
 }
 
