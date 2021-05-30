@@ -91,37 +91,22 @@ async fn show_task_logs(
 }
 
 #[post("/api/task_instance/kill")]
-async fn task_instance_kill(
-    web::Json(model::RecordId { record_id }): web::Json<model::RecordId>,
+async fn kill_task_instance(
+    web::Json(model::TaskRecord { task_id, record_id }): web::Json<model::TaskRecord>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
-    use db::schema::task_log;
-
-    if let Ok(conn) = pool.get() {
-        return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<()>>::into(
-            web::block::<_, _, diesel::result::Error>(move || {
-                let host = task_log::table
-                    .find(record_id)
-                    .filter(task_log::status.eq(state::task_log::State::Running as i16))
-                    .select(task_log::executor_processor_host)
-                    .first::<String>(&conn)?;
-                Ok(())
-            })
-            .await,
-        ));
-
-        // let client = RequestClient::default();
-        // let url = "http://".to_string() + &host + "/cancel";
-
-        // let response = client
-        //     .post(url)
-        //     .send_json(&i32)
-        //     .await?
-        //     .json::<security::BindResponse>()
-        //     .await?;
+    // TODO: Get token.
+    let _token = "";
+    let response_result = kill_one_task_instance(pool, record_id, task_id, _token).await;
+    
+    if let Ok(response) = response_result {
+        return HttpResponse::Ok().json(response);
     }
 
-    HttpResponse::Ok().json(UnifiedResponseMessages::<()>::error())
+    HttpResponse::Ok().json(
+        UnifiedResponseMessages::<()>::error()
+            .customized_error_msg(response_result.expect_err("").to_string()),
+    )
 }
 
 fn batch_insert_task_logs(
@@ -182,4 +167,45 @@ fn batch_update_task_logs(
         .execute(conn)?;
 
     Ok(effect_num)
+}
+
+async fn kill_one_task_instance(
+    pool: ShareData<db::ConnectionPool>,
+    record_id: i64,
+    task_id: i64,
+    token: &str,
+) -> Result<UnifiedResponseMessages<()>, error::CommonError> {
+    use db::schema::task_log;
+
+    let conn = pool.get()?;
+    let host = web::block::<_, String, diesel::result::Error>(move || {
+        let host = task_log::table
+            .find(&record_id)
+            .filter(task_log::status.eq(state::task_log::State::Running as i16))
+            .select(task_log::executor_processor_host)
+            .first::<String>(&conn)?;
+        diesel::update(task_log::table.find(&record_id))
+            .set(task_log::status.eq(state::task_log::State::TmanualCancellation as i16))
+            .execute(&conn)?;
+        Ok(host)
+    })
+    .await?;
+
+    let client = RequestClient::default();
+    let url = "http://".to_string() + &host + "/cancel";
+
+    let record = model::CancelTaskRecord::default()
+        .set_task_id(task_id)
+        .set_record_id(record_id)
+        .set_time(get_timestamp())
+        .sign(token)?;
+
+    let response = client
+        .post(url)
+        .send_json(&record)
+        .await?
+        .json::<UnifiedResponseMessages<()>>()
+        .await?;
+
+    Ok(response)
 }

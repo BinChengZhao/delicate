@@ -36,6 +36,7 @@ impl BindRequest {
         self
     }
 
+    // Except here, the rest of the interaction is done using token-based symmetric encryption.
     pub(crate) fn sign(
         self,
         priv_key: &RSAPrivateKey,

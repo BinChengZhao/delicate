@@ -160,15 +160,20 @@ impl<'a> From<&'a TaskConf> for FrequencyRaw<'a> {
     }
 }
 
+#[allow(dead_code)]
+pub(crate) enum FrequencyModelType {
+    Once = 1,
+    CountDown = 2,
+    Repeat = 3,
+}
+
 impl<'a> TryFrom<FrequencyRaw<'a>> for Frequency<'a> {
     type Error = AnyError;
     fn try_from(value: FrequencyRaw<'a>) -> Result<Self, Self::Error> {
         let f = match value.mode {
-            0 => Frequency::Repeated(value.cron_str),
-
-            1 => Frequency::CountDown(value.count, value.cron_str),
-
-            2 => Frequency::Once(value.cron_str),
+            1 => Frequency::Once(value.cron_str),
+            2 => Frequency::CountDown(value.count, value.cron_str),
+            3 => Frequency::Repeated(value.cron_str),
 
             _ => {
                 return Err(anyhow!("Frequency-mode missed."));

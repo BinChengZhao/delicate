@@ -35,16 +35,17 @@ pub(crate) use actix_session::{CookieSession, Session, UserSession};
 pub(crate) use actix_web::client::{
     Client as RequestClient, SendRequestError as ClientSendRequestError,
 };
-pub(crate) use actix_web::error as actix_web_error;
 pub(crate) use actix_web::http::StatusCode;
 pub(crate) use actix_web::middleware::Logger as MiddlewareLogger;
 pub(crate) use actix_web::web::{self, Data as ShareData};
 pub(crate) use actix_web::{get, post, App, HttpResponse, HttpServer};
 
 pub(crate) use flexi_logger::{Age, Cleanup, Criterion, LogTarget, Logger, Naming};
+#[allow(unused_imports)]
 pub(crate) use log::info;
 pub(crate) use rand::rngs::OsRng;
 pub(crate) use ring::digest::{digest, SHA256};
+#[allow(unused_imports)]
 pub(crate) use rsa::{
     errors as ras_error, hash, pem, PaddingScheme, PublicKey, RSAPrivateKey, RSAPublicKey,
 };
