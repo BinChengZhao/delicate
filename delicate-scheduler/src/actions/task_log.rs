@@ -92,13 +92,13 @@ async fn show_task_logs(
 
 #[post("/api/task_instance/kill")]
 async fn kill_task_instance(
-    web::Json(model::TaskRecord { task_id, record_id }): web::Json<model::TaskRecord>,
+    web::Json(task_record): web::Json<model::TaskRecord>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
     // TODO: Get token.
     let _token = "";
-    let response_result = kill_one_task_instance(pool, record_id, task_id, _token).await;
-    
+    let response_result = kill_one_task_instance(pool, task_record, _token).await;
+
     if let Ok(response) = response_result {
         return HttpResponse::Ok().json(response);
     }
@@ -171,8 +171,7 @@ fn batch_update_task_logs(
 
 async fn kill_one_task_instance(
     pool: ShareData<db::ConnectionPool>,
-    record_id: i64,
-    task_id: i64,
+    model::TaskRecord { task_id, record_id }: model::TaskRecord,
     token: &str,
 ) -> Result<UnifiedResponseMessages<()>, error::CommonError> {
     use db::schema::task_log;

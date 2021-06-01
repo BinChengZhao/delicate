@@ -76,32 +76,38 @@ impl EncryptedBindResponse {
     }
 }
 
-#[derive(Debug, Clone)]
-pub(crate) struct SecurityPrivateKey(RSAPrivateKey);
-
-impl SecurityPrivateKey {
-    /// Get delicate-executor's security private-key from env.
-    pub(crate) fn get_app_rsa_private_key() -> Result<Self, InitSchedulerError> {
-        let key_path = env::var_os("DELICATE_SECURITY_PRIVATE_KEY").ok_or(
-            InitSchedulerError::MisEnvVar(String::from("DELICATE_SECURITY_PRIVATE_KEY")),
-        )?;
+pub(crate) trait SecurityRsaKey<T: TryFrom<pem::Pem>>
+where
+    InitSchedulerError: From<<T as std::convert::TryFrom<pem::Pem>>::Error>,
+{
+    /// Get delicate-executor's security key from env.
+    fn get_app_rsa_key(key_name: &str) -> Result<T, InitSchedulerError> {
+        let key_path =
+            env::var_os(key_name).ok_or(InitSchedulerError::MisEnvVar(String::from(key_name)))?;
 
         let key_pem = fs::read(key_path)?;
-        let key: RSAPrivateKey = pem::parse(key_pem)?.try_into()?;
-        Ok(SecurityPrivateKey(key))
+        let key: T = pem::parse(key_pem)?.try_into()?;
+        Ok(key)
     }
 }
 
-#[derive(Debug, Clone)]
+impl SecurityRsaKey<RSAPrivateKey> for SecurityeKey<RSAPrivateKey> {}
+
+impl SecurityRsaKey<RSAPublicKey> for SecurityeKey<RSAPublicKey> {}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub(crate) struct SecurityeKey<T>(T);
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub(crate) struct SchedulerSecurityConf {
     pub(crate) security_level: SecurityLevel,
-    pub(crate) rsa_private_key: Option<SecurityPrivateKey>,
+    pub(crate) rsa_private_key: Option<SecurityeKey<RSAPrivateKey>>,
 }
 
 impl Default for SchedulerSecurityConf {
     fn default() -> Self {
         let security_level = SecurityLevel::get_app_security_level();
-        let rsa_private_key = SecurityPrivateKey::get_app_rsa_private_key();
+        let rsa_private_key = SecurityeKey::<RSAPrivateKey>::get_app_rsa_key("a");
 
         assert!(
             matches!(security_level, SecurityLevel::Normal if rsa_private_key.is_err()), "When the security level is Normal, the initialization `delicate-scheduler` must contain the secret key (DELICATE_SECURITY_PRIVATE_KEY)"
@@ -109,7 +115,7 @@ impl Default for SchedulerSecurityConf {
 
         Self {
             security_level: SecurityLevel::get_app_security_level(),
-            rsa_private_key: rsa_private_key.ok(),
+            rsa_private_key: rsa_private_key.map(|k| SecurityeKey(k)).ok(),
         }
     }
 }
