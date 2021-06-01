@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use error::InitSchedulerError;
+use crate_error::InitSchedulerError;
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub(crate) struct BindRequest {
@@ -107,10 +107,15 @@ pub(crate) struct SchedulerSecurityConf {
 impl Default for SchedulerSecurityConf {
     fn default() -> Self {
         let security_level = SecurityLevel::get_app_security_level();
-        let rsa_private_key = SecurityeKey::<RSAPrivateKey>::get_app_rsa_key("a");
+        let rsa_private_key =
+            SecurityeKey::<RSAPrivateKey>::get_app_rsa_key("DELICATE_SECURITY_PRIVATE_KEY");
 
         assert!(
-            matches!(security_level, SecurityLevel::Normal if rsa_private_key.is_err()), "When the security level is Normal, the initialization `delicate-scheduler` must contain the secret key (DELICATE_SECURITY_PRIVATE_KEY)"
+            matches!(security_level, SecurityLevel::Normal if rsa_private_key.is_err()),
+            {
+                error!("Initialization failed because: {:?}", rsa_private_key.err());
+                "When the security level is Normal, the initialization `delicate-scheduler` must contain the secret key (DELICATE_SECURITY_PRIVATE_KEY)"
+            }
         );
 
         Self {

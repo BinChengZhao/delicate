@@ -173,7 +173,7 @@ async fn kill_one_task_instance(
     pool: ShareData<db::ConnectionPool>,
     model::TaskRecord { task_id, record_id }: model::TaskRecord,
     token: &str,
-) -> Result<UnifiedResponseMessages<()>, error::CommonError> {
+) -> Result<UnifiedResponseMessages<()>, crate_error::CommonError> {
     use db::schema::task_log;
 
     let conn = pool.get()?;

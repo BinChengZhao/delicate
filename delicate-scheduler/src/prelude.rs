@@ -1,7 +1,7 @@
 pub(crate) use super::components::security;
 pub(crate) use super::components::uniform_data::*;
 pub(crate) use super::db;
-pub(crate) use super::error;
+pub(crate) use super::error as crate_error;
 pub(crate) use super::{cfg_mysql_support, cfg_postgres_support};
 
 pub(crate) use super::db::common::{state, types};
@@ -42,7 +42,7 @@ pub(crate) use actix_web::{get, post, App, HttpResponse, HttpServer};
 
 pub(crate) use flexi_logger::{Age, Cleanup, Criterion, LogTarget, Logger, Naming};
 #[allow(unused_imports)]
-pub(crate) use log::info;
+pub(crate) use log::{error, info};
 pub(crate) use rand::rngs::OsRng;
 pub(crate) use ring::digest::{digest, SHA256};
 #[allow(unused_imports)]
