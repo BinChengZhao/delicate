@@ -111,22 +111,27 @@ async fn activate_executor_processor(
         executor_processor_id,
     }): web::Json<model::ExecutorProcessorId>,
     pool: ShareData<db::ConnectionPool>,
+    scheduler: SharedSchedulerMetaInfo,
 ) -> HttpResponse {
     let uniform_data: UnifiedResponseMessages<()> =
-        do_activate(pool, executor_processor_id).await.into();
+        do_activate(pool, executor_processor_id, scheduler)
+            .await
+            .into();
     HttpResponse::Ok().json(uniform_data)
 }
 async fn do_activate(
     pool: ShareData<db::ConnectionPool>,
     executor_processor_id: i64,
+    scheduler: SharedSchedulerMetaInfo,
 ) -> Result<(), crate_error::BindExecutorError> {
-    let bind_info = activate_executor(pool.get()?, executor_processor_id).await?;
+    let bind_info = activate_executor(pool.get()?, executor_processor_id, scheduler).await?;
     activate_executor_row(pool.get()?, executor_processor_id, bind_info).await?;
     Ok(())
 }
 async fn activate_executor(
     conn: db::PoolConnection,
     executor_processor_id: i64,
+    scheduler: SharedSchedulerMetaInfo,
 ) -> Result<security::BindResponse, crate_error::BindExecutorError> {
     let query = web::block::<_, model::UpdateExecutorProcessor, diesel::result::Error>(move || {
         executor_processor::table
@@ -153,17 +158,13 @@ async fn activate_executor(
     let client = RequestClient::default();
     let url = "http://".to_string() + &host + "/bind";
 
-    // TODO: Update private_key.
-    let mut rng = OsRng;
-    let bits = 2048;
-    let private_key = RSAPrivateKey::new(&mut rng, bits).expect("failed to generate a key");
-
+    let private_key = scheduler.get_app_security_key().map(|k| &k.0);
     let signed_scheduler = security::BindRequest::default()
         .set_executor_name(name)
         .set_scheduler_host(host)
         .set_executor_machine_id(machine_id)
         .set_time(get_timestamp())
-        .sign(&private_key)?;
+        .sign(private_key)?;
 
     let response = client
         .post(url)

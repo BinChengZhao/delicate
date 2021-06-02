@@ -39,12 +39,14 @@ impl BindRequest {
     // Except here, the rest of the interaction is done using token-based symmetric encryption.
     pub(crate) fn sign(
         self,
-        priv_key: &RSAPrivateKey,
+        priv_key: Option<&RSAPrivateKey>,
     ) -> Result<SignedBindRequest, crate::error::BindExecutorError> {
         let json_str = to_json_string(&self)?;
 
-        let signature =
-            priv_key.sign(PaddingScheme::new_pkcs1v15_sign(None), json_str.as_bytes())?;
+        let signature = priv_key
+            .map(|k| k.sign(PaddingScheme::new_pkcs1v15_sign(None), json_str.as_bytes()))
+            .transpose()?
+            .unwrap_or_default();
 
         Ok(SignedBindRequest {
             bind_request: self,
@@ -96,7 +98,7 @@ impl SecurityRsaKey<RSAPrivateKey> for SecurityeKey<RSAPrivateKey> {}
 impl SecurityRsaKey<RSAPublicKey> for SecurityeKey<RSAPublicKey> {}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub(crate) struct SecurityeKey<T>(T);
+pub(crate) struct SecurityeKey<T>(pub(crate) T);
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub(crate) struct SchedulerSecurityConf {
@@ -110,13 +112,16 @@ impl Default for SchedulerSecurityConf {
         let rsa_private_key =
             SecurityeKey::<RSAPrivateKey>::get_app_rsa_key("DELICATE_SECURITY_PRIVATE_KEY");
 
-        assert!(
-            matches!(security_level, SecurityLevel::Normal if rsa_private_key.is_err()),
-            {
-                error!("Initialization failed because: {:?}", rsa_private_key.err());
-                "When the security level is Normal, the initialization `delicate-scheduler` must contain the secret key (DELICATE_SECURITY_PRIVATE_KEY)"
-            }
-        );
+        if matches!(security_level, SecurityLevel::Normal if rsa_private_key.is_err()) {
+            error!(
+                "{}",
+                rsa_private_key
+                    .err()
+                    .map(|e| "Initialization failed because: ".to_owned() + &e.to_string())
+                    .unwrap_or_default()
+            );
+            unreachable!("When the security level is Normal, the initialization `delicate-scheduler` must contain the secret key (DELICATE_SECURITY_PRIVATE_KEY)");
+        }
 
         Self {
             security_level: SecurityLevel::get_app_security_level(),
@@ -169,6 +174,8 @@ impl TryFrom<u16> for SecurityLevel {
 
 #[test]
 fn test_rsa_crypt() {
+    use crate::prelude::*;
+    use rand::rngs::OsRng;
     let mut rng = OsRng;
     let bits = 2048;
     let priv_key = RSAPrivateKey::new(&mut rng, bits).expect("failed to generate a key");
@@ -190,6 +197,8 @@ fn test_rsa_crypt() {
 
 #[test]
 fn test_rsa_sign() {
+    use crate::prelude::*;
+    use rand::rngs::OsRng;
     let mut rng = OsRng;
     let bits = 2048;
     let priv_key = RSAPrivateKey::new(&mut rng, bits).expect("failed to generate a key");

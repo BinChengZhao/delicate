@@ -1,12 +1,23 @@
 use super::security::SchedulerSecurityConf;
 use crate::prelude::*;
 
+pub(crate) type SharedSchedulerMetaInfo = ShareData<SchedulerMetaInfo>;
 #[derive(Debug, Clone, Serialize, Deserialize)]
-struct SchedulerMetaInfo {
+pub(crate) struct SchedulerMetaInfo {
     name: String,
     domain: String,
     listening_address: String,
     security_conf: SchedulerSecurityConf,
+}
+
+impl SchedulerMetaInfo {
+    pub(crate) fn get_app_security_level(&self) -> SecurityLevel {
+        self.security_conf.security_level
+    }
+
+    pub(crate) fn get_app_security_key(&self) -> Option<&SecurityeKey<RSAPrivateKey>> {
+        self.security_conf.rsa_private_key.as_ref()
+    }
 }
 
 impl Default for SchedulerMetaInfo {

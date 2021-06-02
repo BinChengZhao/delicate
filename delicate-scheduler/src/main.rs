@@ -47,6 +47,8 @@ async fn main() -> AnyResut<()> {
 
     let connection_pool = db::get_connection_pool();
     let shared_connection_pool = ShareData::new(connection_pool);
+    let shared_scheduler_meta_info: SharedSchedulerMetaInfo =
+        ShareData::new(SchedulerMetaInfo::default());
 
     let result = HttpServer::new(move || {
         App::new()
@@ -60,6 +62,7 @@ async fn main() -> AnyResut<()> {
             .configure(actions::components::config)
             .app_data(shared_delay_timer.clone())
             .app_data(shared_connection_pool.clone())
+            .app_data(shared_scheduler_meta_info.clone())
             .wrap(components::session::session_middleware())
             .wrap(MiddlewareLogger::default())
     })

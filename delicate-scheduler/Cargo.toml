@@ -31,10 +31,13 @@ futures = "^0.3.14"
 chrono = { version = "^0.4", features = ["serde"]}
 ring = "^0.16.20"
 rsa = { version = "^0.4.0", features = ["std", "pem" ,"serde"] }
-rand = "^0.8.3"
 validator = { version = "^0.13", features = ["phone", "derive"] }
 
 # Use `cached"` for caching in the future.
+
+[dev-dependencies]
+rand = "^0.8.3"
+
 
 [build-dependencies]
 autocfg = "1"
