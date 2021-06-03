@@ -33,6 +33,7 @@ ring = "^0.16.20"
 rsa = { version = "^0.4.0", features = ["std", "pem" ,"serde"] }
 validator = { version = "^0.13", features = ["phone", "derive"] }
 cached = "^0.23.0"
+derive_more = "^0.99.14"
 
 [dev-dependencies]
 rand = "^0.8.3"

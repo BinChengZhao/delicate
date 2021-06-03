@@ -165,28 +165,9 @@ async fn run_task(
     web::Json(model::TaskId { task_id }): web::Json<model::TaskId>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
-    use db::schema::executor_processor::dsl::*;
-    use db::schema::{executor_processor, executor_processor_bind, task_bind};
+    let result: UnifiedResponseMessages<()> = Into::into(pre_run_task(task_id, pool).await);
 
-    if let Ok(conn) = pool.get() {
-        // TODO: Select task.
-
-        let _executor_processor_result: Result<Vec<String>, _> = web::block(move || {
-            task_bind::table
-                .inner_join(executor_processor_bind::table.inner_join(executor_processor::table))
-                .select(host)
-                .filter(task_bind::task_id.eq(task_id))
-                .load(&conn)
-        })
-        .await;
-
-        // TODO: Send task.
-
-        let mut _client = RequestClient::default();
-        todo!();
-    }
-
-    HttpResponse::Ok().json(UnifiedResponseMessages::<usize>::error())
+    HttpResponse::Ok().json(result)
 }
 
 #[post("/api/task/manual_trigger")]
@@ -198,10 +179,11 @@ async fn manual_trigger_task(
     use db::schema::{executor_processor, executor_processor_bind, task_bind};
 
     if let Ok(conn) = pool.get() {
-        let _executor_processor_result: Result<Vec<String>, _> = web::block(move || {
+        // Many machine.
+        let _executor_processor_result: Result<Vec<(String, String)>, _> = web::block(move || {
             task_bind::table
                 .inner_join(executor_processor_bind::table.inner_join(executor_processor::table))
-                .select(host)
+                .select((host, token))
                 .filter(task_bind::task_id.eq(task_id))
                 .load(&conn)
         })
@@ -214,4 +196,55 @@ async fn manual_trigger_task(
     }
 
     HttpResponse::Ok().json(UnifiedResponseMessages::<usize>::error())
+}
+
+async fn pre_run_task(
+    task_id: i64,
+    pool: ShareData<db::ConnectionPool>,
+) -> Result<(), crate_error::CommonError> {
+    use db::schema::executor_processor::dsl::{host, token};
+    use db::schema::task::dsl::*;
+    use db::schema::{executor_processor, executor_processor_bind, task, task_bind};
+
+    let conn = pool.get()?;
+
+    // Many machine.
+    let task_packages = web::block(move || {
+        task_bind::table
+            .inner_join(executor_processor_bind::table.inner_join(executor_processor::table))
+            .inner_join(task::table)
+            .select((
+                id,
+                command,
+                frequency,
+                cron_expression,
+                timeout,
+                maximun_parallel_runnable_num,
+                host,
+                token,
+            ))
+            .filter(task_bind::task_id.eq(task_id))
+            .load::<model::TaskPackage>(&conn)
+    })
+    .await?
+    .into_iter();
+
+    // TODO: Send task.
+
+    let client = RequestClient::default();
+    for task_package in task_packages {
+        let executor_host = task_package.host.clone() + "/run";
+        let executor_token = task_package.token.clone();
+        info!("Run task{} at:{}", &task_package, &executor_host);
+        let signed_task_package = task_package.sign(executor_token)?;
+
+        client
+            .post(executor_host)
+            .send_json(&signed_task_package)
+            .await
+            .map_err(|e| error!("{}", e))
+            .ok();
+    }
+
+    Ok(())
 }

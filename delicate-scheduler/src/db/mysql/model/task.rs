@@ -24,6 +24,51 @@ pub struct Task {
     deleted_time: Option<NaiveDateTime>,
 }
 
+
+#[derive(
+    Queryable, Clone, Debug, Default, Serialize, Deserialize,Display
+)]
+#[display(fmt = "{} {} {} {} {} {} {} {}", id, command, frequency, cron_expression, timeout, maximun_parallel_runnable_num, host, token)]
+
+pub struct TaskPackage {
+    pub(crate) id: i64,
+    command: String,
+    frequency: String,
+    cron_expression: String,
+    timeout: i16,
+    maximun_parallel_runnable_num: i16,
+    pub(crate) host: String,
+    pub(crate) token: String,
+}
+
+#[derive(Clone, Default, Debug, Serialize, Deserialize)]
+
+pub struct SignedTaskPackage {
+    task_package: TaskPackage,
+    pub(crate) signature: Vec<u8>,
+}
+
+impl TaskPackage{
+    pub(crate) fn sign(
+        self,
+        token: String,
+    ) -> Result<SignedTaskPackage, crate::error::CommonError> {
+        let json_str = to_json_string(&self)?;
+
+        let signature =  if token.is_empty(){
+                Vec::default()
+        }else{
+                let raw_str = json_str + &token;
+                digest(&SHA256, raw_str.as_bytes()).as_ref().to_vec()
+        };
+
+        
+        Ok(SignedTaskPackage {
+            task_package: self,
+            signature,
+        })
+    }
+}
 #[derive(Insertable, Debug, Default, Serialize, Deserialize)]
 #[table_name = "task"]
 pub struct NewTask {
