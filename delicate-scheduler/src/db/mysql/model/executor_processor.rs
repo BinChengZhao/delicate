@@ -5,10 +5,10 @@ use super::schema::executor_processor;
 #[table_name = "executor_processor"]
 
 pub struct ExecutorProcessor {
-   pub(crate) id: i64,
-   pub(crate) name: String,
-   pub(crate) host: String,
-   pub(crate) machine_id: i16,
+    pub(crate) id: i64,
+    pub(crate) name: String,
+    pub(crate) host: String,
+    pub(crate) machine_id: i16,
     description: String,
     tag: String,
     status: i16,

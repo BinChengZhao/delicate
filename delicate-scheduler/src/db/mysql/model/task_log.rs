@@ -232,6 +232,7 @@ pub(crate) struct PaginateTaskLogs {
 pub struct TaskRecord {
     pub(crate) task_id: i64,
     pub(crate) record_id: i64,
+    pub(crate) executor_processor_id: i64,
 }
 
 #[derive(Copy, Clone, Default, Debug, Serialize, Deserialize)]
@@ -245,40 +246,44 @@ pub struct CancelTaskRecord {
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
 
 pub struct SignedCancelTaskRecord {
-    cancel_task_record:CancelTaskRecord,
+    cancel_task_record: CancelTaskRecord,
     pub(crate) signature: Vec<u8>,
 }
 
-impl CancelTaskRecord{
-    pub fn set_record_id(mut self, record_id:i64) ->Self{
+impl CancelTaskRecord {
+    pub fn set_record_id(mut self, record_id: i64) -> Self {
         self.record_id = record_id;
         self
     }
 
-    pub fn set_task_id(mut self, task_id:i64) ->Self{
+    pub fn set_task_id(mut self, task_id: i64) -> Self {
         self.task_id = task_id;
         self
     }
 
-    pub fn set_time(mut self, time:u64) ->Self{
+    pub fn set_time(mut self, time: u64) -> Self {
         self.time = time;
         self
     }
     pub(crate) fn sign(
         self,
-        token: &str,
+        token: Option<String>,
     ) -> Result<SignedCancelTaskRecord, crate::error::CommonError> {
         let json_str = to_json_string(&self)?;
-        let raw_str = json_str + token;
 
-        let signature = digest(&SHA256, raw_str.as_bytes()).as_ref().to_vec();
+        let signature = token
+            .map(|t| {
+                let raw_str = json_str + &t;
+                digest(&SHA256, raw_str.as_bytes()).as_ref().to_vec()
+            })
+            .unwrap_or_default();
+
         Ok(SignedCancelTaskRecord {
             cancel_task_record: self,
             signature,
         })
     }
 }
-
 
 impl PaginateTaskLogs {
     pub(crate) fn set_task_logs(mut self, task_logs: Vec<TaskLog>) -> Self {

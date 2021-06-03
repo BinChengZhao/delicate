@@ -95,9 +95,7 @@ async fn kill_task_instance(
     web::Json(task_record): web::Json<model::TaskRecord>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
-    // TODO: Get token.
-    let _token = "";
-    let response_result = kill_one_task_instance(pool, task_record, _token).await;
+    let response_result = kill_one_task_instance(pool, task_record).await;
 
     if let Ok(response) = response_result {
         return HttpResponse::Ok().json(response);
@@ -171,10 +169,15 @@ fn batch_update_task_logs(
 
 async fn kill_one_task_instance(
     pool: ShareData<db::ConnectionPool>,
-    model::TaskRecord { task_id, record_id }: model::TaskRecord,
-    token: &str,
+    model::TaskRecord {
+        task_id,
+        record_id,
+        executor_processor_id,
+    }: model::TaskRecord,
 ) -> Result<UnifiedResponseMessages<()>, crate_error::CommonError> {
     use db::schema::task_log;
+
+    let token = security::get_executor_token_by_id(executor_processor_id, pool.get()?).await;
 
     let conn = pool.get()?;
     let host = web::block::<_, String, diesel::result::Error>(move || {

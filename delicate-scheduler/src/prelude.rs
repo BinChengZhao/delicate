@@ -25,6 +25,8 @@ pub(crate) use actix_web::{Error as ActixWebError, Result};
 pub(crate) use futures::future::{ok, Ready};
 pub(crate) use futures::Future;
 
+pub(crate) use cached::proc_macro::cached;
+pub(crate) use cached::TimedSizedCache;
 pub(crate) use chrono::NaiveDateTime;
 pub(crate) use diesel::mysql::Mysql;
 pub(crate) use diesel::prelude::*;
