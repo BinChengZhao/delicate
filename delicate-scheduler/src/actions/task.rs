@@ -4,6 +4,9 @@ pub(crate) fn config(cfg: &mut web::ServiceConfig) {
     cfg.service(show_tasks)
         .service(create_task)
         .service(update_task)
+        .service(run_task)
+        .service(suspend_task)
+        .service(manual_trigger_task)
         .service(delete_task);
 }
 
@@ -170,6 +173,17 @@ async fn run_task(
     HttpResponse::Ok().json(result)
 }
 
+#[post("/api/task/suspend")]
+async fn suspend_task(
+    web::Json(model::TaskId { task_id }): web::Json<model::TaskId>,
+    pool: ShareData<db::ConnectionPool>,
+) -> HttpResponse {
+    let result: UnifiedResponseMessages<()> = Into::into(pre_suspend_task(task_id, pool).await);
+
+    HttpResponse::Ok().json(result)
+}
+
+
 #[post("/api/task/manual_trigger")]
 async fn manual_trigger_task(
     web::Json(model::TaskId { task_id }): web::Json<model::TaskId>,
@@ -214,29 +228,71 @@ async fn pre_run_task(
             .inner_join(executor_processor_bind::table.inner_join(executor_processor::table))
             .inner_join(task::table)
             .select((
-                id,
-                command,
-                frequency,
-                cron_expression,
-                timeout,
-                maximun_parallel_runnable_num,
-                host,
-                token,
+                (
+                    id,
+                    command,
+                    frequency,
+                    cron_expression,
+                    timeout,
+                    maximun_parallel_runnable_num,
+                    host,
+                ),
+                (token),
             ))
             .filter(task_bind::task_id.eq(task_id))
-            .load::<model::TaskPackage>(&conn)
+            .load::<(model::TaskPackage, String)>(&conn)
     })
     .await?
     .into_iter();
 
-    // TODO: Send task.
-
     let client = RequestClient::default();
-    for task_package in task_packages {
+    for (task_package, executor_token) in task_packages {
         let executor_host = task_package.host.clone() + "/run";
-        let executor_token = task_package.token.clone();
         info!("Run task{} at:{}", &task_package, &executor_host);
         let signed_task_package = task_package.sign(executor_token)?;
+
+        client
+            .post(executor_host)
+            .send_json(&signed_task_package)
+            .await
+            .map_err(|e| error!("{}", e))
+            .ok();
+    }
+
+    Ok(())
+}
+
+async fn pre_suspend_task(
+    task_id: i64,
+    pool: ShareData<db::ConnectionPool>,
+) -> Result<(), crate_error::CommonError> {
+    use db::schema::executor_processor::dsl::{host, token};
+    use db::schema::{executor_processor, executor_processor_bind, task, task_bind};
+
+    let conn = pool.get()?;
+
+    // Many machine.
+    let executor_packages = web::block(move || {
+        task_bind::table
+            .inner_join(executor_processor_bind::table.inner_join(executor_processor::table))
+            .inner_join(task::table)
+            .select((host, token))
+            .filter(task_bind::task_id.eq(task_id))
+            .load::<(String, String)>(&conn)
+    })
+    .await?
+    .into_iter();
+
+    let client = RequestClient::default();
+    for (executor_host, executor_token) in executor_packages {
+        let message = model::SuspendTaskRecord::default()
+            .set_task_id(task_id)
+            .set_time(get_timestamp());
+
+        let executor_host = executor_host + "/remove";
+
+        info!("Suspend task{} at:{}", message, &executor_host);
+        let signed_task_package = message.sign(executor_token)?;
 
         client
             .post(executor_host)
