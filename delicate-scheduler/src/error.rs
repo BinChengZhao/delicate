@@ -18,15 +18,3 @@ pub enum CommonError {
     #[error("data sign or Decrypt fail.")]
     DisSign(#[from] ras_error::Error),
 }
-
-#[derive(ThisError, Debug)]
-pub enum InitSchedulerError {
-    #[error("Environment Variables `{0}` missed.")]
-    MisEnvVar(String),
-    #[error("Access fileSystem fail.")]
-    DisAccessFs(#[from] std::io::Error),
-    #[error("Parse pem file fail.")]
-    DisParsePem(#[from] pem::PemError),
-    #[error("Parse pem to Key fail.")]
-    DisParseKey(#[from] ras_error::Error),
-}

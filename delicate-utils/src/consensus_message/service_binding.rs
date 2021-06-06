@@ -69,11 +69,17 @@ pub struct EncryptedBindResponse {
 impl EncryptedBindResponse {
     pub fn decrypt_self(
         self,
-        priv_key: &RSAPrivateKey,
+        priv_key: Option<&RSAPrivateKey>,
     ) -> Result<BindResponse, crate::error::CommonError> {
         // Decrypt
-        let padding = PaddingScheme::new_pkcs1v15_encrypt();
-        let dec_data = priv_key.decrypt(padding, &self.bind_response)?;
+        let dec_data = priv_key
+            .map(|p| {
+                let padding = PaddingScheme::new_pkcs1v15_encrypt();
+                p.decrypt(padding, &self.bind_response)
+            })
+            .transpose()?
+            .unwrap_or(self.bind_response);
+
         Ok(json_from_slice(&dec_data)?)
     }
 }

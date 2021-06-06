@@ -123,3 +123,23 @@ impl QueryParamsExecutorProcessor {
         statement_builder.order(executor_processor::id.desc())
     }
 }
+
+
+
+#[cached(
+    type = "TimedSizedCache<i64, Option<String>>",
+    create = "{ TimedSizedCache::with_size_and_lifespan(1024, 60) }",
+    convert = r#"{ id }"#
+)]
+pub(crate) async fn get_executor_token_by_id(id: i64, conn: db::PoolConnection) -> Option<String> {
+    use db::schema::executor_processor;
+
+    web::block(move || {
+        executor_processor::table
+            .find(id)
+            .select(executor_processor::token)
+            .first::<String>(&conn)
+    })
+    .await
+    .ok()
+}

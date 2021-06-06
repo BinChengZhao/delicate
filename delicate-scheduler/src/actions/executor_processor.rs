@@ -123,7 +123,7 @@ async fn do_activate(
     pool: ShareData<db::ConnectionPool>,
     executor_processor_id: i64,
     scheduler: SharedSchedulerMetaInfo,
-) -> Result<(), crate_error::CommonError> {
+) -> Result<(), CommonError> {
     let bind_info = activate_executor(pool.get()?, executor_processor_id, scheduler).await?;
     activate_executor_row(pool.get()?, executor_processor_id, bind_info).await?;
     Ok(())
@@ -132,7 +132,7 @@ async fn activate_executor(
     conn: db::PoolConnection,
     executor_processor_id: i64,
     scheduler: SharedSchedulerMetaInfo,
-) -> Result<security::BindResponse, crate_error::CommonError> {
+) -> Result<service_binding::BindResponse, CommonError> {
     let query = web::block::<_, model::UpdateExecutorProcessor, diesel::result::Error>(move || {
         executor_processor::table
             .find(executor_processor_id)
@@ -158,8 +158,8 @@ async fn activate_executor(
     let client = RequestClient::default();
     let url = "http://".to_string() + &host + "/bind";
 
-    let private_key = scheduler.get_app_security_key().map(|k| &k.0);
-    let signed_scheduler = security::BindRequest::default()
+    let private_key = scheduler.get_app_security_key();
+    let signed_scheduler = service_binding::BindRequest::default()
         .set_executor_name(name)
         .set_scheduler_host(host)
         .set_executor_machine_id(machine_id)
@@ -170,17 +170,17 @@ async fn activate_executor(
         .post(url)
         .send_json(&signed_scheduler)
         .await?
-        .json::<security::BindResponse>()
+        .json::<service_binding::EncryptedBindResponse>()
         .await?;
 
-    Ok(response)
+    Ok(response.decrypt_self(private_key)?)
 }
 
 async fn activate_executor_row(
     conn: db::PoolConnection,
     executor_processor_id: i64,
-    bind_info: security::BindResponse,
-) -> Result<(), crate_error::CommonError> {
+    bind_info: service_binding::BindResponse,
+) -> Result<(), CommonError> {
     use db::schema::executor_processor::dsl::{executor_processor, status, token};
 
     // TODO:

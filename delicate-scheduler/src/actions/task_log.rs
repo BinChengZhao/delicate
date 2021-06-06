@@ -177,7 +177,7 @@ async fn kill_one_task_instance(
 ) -> Result<UnifiedResponseMessages<()>, crate_error::CommonError> {
     use db::schema::task_log;
 
-    let token = security::get_executor_token_by_id(executor_processor_id, pool.get()?).await;
+    let token = model::get_executor_token_by_id(executor_processor_id, pool.get()?).await;
 
     let conn = pool.get()?;
     let host = web::block::<_, String, diesel::result::Error>(move || {
