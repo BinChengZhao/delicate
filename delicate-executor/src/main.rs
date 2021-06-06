@@ -1,127 +1,45 @@
 use actix_web::web::{self, Data as ShareData};
 use actix_web::{get, App, HttpResponse, HttpServer, Responder};
 
+use std::iter::repeat_with;
+
 use delay_timer::prelude::*;
-//TODO: delay-timer add `tokio_unblock_process_task_fn` to prelude
-//FIXME: It is possible that the tokio in delay-timer is not compatible
-//FIXME: With the tokio built into actix.
-use delay_timer::utils::convenience::functions::tokio_unblock_process_task_fn;
+use delicate_utils::consensus_message::security::ExecutorSecurityConf;
+use delicate_utils::consensus_message::service_binding::{
+    BindRequest, BindResponse, EncryptedBindResponse, SignedBindRequest,
+};
+use delicate_utils::uniform_data::UnifiedResponseMessages;
+
+use delay_timer::utils::convenience::functions::unblock_process_task_fn;
 use serde::{Deserialize, Serialize};
 
 use anyhow::{anyhow, Error as AnyError};
 
 use async_lock::RwLock;
 
-use rsa::PaddingScheme;
-
 use std::convert::{From, Into, TryFrom, TryInto};
 use std::env;
-use std::net::IpAddr;
-use std::ops::DerefMut;
-use std::str::from_utf8;
 
 mod component;
 use component::*;
 
 type SharedBindScheduler = ShareData<BindScheduler>;
+type SharedExecutorSecurityConf = ShareData<ExecutorSecurityConf>;
 type UnitUnifiedResponseMessages = UnifiedResponseMessages<()>;
 type StringUnifiedResponseMessages = UnifiedResponseMessages<String>;
 type SharedSystemMirror = ShareData<SystemMirror>;
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 struct BindScheduler {
-    inner: RwLock<Option<(RequestScheduler, String)>>,
+    inner: RwLock<Option<(BindRequest, String)>>,
 }
 
-//TODO: shared by app_data(Data<AsyncRwlock>)
-/// External request for registration of Scheduler.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct RequestScheduler {
-    name: String,
-    // TODO: Can store the domain name to store the domain name, because it is not sure how many machines on the server side.
-    // TODO: Can store the domain name to store the domain name, because it is not sure how many machines on the server side.
-    // TODO: Can store the domain name to store the domain name, because it is not sure how many machines on the server side.
-    ip: IpAddr,
-    port: u16,
-    domin: String,
-    callback_url: String,
-    // private_key.decrypt(raw_token) = "ip:port:token" when security_level = SecurityLevel::Normal.
-    // raw_token = "ip:port:token" when security_level = SecurityLevel::ZeroRestriction.
-    raw_token: String,
-}
-
-impl Default for RequestScheduler {
-    fn default() -> Self {
-        RequestScheduler {
-            ip: IpAddr::V4([0, 0, 0, 0].into()),
-            ..Default::default()
-        }
+impl Default for BindScheduler {
+    fn default() -> BindScheduler {
+        let inner = RwLock::new(None);
+        BindScheduler { inner }
     }
 }
-
-impl RequestScheduler {
-    fn verify(&self, security_conf: &SecurityConf) -> AnyResult<String> {
-        match security_conf.security_level {
-            SecurityLevel::ZeroRestriction => {
-                let mut split_str = self.raw_token.split(':');
-
-                let ip_str = split_str
-                    .next()
-                    .ok_or_else(|| anyhow!("ip_str missed for raw_token."))?;
-
-                let port_str = split_str
-                    .next()
-                    .ok_or_else(|| anyhow!("port_str missed for raw_token."))?;
-
-                if ip_str != self.ip.to_string() || port_str != self.port.to_string() {
-                    return Err(anyhow!("verify error."));
-                }
-
-                split_str
-                    .next()
-                    .map(|t| t.to_string())
-                    .ok_or_else(|| anyhow!("token missed for raw_token."))
-            }
-            SecurityLevel::Normal => {
-                // FIXME: 1. scheduler does not use RSA encryption for messages communicated with executor.
-                // FIXME:    Reason: RSA encryption and signature take longer time, about 1-2 ms.
-
-                // FIXME:  Therefore, we currently use the mode of passing messages + token for authentication.
-                // FIXME: The token is configured by env initialization, or generated when creating the node.
-
-                let padding = PaddingScheme::new_pkcs1v15_encrypt();
-                //|k|k.0.decrypt(padding, &self.raw_token.as_bytes()).err()
-                let rsa_private_key =  security_conf.rsa_private_key.as_ref().ok_or_else(||anyhow!("When the security level is Normal, the initialization `delicate-executor` must contain the secret key (DELICATE_SECURITY_KEY)"))?;
-                let decrypt_raw_token = from_utf8(
-                    &rsa_private_key
-                        .0
-                        .decrypt(padding, &self.raw_token.as_bytes())?,
-                )?
-                .to_string();
-
-                let mut split_str = decrypt_raw_token.split(':');
-
-                let ip_str = split_str
-                    .next()
-                    .ok_or_else(|| anyhow!("ip_str missed for raw_token."))?;
-
-                let port_str = split_str
-                    .next()
-                    .ok_or_else(|| anyhow!("port_str missed for raw_token."))?;
-
-                if ip_str != self.ip.to_string() || port_str != self.port.to_string() {
-                    return Err(anyhow!("verify error."));
-                }
-
-                split_str
-                    .next()
-                    .map(|t| t.to_string())
-                    .ok_or_else(|| anyhow!("token missed for raw_token."))
-            }
-        }
-    }
-}
-
 #[derive(Debug, Default, Serialize, Deserialize)]
 struct TaskConf {
     /// Task_id should unique.
@@ -195,9 +113,7 @@ impl TryFrom<TaskConf> for Task {
             .set_frequency(frequency)
             .set_maximum_running_time(task_conf.maximum_running_time)
             .set_maximun_parallel_runable_num(task_conf.maximun_parallel_runnable_num)
-            .spawn(tokio_unblock_process_task_fn(
-                task_conf.command_string.clone(),
-            ))?;
+            .spawn(unblock_process_task_fn(task_conf.command_string.clone()))?;
 
         Ok(task)
     }
@@ -255,8 +171,6 @@ async fn health_screen(system_mirror: SharedSystemMirror) -> impl Responder {
 }
 
 #[get("/bind_executor")]
-// who are you.
-// callback_address.
 // token.
 
 // Or use middleware to reach consensus.
@@ -264,24 +178,35 @@ async fn health_screen(system_mirror: SharedSystemMirror) -> impl Responder {
 
 // Or set security level, no authentication at level 0, public and private keys required at level 1.
 async fn bind_executor(
-    web::Json(request_bind_scheduler): web::Json<RequestScheduler>,
+    web::Json(request_bind_scheduler): web::Json<SignedBindRequest>,
     delicate_shared_scheduler: SharedBindScheduler,
-    delicate_conf: web::Data<DelicateConf>,
+    security_conf: web::Data<ExecutorSecurityConf>,
 ) -> impl Responder {
-    let verify_result = request_bind_scheduler.verify(&delicate_conf.security_conf);
-    // if verify_result.is_err() {
-    //     return HttpResponse::Ok()
-    //         .json(<AnyResult<String> as Into<StringUnifiedResponseMessages>>::into(verify_result));
-    // }
+    let verify_result = request_bind_scheduler.verify(security_conf.get_ref().get_rsa_public_key());
+    if verify_result.is_ok() {
+        let SignedBindRequest { bind_request, .. } = request_bind_scheduler;
 
-    delicate_shared_scheduler
-        .inner
-        .write()
-        .await
-        .deref_mut()
-        .replace((request_bind_scheduler, verify_result.unwrap()));
+        let token: String = repeat_with(fastrand::alphanumeric).take(32).collect();
+        delicate_shared_scheduler
+            .inner
+            .write()
+            .await
+            .replace((bind_request, token.clone()));
 
-    HttpResponse::Ok().json(StringUnifiedResponseMessages::success())
+        let bind_response = BindResponse {
+            time: get_timestamp() as i64,
+            token,
+        }
+        .encrypt_self(security_conf.get_rsa_public_key());
+
+        let response: UnifiedResponseMessages<EncryptedBindResponse> = Into::into(bind_response);
+        return HttpResponse::Ok().json(response);
+    }
+
+    HttpResponse::Ok().json(
+        StringUnifiedResponseMessages::error()
+            .customized_error_msg(verify_result.expect_err("").to_string()),
+    )
 }
 
 #[actix_web::main]
@@ -290,6 +215,8 @@ async fn main() -> std::io::Result<()> {
 
     let shared_delay_timer: SharedDelayTimer = ShareData::new(delay_timer);
     let shared_scheduler: SharedBindScheduler = ShareData::new(BindScheduler::default());
+    let shared_security_conf: SharedExecutorSecurityConf =
+        ShareData::new(ExecutorSecurityConf::default());
     let shared_system_mirror: SharedSystemMirror = ShareData::new(SystemMirror::default());
 
     HttpServer::new(move || {
@@ -301,6 +228,7 @@ async fn main() -> std::io::Result<()> {
             .service(health_screen)
             .app_data(shared_delay_timer.clone())
             .app_data(shared_scheduler.clone())
+            .app_data(shared_security_conf.clone())
             .app_data(shared_system_mirror.clone())
     })
     .bind(

@@ -56,6 +56,12 @@ impl<T: UniformData + Default> UnifiedResponseMessages<T> {
             data,
         }
     }
+
+    pub fn success() -> Self {
+        let msg = String::default();
+        let data = T::default();
+        UnifiedResponseMessages { code: 0, msg, data }
+    }
 }
 
 impl<T: UniformData + Default, E: std::error::Error> From<Result<T, E>>

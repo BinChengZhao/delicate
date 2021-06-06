@@ -53,6 +53,42 @@ impl Default for SchedulerSecurityConf {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ExecutorSecurityConf {
+    pub security_level: SecurityLevel,
+    pub rsa_public_key: Option<SecurityeKey<RSAPublicKey>>,
+}
+
+impl Default for ExecutorSecurityConf {
+    fn default() -> Self {
+        let security_level = SecurityLevel::get_app_security_level();
+        let rsa_public_key =
+            SecurityeKey::<RSAPublicKey>::get_app_rsa_key("DELICATE_SECURITY_PUBLIC_KEY");
+
+        if matches!(security_level, SecurityLevel::Normal if rsa_public_key.is_err()) {
+            error!(
+                "{}",
+                rsa_public_key
+                    .err()
+                    .map(|e| "Initialization failed because: ".to_owned() + &e.to_string())
+                    .unwrap_or_default()
+            );
+            unreachable!("When the security level is Normal, the initialization `delicate-executor` must contain the secret key (DELICATE_SECURITY_PUBLIC_KEY)");
+        }
+
+        Self {
+            security_level: SecurityLevel::get_app_security_level(),
+            rsa_public_key: rsa_public_key.map(|k| SecurityeKey(k)).ok(),
+        }
+    }
+}
+
+impl ExecutorSecurityConf {
+    pub fn get_rsa_public_key(&self) -> Option<&RSAPublicKey> {
+        self.rsa_public_key.as_ref().map(|k| &k.0)
+    }
+}
+
 /// Delicate's security level.
 /// The distinction in security level is reflected at `bind_executor-api`.
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]

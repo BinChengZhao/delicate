@@ -55,10 +55,46 @@ impl BindRequest {
     }
 }
 
+impl SignedBindRequest {
+    pub fn verify(&self, ras_key: Option<&RSAPublicKey>) -> Result<(), crate::error::CommonError> {
+        Ok(ras_key
+            .map(|k| {
+                k.verify(
+                    PaddingScheme::new_pkcs1v15_sign(None),
+                    &self.signature[..],
+                    &self.signature[..],
+                )
+            })
+            .unwrap_or(Ok(()))?)
+    }
+}
+
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct BindResponse {
     pub token: String,
     pub time: i64,
+}
+
+impl BindResponse {
+    pub fn encrypt_self(
+        self,
+        pub_key: Option<&RSAPublicKey>,
+    ) -> Result<EncryptedBindResponse, crate::error::CommonError> {
+        let json_str = to_json_string(&self)?;
+
+        // Encrypt
+        let bind_response = pub_key
+            .map(|p| {
+                let padding = PaddingScheme::new_pkcs1v15_encrypt();
+                let mut rng = OsRng;
+
+                p.encrypt(&mut rng, padding, json_str.as_bytes())
+            })
+            .transpose()?
+            .unwrap_or(json_str.into_bytes());
+
+        Ok(EncryptedBindResponse { bind_response })
+    }
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]

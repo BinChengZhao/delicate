@@ -11,6 +11,7 @@ name = "delicate_utils"
 
 [dependencies]
 log = "^0.4"
+rand = "^0.8.3"
 ring = "^0.16.20"
 thiserror = "1.0.25"
 actix-web = "^3.3.2"
@@ -22,4 +23,3 @@ diesel = { version = "^1.4.6", features = ["postgres", "mysql", "extras", "r2d2"
 
 
 [dev-dependencies]
-rand = "^0.8.3"

@@ -16,7 +16,7 @@ pub enum CommonError {
     DisParse(#[from] JsonPayloadError),
     #[error("data serializing fail.")]
     DisSer(#[from] serde_json_error::Error),
-    #[error("data sign or Decrypt fail.")]
+    #[error("data sign or decrypt or verify fail.")]
     DisSign(#[from] ras_error::Error),
 }
 
