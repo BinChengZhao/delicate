@@ -123,7 +123,7 @@ async fn do_activate(
     pool: ShareData<db::ConnectionPool>,
     executor_processor_id: i64,
     scheduler: SharedSchedulerMetaInfo,
-) -> Result<(), crate_error::BindExecutorError> {
+) -> Result<(), crate_error::CommonError> {
     let bind_info = activate_executor(pool.get()?, executor_processor_id, scheduler).await?;
     activate_executor_row(pool.get()?, executor_processor_id, bind_info).await?;
     Ok(())
@@ -132,7 +132,7 @@ async fn activate_executor(
     conn: db::PoolConnection,
     executor_processor_id: i64,
     scheduler: SharedSchedulerMetaInfo,
-) -> Result<security::BindResponse, crate_error::BindExecutorError> {
+) -> Result<security::BindResponse, crate_error::CommonError> {
     let query = web::block::<_, model::UpdateExecutorProcessor, diesel::result::Error>(move || {
         executor_processor::table
             .find(executor_processor_id)
@@ -180,7 +180,7 @@ async fn activate_executor_row(
     conn: db::PoolConnection,
     executor_processor_id: i64,
     bind_info: security::BindResponse,
-) -> Result<(), crate_error::BindExecutorError> {
+) -> Result<(), crate_error::CommonError> {
     use db::schema::executor_processor::dsl::{executor_processor, status, token};
 
     // TODO:

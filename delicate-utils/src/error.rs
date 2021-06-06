@@ -1,5 +1,6 @@
 use crate::prelude::*;
 use actix_web::client::JsonPayloadError;
+pub(crate) use actix_web::client::SendRequestError as ClientSendRequestError;
 use actix_web::error::BlockingError;
 use diesel::r2d2::PoolError;
 

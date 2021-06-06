@@ -183,7 +183,6 @@ async fn suspend_task(
     HttpResponse::Ok().json(result)
 }
 
-
 #[post("/api/task/manual_trigger")]
 async fn manual_trigger_task(
     web::Json(model::TaskId { task_id }): web::Json<model::TaskId>,

@@ -1,43 +1,43 @@
+use crate::error::InitSchedulerError;
 use crate::prelude::*;
-use crate_error::InitSchedulerError;
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
-pub(crate) struct BindRequest {
-    pub(crate) scheduler_host: String,
-    pub(crate) executor_name: String,
-    pub(crate) executor_machine_id: i16,
-    pub(crate) time: u64,
+pub struct BindRequest {
+    pub scheduler_host: String,
+    pub executor_name: String,
+    pub executor_machine_id: i16,
+    pub time: u64,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
-pub(crate) struct SignedBindRequest {
-    pub(crate) bind_request: BindRequest,
-    pub(crate) signature: Vec<u8>,
+pub struct SignedBindRequest {
+    pub bind_request: BindRequest,
+    pub signature: Vec<u8>,
 }
 
 impl BindRequest {
-    pub(crate) fn set_scheduler_host(mut self, scheduler_host: String) -> Self {
+    pub fn set_scheduler_host(mut self, scheduler_host: String) -> Self {
         self.scheduler_host = scheduler_host;
         self
     }
 
-    pub(crate) fn set_executor_name(mut self, executor_name: String) -> Self {
+    pub fn set_executor_name(mut self, executor_name: String) -> Self {
         self.executor_name = executor_name;
         self
     }
 
-    pub(crate) fn set_executor_machine_id(mut self, executor_machine_id: i16) -> Self {
+    pub fn set_executor_machine_id(mut self, executor_machine_id: i16) -> Self {
         self.executor_machine_id = executor_machine_id;
         self
     }
 
-    pub(crate) fn set_time(mut self, time: u64) -> Self {
+    pub fn set_time(mut self, time: u64) -> Self {
         self.time = time;
         self
     }
 
     // Except here, the rest of the interaction is done using token-based symmetric encryption.
-    pub(crate) fn sign(
+    pub fn sign(
         self,
         priv_key: Option<&RSAPrivateKey>,
     ) -> Result<SignedBindRequest, crate::error::CommonError> {
@@ -56,18 +56,18 @@ impl BindRequest {
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
-pub(crate) struct BindResponse {
-    pub(crate) token: String,
-    pub(crate) time: i64,
+pub struct BindResponse {
+    pub token: String,
+    pub time: i64,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
-pub(crate) struct EncryptedBindResponse {
-    pub(crate) bind_response: Vec<u8>,
+pub struct EncryptedBindResponse {
+    pub bind_response: Vec<u8>,
 }
 
 impl EncryptedBindResponse {
-    pub(crate) fn decrypt_self(
+    pub fn decrypt_self(
         self,
         priv_key: &RSAPrivateKey,
     ) -> Result<BindResponse, crate::error::CommonError> {
@@ -78,7 +78,7 @@ impl EncryptedBindResponse {
     }
 }
 
-pub(crate) trait SecurityRsaKey<T: TryFrom<pem::Pem>>
+pub trait SecurityRsaKey<T: TryFrom<pem::Pem>>
 where
     InitSchedulerError: From<<T as std::convert::TryFrom<pem::Pem>>::Error>,
 {
@@ -98,12 +98,12 @@ impl SecurityRsaKey<RSAPrivateKey> for SecurityeKey<RSAPrivateKey> {}
 impl SecurityRsaKey<RSAPublicKey> for SecurityeKey<RSAPublicKey> {}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub(crate) struct SecurityeKey<T>(pub(crate) T);
+pub struct SecurityeKey<T>(pub T);
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub(crate) struct SchedulerSecurityConf {
-    pub(crate) security_level: SecurityLevel,
-    pub(crate) rsa_private_key: Option<SecurityeKey<RSAPrivateKey>>,
+pub struct SchedulerSecurityConf {
+    pub security_level: SecurityLevel,
+    pub rsa_private_key: Option<SecurityeKey<RSAPrivateKey>>,
 }
 
 impl Default for SchedulerSecurityConf {
@@ -133,7 +133,7 @@ impl Default for SchedulerSecurityConf {
 /// Delicate's security level.
 /// The distinction in security level is reflected at `bind_executor-api`.
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
-pub(crate) enum SecurityLevel {
+pub enum SecurityLevel {
     /// There are no strict restrictions.
     ZeroRestriction,
     /// Normal security validation, encrypted validation is required at `bind_executor-api`.
@@ -142,7 +142,7 @@ pub(crate) enum SecurityLevel {
 
 impl SecurityLevel {
     /// Get delicate-scheduler's security level from env.
-    pub(crate) fn get_app_security_level() -> Self {
+    pub fn get_app_security_level() -> Self {
         env::var_os("DELICATE_SECURITY_LEVEL").map_or(SecurityLevel::default(), |e| {
             e.to_str()
                 .map(|s| u16::from_str(s).ok())
@@ -170,24 +170,6 @@ impl TryFrom<u16> for SecurityLevel {
             _ => Err(InitSchedulerError::MisEnvVar(String::from("SecurityLevel"))),
         }
     }
-}
-
-#[cached(
-    type = "TimedSizedCache<i64, Option<String>>",
-    create = "{ TimedSizedCache::with_size_and_lifespan(1024, 60) }",
-    convert = r#"{ id }"#
-)]
-pub(crate) async fn get_executor_token_by_id(id: i64, conn: db::PoolConnection) -> Option<String> {
-    use db::schema::executor_processor;
-
-    web::block(move || {
-        executor_processor::table
-            .find(id)
-            .select(executor_processor::token)
-            .first::<String>(&conn)
-    })
-    .await
-    .ok()
 }
 
 #[test]

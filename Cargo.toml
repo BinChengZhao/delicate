@@ -2,5 +2,6 @@
 
 members = [
   "delicate-executor",
-  "delicate-scheduler"
+  "delicate-scheduler",
+  "delicate-utils"
 ]
