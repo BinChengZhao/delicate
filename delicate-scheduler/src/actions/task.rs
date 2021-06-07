@@ -222,7 +222,7 @@ async fn pre_run_task(
     let conn = pool.get()?;
 
     // Many machine.
-    let task_packages = web::block(move || {
+    let task_packages: Vec<(delicate_utils_task::TaskPackage, String)> = web::block(move || {
         task_bind::table
             .inner_join(executor_processor_bind::table.inner_join(executor_processor::table))
             .inner_join(task::table)
@@ -241,14 +241,13 @@ async fn pre_run_task(
             .filter(task_bind::task_id.eq(task_id))
             .load::<(delicate_utils_task::TaskPackage, String)>(&conn)
     })
-    .await?
-    .into_iter();
+    .await?;
 
     let client = RequestClient::default();
-    for (task_package, executor_token) in task_packages {
+    for (task_package, executor_token) in task_packages.into_iter() {
         let executor_host = task_package.host.clone() + "/run";
         info!("Run task{} at:{}", &task_package, &executor_host);
-        let signed_task_package = task_package.sign(executor_token)?;
+        let signed_task_package = task_package.sign(Some(&executor_token))?;
 
         client
             .post(executor_host)

@@ -12,37 +12,102 @@ use crate::prelude::*;
 )]
 
 pub struct TaskPackage {
+    /// Task_id should unique.
     pub id: i64,
+    /// Command string.
     command: String,
+    /// Repeat type and count.
     frequency: String,
+    /// Cron-expression str.
     cron_expression: String,
+    /// Maximum execution time (optional).
+    /// it can be use to deadline (excution-time + maximum_running_time).
     timeout: i16,
+    /// Maximum parallel runable num (optional).
     maximun_parallel_runnable_num: i16,
+    /// Target executor host.
     pub host: String,
 }
 
+#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
+pub enum FrequencyModelType {
+    Once = 1,
+    CountDown = 2,
+    Repeat = 3,
+}
+
+impl Default for FrequencyModelType {
+    fn default() -> Self {
+        FrequencyModelType::Repeat
+    }
+}
+
+#[derive(Copy, Clone, Debug, Default, Serialize, Deserialize)]
+pub struct FrequencyObject {
+    mode: i8,
+    extend: FrequencyExtend,
+}
+
+#[derive(Copy, Clone, Debug, Default, Serialize, Deserialize)]
+pub struct FrequencyExtend {
+    count: u64,
+    time_zone: u8,
+}
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
 
 pub struct SignedTaskPackage {
-    task_package: TaskPackage,
+    pub task_package: TaskPackage,
     pub signature: Vec<u8>,
 }
 
 impl TaskPackage {
-    pub fn sign(self, token: String) -> Result<SignedTaskPackage, crate::error::CommonError> {
-        let json_str = to_json_string(&self)?;
-
-        let signature = if token.is_empty() {
-            Vec::default()
-        } else {
-            let raw_str = json_str + &token;
-            digest(&SHA256, raw_str.as_bytes()).as_ref().to_vec()
-        };
+    pub fn sign(self, token: Option<&str>) -> Result<SignedTaskPackage, crate::error::CommonError> {
+        let signature = get_signature(&self, token)?;
 
         Ok(SignedTaskPackage {
             task_package: self,
             signature,
         })
+    }
+}
+
+impl SignedTaskPackage {
+    pub fn verify(&self, token: Option<&str>) -> Result<(), crate::error::CommonError> {
+        let SignedTaskPackage {
+            ref task_package,
+            ref signature,
+        } = self;
+
+        let s = get_signature(task_package, token)?;
+
+        if s.eq(signature) {
+            Ok(())
+        } else {
+            Err(crate::error::CommonError::DisVerify)
+        }
+    }
+
+    pub fn get_task_package_after_verify(
+        self,
+        token: Option<&str>,
+    ) -> Result<TaskPackage, crate::error::CommonError> {
+        self.verify(token)?;
+        let SignedTaskPackage { task_package, .. } = self;
+
+        Ok(task_package)
+    }
+}
+
+pub fn get_signature<T: Serialize>(
+    data: &T,
+    token: Option<&str>,
+) -> Result<Vec<u8>, crate::error::CommonError> {
+    if let Some(token) = token {
+        let json_str = to_json_string(data)?;
+        let raw_str = json_str + token;
+        Ok(digest(&SHA256, raw_str.as_bytes()).as_ref().to_vec())
+    } else {
+        Ok(Vec::default())
     }
 }
 

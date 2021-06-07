@@ -18,6 +18,8 @@ pub enum CommonError {
     DisSer(#[from] serde_json_error::Error),
     #[error("data sign or decrypt or verify fail.")]
     DisSign(#[from] ras_error::Error),
+    #[error("Consensus message signature verification failed.")]
+    DisVerify,
 }
 
 #[derive(ThisError, Debug)]

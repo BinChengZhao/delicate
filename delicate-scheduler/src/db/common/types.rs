@@ -13,15 +13,6 @@ pub(crate) enum IdentityType {
     Username = 3,
 }
 
-#[allow(dead_code)]
-pub(crate) enum FrequencyModelType {
-    Once = 1,
-    CountDown = 2,
-    Repeat = 3,
-}
-
-//
-
 impl From<i16> for EventType {
     fn from(value: i16) -> Self {
         match value {
