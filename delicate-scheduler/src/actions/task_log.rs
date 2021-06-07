@@ -174,7 +174,7 @@ async fn kill_one_task_instance(
         record_id,
         executor_processor_id,
     }: model::TaskRecord,
-) -> Result<UnifiedResponseMessages<()>, crate_error::CommonError> {
+) -> Result<UnifiedResponseMessages<()>, CommonError> {
     use db::schema::task_log;
 
     let token = model::get_executor_token_by_id(executor_processor_id, pool.get()?).await;
@@ -196,7 +196,7 @@ async fn kill_one_task_instance(
     let client = RequestClient::default();
     let url = "http://".to_string() + &host + "/cancel";
 
-    let record = model::CancelTaskRecord::default()
+    let record = delicate_utils_task_log::CancelTaskRecord::default()
         .set_task_id(task_id)
         .set_record_id(record_id)
         .set_time(get_timestamp())

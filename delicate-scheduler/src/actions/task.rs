@@ -109,15 +109,15 @@ async fn update_task(
                     let removed_task_binds: Vec<model::NewTaskBind> = original_task_binds
                         .difference(&current_task_binds)
                         .into_iter()
-                        .map(|b| *b)
-                        .map(|bind_id| model::NewTaskBind { bind_id, task_id })
+                        .copied()
+                        .map(|bind_id| model::NewTaskBind { task_id, bind_id })
                         .collect();
 
                     let append_task_binds: Vec<model::NewTaskBind> = current_task_binds
                         .difference(&original_task_binds)
                         .into_iter()
-                        .map(|b| *b)
-                        .map(|bind_id| model::NewTaskBind { bind_id, task_id })
+                        .copied()
+                        .map(|bind_id| model::NewTaskBind { task_id, bind_id })
                         .collect();
 
                     for model::NewTaskBind { task_id, bind_id } in removed_task_binds {
@@ -214,7 +214,7 @@ async fn manual_trigger_task(
 async fn pre_run_task(
     task_id: i64,
     pool: ShareData<db::ConnectionPool>,
-) -> Result<(), crate_error::CommonError> {
+) -> Result<(), CommonError> {
     use db::schema::executor_processor::dsl::{host, token};
     use db::schema::task::dsl::*;
     use db::schema::{executor_processor, executor_processor_bind, task, task_bind};
@@ -239,7 +239,7 @@ async fn pre_run_task(
                 (token),
             ))
             .filter(task_bind::task_id.eq(task_id))
-            .load::<(model::TaskPackage, String)>(&conn)
+            .load::<(delicate_utils_task::TaskPackage, String)>(&conn)
     })
     .await?
     .into_iter();
@@ -264,7 +264,7 @@ async fn pre_run_task(
 async fn pre_suspend_task(
     task_id: i64,
     pool: ShareData<db::ConnectionPool>,
-) -> Result<(), crate_error::CommonError> {
+) -> Result<(), CommonError> {
     use db::schema::executor_processor::dsl::{host, token};
     use db::schema::{executor_processor, executor_processor_bind, task, task_bind};
 
@@ -284,7 +284,7 @@ async fn pre_suspend_task(
 
     let client = RequestClient::default();
     for (executor_host, executor_token) in executor_packages {
-        let message = model::SuspendTaskRecord::default()
+        let message = delicate_utils_task::SuspendTaskRecord::default()
             .set_task_id(task_id)
             .set_time(get_timestamp());
 

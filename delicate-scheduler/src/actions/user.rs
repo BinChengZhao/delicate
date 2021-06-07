@@ -150,7 +150,8 @@ async fn login_user(
 
 #[post("/api/user/logout")]
 async fn logout_user(session: Session) -> HttpResponse {
-    HttpResponse::Ok().json(UnifiedResponseMessages::<()>::success_with_data(
-        session.purge(),
-    ))
+    HttpResponse::Ok().json({
+        session.purge();
+        UnifiedResponseMessages::<()>::success()
+    })
 }

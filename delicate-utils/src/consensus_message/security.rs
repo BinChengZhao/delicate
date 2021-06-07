@@ -7,8 +7,8 @@ where
 {
     /// Get delicate-executor's security key from env.
     fn get_app_rsa_key(key_name: &str) -> Result<T, InitSchedulerError> {
-        let key_path =
-            env::var_os(key_name).ok_or(InitSchedulerError::MisEnvVar(String::from(key_name)))?;
+        let key_path = env::var_os(key_name)
+            .ok_or_else(|| InitSchedulerError::MisEnvVar(String::from(key_name)))?;
 
         let key_pem = fs::read(key_path)?;
         let key: T = pem::parse(key_pem)?.try_into()?;
@@ -48,7 +48,7 @@ impl Default for SchedulerSecurityConf {
 
         Self {
             security_level: SecurityLevel::get_app_security_level(),
-            rsa_private_key: rsa_private_key.map(|k| SecurityeKey(k)).ok(),
+            rsa_private_key: rsa_private_key.map(SecurityeKey).ok(),
         }
     }
 }
@@ -78,7 +78,7 @@ impl Default for ExecutorSecurityConf {
 
         Self {
             security_level: SecurityLevel::get_app_security_level(),
-            rsa_public_key: rsa_public_key.map(|k| SecurityeKey(k)).ok(),
+            rsa_public_key: rsa_public_key.map(SecurityeKey).ok(),
         }
     }
 }

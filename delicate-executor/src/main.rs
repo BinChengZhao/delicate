@@ -1,47 +1,9 @@
-use actix_web::web::{self, Data as ShareData};
-use actix_web::{get, App, HttpResponse, HttpServer, Responder};
-
-use std::iter::repeat_with;
-
-use delay_timer::prelude::*;
-use delicate_utils::consensus_message::security::ExecutorSecurityConf;
-use delicate_utils::consensus_message::service_binding::{
-    BindRequest, BindResponse, EncryptedBindResponse, SignedBindRequest,
-};
-use delicate_utils::uniform_data::UnifiedResponseMessages;
-
-use delay_timer::utils::convenience::functions::unblock_process_task_fn;
-use serde::{Deserialize, Serialize};
-
-use anyhow::{anyhow, Error as AnyError};
-
-use async_lock::RwLock;
-
-use std::convert::{From, Into, TryFrom, TryInto};
-use std::env;
-
 mod component;
-use component::*;
+mod prelude;
+use prelude::*;
 
-type SharedBindScheduler = ShareData<BindScheduler>;
-type SharedExecutorSecurityConf = ShareData<ExecutorSecurityConf>;
-type UnitUnifiedResponseMessages = UnifiedResponseMessages<()>;
-type StringUnifiedResponseMessages = UnifiedResponseMessages<String>;
-type SharedSystemMirror = ShareData<SystemMirror>;
-
-#[derive(Debug)]
-struct BindScheduler {
-    inner: RwLock<Option<(BindRequest, String)>>,
-}
-
-impl Default for BindScheduler {
-    fn default() -> BindScheduler {
-        let inner = RwLock::new(None);
-        BindScheduler { inner }
-    }
-}
 #[derive(Debug, Default, Serialize, Deserialize)]
-struct TaskConf {
+pub(crate) struct TaskConf {
     /// Task_id should unique.
     task_id: u64,
     /// Command string.
@@ -204,7 +166,7 @@ async fn bind_executor(
     }
 
     HttpResponse::Ok().json(
-        StringUnifiedResponseMessages::error()
+        UnifiedResponseMessages::<EncryptedBindResponse>::error()
             .customized_error_msg(verify_result.expect_err("").to_string()),
     )
 }

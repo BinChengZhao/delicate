@@ -1,5 +1,6 @@
 pub(crate) use log::error;
 
+pub(crate) use derive_more::Display;
 pub(crate) use rand::rngs::OsRng;
 #[allow(unused_imports)]
 pub(crate) use ring::digest::{digest, SHA256};

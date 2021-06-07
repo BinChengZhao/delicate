@@ -1,19 +1,16 @@
-use actix_web::web::Data as ShareData;
+use crate::prelude::*;
 
-use delay_timer::prelude::*;
+#[derive(Debug)]
+pub(crate) struct BindScheduler {
+    pub(crate) inner: RwLock<Option<(BindRequest, String)>>,
+}
 
-use serde::{Deserialize, Serialize};
-
-use sysinfo::{Process as SysProcess, RefreshKind, System, SystemExt};
-
-use async_lock::RwLock;
-
-use std::collections::HashMap;
-use std::convert::From;
-use std::fmt::Debug;
-use std::path::PathBuf;
-
-pub(crate) type SharedDelayTimer = ShareData<DelayTimer>;
+impl Default for BindScheduler {
+    fn default() -> BindScheduler {
+        let inner = RwLock::new(None);
+        BindScheduler { inner }
+    }
+}
 
 /// This is a mirror of the system that can reflect the current state of the system.
 // TODO:
