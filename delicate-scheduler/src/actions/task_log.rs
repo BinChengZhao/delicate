@@ -1,14 +1,16 @@
 use super::prelude::*;
 
 pub(crate) fn config(cfg: &mut web::ServiceConfig) {
-    cfg.service(create_task_logs).service(show_task_logs);
+    cfg.service(create_task_logs)
+        .service(show_task_logs)
+        .service(kill_task_instance);
 }
 
 // Depending on the event, scheduler records/updates different logs.
 // Bulk operations are supported for log messages passed from delicate-executor.
 #[post("/api/task_logs/event_trigger")]
 async fn create_task_logs(
-    web::Json(events_collection): web::Json<model::ExecutorEventCollection>,
+    web::Json(events_collection): web::Json<delicate_utils_task_log::ExecutorEventCollection>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
     use db::common::types::EventType;
@@ -25,12 +27,10 @@ async fn create_task_logs(
             web::block::<_, _, diesel::result::Error>(move || {
                 conn.transaction(|| {
                     let mut effect_num = 0;
-                    let model::ExecutorEventCollection { events, .. } = events_collection;
+                    let delicate_utils_task_log::ExecutorEventCollection { events, .. } =
+                        events_collection;
                     let mut new_task_logs: Vec<model::NewTaskLog> = Vec::new();
-                    let mut supply_task_logs: Vec<(
-                        model::SupplyTaskLog,
-                        model::SupplyTaskLogExtend,
-                    )> = Vec::new();
+                    let mut supply_task_logs: Vec<model::SupplyTaskLogTuple> = Vec::new();
 
                     events
                         .into_iter()
@@ -145,7 +145,7 @@ fn batch_insert_task_logs(
 
 fn batch_update_task_logs(
     conn: &db::PoolConnection,
-    supply_task_logs: Vec<(model::SupplyTaskLog, model::SupplyTaskLogExtend)>,
+    supply_task_logs: Vec<model::SupplyTaskLogTuple>,
 ) -> QueryResult<usize> {
     use db::schema::task_log_extend;
 
@@ -157,8 +157,10 @@ fn batch_update_task_logs(
             .execute(conn)?;
     }
 
-    let supply_task_logs_extend: Vec<model::SupplyTaskLogExtend> =
-        supply_task_logs.into_iter().map(|(_, t)| t).collect();
+    let supply_task_logs_extend: Vec<model::SupplyTaskLogExtend> = supply_task_logs
+        .into_iter()
+        .map(|model::SupplyTaskLogTuple(_, t)| t)
+        .collect();
 
     diesel::insert_into(task_log_extend::table)
         .values(&supply_task_logs_extend[..])

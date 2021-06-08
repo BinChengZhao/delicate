@@ -62,7 +62,7 @@ pub struct SignedTaskPackage {
 
 impl TaskPackage {
     pub fn sign(self, token: Option<&str>) -> Result<SignedTaskPackage, crate::error::CommonError> {
-        let signature = get_signature(&self, token)?;
+        let signature = make_signature(&self, token)?;
 
         Ok(SignedTaskPackage {
             task_package: self,
@@ -78,13 +78,7 @@ impl SignedTaskPackage {
             ref signature,
         } = self;
 
-        let s = get_signature(task_package, token)?;
-
-        if s.eq(signature) {
-            Ok(())
-        } else {
-            Err(crate::error::CommonError::DisVerify)
-        }
+        verify_signature_by_raw_data(task_package, token, signature)
     }
 
     pub fn get_task_package_after_verify(
@@ -95,19 +89,6 @@ impl SignedTaskPackage {
         let SignedTaskPackage { task_package, .. } = self;
 
         Ok(task_package)
-    }
-}
-
-pub fn get_signature<T: Serialize>(
-    data: &T,
-    token: Option<&str>,
-) -> Result<Vec<u8>, crate::error::CommonError> {
-    if let Some(token) = token {
-        let json_str = to_json_string(data)?;
-        let raw_str = json_str + token;
-        Ok(digest(&SHA256, raw_str.as_bytes()).as_ref().to_vec())
-    } else {
-        Ok(Vec::default())
     }
 }
 

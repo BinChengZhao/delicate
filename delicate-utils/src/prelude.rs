@@ -1,8 +1,9 @@
+pub use super::consensus_message::security::{make_signature, verify_signature_by_raw_data};
+
 pub(crate) use log::error;
 
 pub(crate) use derive_more::Display;
 pub(crate) use rand::rngs::OsRng;
-#[allow(unused_imports)]
 pub(crate) use ring::digest::{digest, SHA256};
 pub(crate) use serde::{Deserialize, Serialize};
 pub(crate) use serde_json::{

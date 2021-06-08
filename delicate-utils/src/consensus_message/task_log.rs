@@ -49,3 +49,40 @@ impl CancelTaskRecord {
         })
     }
 }
+
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+pub struct ExecutorEventCollection {
+    pub events: Vec<ExecutorEvent>,
+    signature: String,
+    timestamp: i64,
+}
+
+impl ExecutorEventCollection {
+    pub fn verify_signature(&self, _token: &str) -> bool {
+        todo!();
+    }
+}
+
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+pub struct ExecutorEvent {
+    pub task_id: i64,
+    pub id: i64,
+    pub event_type: i16,
+    pub executor_processor_id: i64,
+    pub executor_processor_name: String,
+    pub executor_processor_host: String,
+    pub output: Option<FinishOutput>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum FinishOutput {
+    ProcessOutput(ChildOutput),
+    ExceptionOutput(String),
+}
+
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+pub struct ChildOutput {
+    pub child_status: i32,
+    pub child_stdout: Vec<u8>,
+    pub child_stderr: Vec<u8>,
+}

@@ -131,6 +131,32 @@ impl TryFrom<u16> for SecurityLevel {
     }
 }
 
+pub fn make_signature<T: Serialize>(
+    data: &T,
+    token: Option<&str>,
+) -> Result<Vec<u8>, crate::error::CommonError> {
+    if let Some(token) = token {
+        let json_str = to_json_string(data)?;
+        let raw_str = json_str + token;
+        Ok(digest(&SHA256, raw_str.as_bytes()).as_ref().to_vec())
+    } else {
+        Ok(Vec::default())
+    }
+}
+
+pub fn verify_signature_by_raw_data<T: Serialize>(
+    data: &T,
+    token: Option<&str>,
+    signature: &[u8],
+) -> Result<(), crate::error::CommonError> {
+    let signature_new = make_signature(data, token)?;
+    if signature_new.eq(signature) {
+        Ok(())
+    } else {
+        Err(crate::error::CommonError::DisVerify)
+    }
+}
+
 #[test]
 fn test_rsa_crypt() {
     use crate::prelude::*;

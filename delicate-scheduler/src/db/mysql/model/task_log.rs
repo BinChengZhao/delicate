@@ -1,5 +1,6 @@
 use super::prelude::*;
 use super::schema::{task_log, task_log_extend};
+use delicate_utils_task_log::{ExecutorEventCollection, ExecutorEvent, ChildOutput, FinishOutput};
 
 pub(crate) struct TaskLogQueryBuilder;
 impl TaskLogQueryBuilder {
@@ -12,37 +13,15 @@ impl TaskLogQueryBuilder {
     }
 }
 
-impl From<ExecutorEventCollection> for Vec<NewTaskLog> {
+pub struct NewTaskLogs(pub Vec<NewTaskLog>);
+
+impl From<ExecutorEventCollection> for NewTaskLogs {
     fn from(value: ExecutorEventCollection) -> Self {
         let ExecutorEventCollection { events, .. } = value;
-        events.into_iter().map(|e| e.into()).collect()
+        NewTaskLogs(events.into_iter().map(|e| e.into()).collect())
     }
 }
 
-#[derive(Default, Debug, Clone, Serialize, Deserialize)]
-pub(crate) struct ExecutorEventCollection {
-    pub(crate) events: Vec<ExecutorEvent>,
-    signature: String,
-    timestamp: i64,
-}
-
-impl ExecutorEventCollection {
-    pub(crate) fn verify_signature(&self, _token: &str) -> bool {
-        todo!();
-    }
-}
-
-// TODO:  `delay_timer::utils::status_report::PublicEvent::FinishTask` without task_id and id.
-#[derive(Default, Debug, Clone, Serialize, Deserialize)]
-pub(crate) struct ExecutorEvent {
-    task_id: i64,
-    id: i64,
-    pub(crate) event_type: i16,
-    executor_processor_id: i64,
-    executor_processor_name: String,
-    executor_processor_host: String,
-    output: Option<FinishOutput>,
-}
 
 impl From<ExecutorEvent> for NewTaskLog {
     fn from(
@@ -72,7 +51,8 @@ impl From<ExecutorEvent> for NewTaskLog {
     }
 }
 
-impl From<ExecutorEvent> for (SupplyTaskLog, SupplyTaskLogExtend) {
+pub struct SupplyTaskLogTuple(pub SupplyTaskLog, pub SupplyTaskLogExtend);
+impl From<ExecutorEvent> for SupplyTaskLogTuple {
     fn from(
         ExecutorEvent {
             event_type,
@@ -110,7 +90,7 @@ impl From<ExecutorEvent> for (SupplyTaskLog, SupplyTaskLogExtend) {
 
         let status = state as i16;
 
-        (
+        SupplyTaskLogTuple(
             SupplyTaskLog { id, status },
             SupplyTaskLogExtend {
                 id,
@@ -122,18 +102,6 @@ impl From<ExecutorEvent> for (SupplyTaskLog, SupplyTaskLogExtend) {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub(crate) enum FinishOutput {
-    ProcessOutput(ChildOutput),
-    ExceptionOutput(String),
-}
-
-#[derive(Default, Debug, Clone, Serialize, Deserialize)]
-pub(crate) struct ChildOutput {
-    pub(crate) child_status: i32,
-    pub(crate) child_stdout: Vec<u8>,
-    pub(crate) child_stderr: Vec<u8>,
-}
 
 // TODO: Use `replace_into` instead of `insert_into` to process data.
 
