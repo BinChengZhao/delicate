@@ -1,17 +1,5 @@
 use crate::prelude::*;
 
-#[derive(Debug)]
-pub(crate) struct BindScheduler {
-    pub(crate) inner: RwLock<Option<(BindRequest, String)>>,
-}
-
-impl Default for BindScheduler {
-    fn default() -> BindScheduler {
-        let inner = RwLock::new(None);
-        BindScheduler { inner }
-    }
-}
-
 /// This is a mirror of the system that can reflect the current state of the system.
 // TODO:
 #[derive(Debug)]

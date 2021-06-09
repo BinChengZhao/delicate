@@ -15,16 +15,15 @@ pub struct TaskPackage {
     /// Task_id should unique.
     pub id: i64,
     /// Command string.
-    command: String,
+    pub command: String,
     /// Repeat type and count.
-    frequency: String,
+    pub frequency: String,
     /// Cron-expression str.
-    cron_expression: String,
-    /// Maximum execution time (optional).
-    /// it can be use to deadline (excution-time + maximum_running_time).
-    timeout: i16,
+    pub cron_expression: String,
+    /// timeout.
+    pub timeout: i16,
     /// Maximum parallel runable num (optional).
-    maximun_parallel_runnable_num: i16,
+    pub maximun_parallel_runnable_num: i16,
     /// Target executor host.
     pub host: String,
 }
@@ -42,16 +41,34 @@ impl Default for FrequencyModelType {
     }
 }
 
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+pub struct FrequencyModel<'a> {
+    pub metadata: FrequencyObject,
+    pub cron_expression: &'a str,
+}
+
+impl<'a> TryInto<Frequency<'a>> for FrequencyModel<'a> {
+    type Error = CommonError;
+    fn try_into(self) -> Result<Frequency<'a>, Self::Error> {
+        match self.metadata.mode {
+            1 => {}
+            // FrequencyModelType::Once as i8 => {}
+            // FrequencyModelType::Once as i8 => {}
+            _ => {}
+        }
+        todo!();
+    }
+}
 #[derive(Copy, Clone, Debug, Default, Serialize, Deserialize)]
 pub struct FrequencyObject {
-    mode: i8,
-    extend: FrequencyExtend,
+    pub mode: i8,
+    pub extend: FrequencyExtend,
 }
 
 #[derive(Copy, Clone, Debug, Default, Serialize, Deserialize)]
 pub struct FrequencyExtend {
-    count: u64,
-    time_zone: u8,
+    pub count: u64,
+    pub time_zone: u8,
 }
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
 
@@ -126,5 +143,33 @@ impl SuspendTaskRecord {
             suspend_task_record: self,
             signature,
         })
+    }
+}
+
+impl TryFrom<TaskPackage> for Task {
+    type Error = CommonError;
+    fn try_from(task_package: TaskPackage) -> Result<Self, Self::Error> {
+        // let TaskPackage {
+        //     id,
+        //     command,
+        //     frequency,
+        //     cron_expression,
+        //     timeout,
+        //     maximun_parallel_runnable_num,
+        //     ..
+        // } = task_package;
+
+        // let frequency: FrequencyObject = json_from_slice(frequency.as_bytes())?;
+
+        // let mut task_builder = TaskBuilder::default();
+        // let task = task_builder
+        //     .set_task_id(id as u64)
+        //     .set_frequency(frequency)
+        //     .set_maximum_running_time(timeout as u64)
+        //     .set_maximun_parallel_runable_num(maximun_parallel_runnable_num as u64)
+        //     .spawn(unblock_process_task_fn(command))?;
+
+        // Ok(task)
+        todo!();
     }
 }

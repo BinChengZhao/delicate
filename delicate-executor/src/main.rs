@@ -2,32 +2,22 @@ mod component;
 mod prelude;
 use prelude::*;
 
-// impl TryFrom<TaskConf> for Task {
-//     type Error = AnyError;
-//     fn try_from(task_conf: TaskConf) -> Result<Self, Self::Error> {
-//         let frequency: Frequency = FrequencyRaw::from(&task_conf).try_into()?;
-
-//         let mut task_builder = TaskBuilder::default();
-//         let task = task_builder
-//             .set_task_id(task_conf.task_id)
-//             .set_frequency(frequency)
-//             .set_maximum_running_time(task_conf.maximum_running_time)
-//             .set_maximun_parallel_runable_num(task_conf.maximun_parallel_runnable_num)
-//             .spawn(unblock_process_task_fn(task_conf.command_string.clone()))?;
-
-//         Ok(task)
-//     }
-// }
-
 /// This handler uses json extractor
-#[get("/add_task")]
-async fn add_task(// task_conf: web::Json<TaskConf>,
-    // shared_delay_timer: SharedDelayTimer,
+#[get("/api/task/create")]
+async fn create_task(
+    web::Json(signed_task_package): web::Json<SignedTaskPackage>,
+    shared_delay_timer: SharedDelayTimer,
+    executor_conf: SharedExecutorSecurityConf,
 ) -> impl Responder {
     let response = UnitUnifiedResponseMessages::error();
     // if let Ok(task) = Task::try_from(task_conf.0) {
     //     response = shared_delay_timer.add_task(task).into();
     // }
+    let guard = executor_conf.get_bind_scheduler_inner_ref().await;
+    let token = guard.as_ref().map(|b| (&b.1).deref());
+    let task_package = signed_task_package
+        .get_task_package_after_verify(token)
+        .map(|t| {});
 
     HttpResponse::Ok().json(response)
 }
@@ -78,7 +68,6 @@ async fn health_screen(system_mirror: SharedSystemMirror) -> impl Responder {
 // Or set security level, no authentication at level 0, public and private keys required at level 1.
 async fn bind_executor(
     web::Json(request_bind_scheduler): web::Json<SignedBindRequest>,
-    delicate_shared_scheduler: SharedBindScheduler,
     security_conf: web::Data<ExecutorSecurityConf>,
 ) -> impl Responder {
     let verify_result = request_bind_scheduler.verify(security_conf.get_ref().get_rsa_public_key());
@@ -86,9 +75,8 @@ async fn bind_executor(
         let SignedBindRequest { bind_request, .. } = request_bind_scheduler;
 
         let token: String = repeat_with(fastrand::alphanumeric).take(32).collect();
-        delicate_shared_scheduler
-            .inner
-            .write()
+        security_conf
+            .get_bind_scheduler_inner_mut()
             .await
             .replace((bind_request, token.clone()));
 
@@ -113,7 +101,6 @@ async fn main() -> std::io::Result<()> {
     let delay_timer = DelayTimerBuilder::default().enable_status_report().build();
 
     let shared_delay_timer: SharedDelayTimer = ShareData::new(delay_timer);
-    let shared_scheduler: SharedBindScheduler = ShareData::new(BindScheduler::default());
     let shared_security_conf: SharedExecutorSecurityConf =
         ShareData::new(ExecutorSecurityConf::default());
     let shared_system_mirror: SharedSystemMirror = ShareData::new(SystemMirror::default());
@@ -121,12 +108,11 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .service(bind_executor)
-            .service(add_task)
+            .service(create_task)
             .service(remove_task)
             .service(cancel_task)
             .service(health_screen)
             .app_data(shared_delay_timer.clone())
-            .app_data(shared_scheduler.clone())
             .app_data(shared_security_conf.clone())
             .app_data(shared_system_mirror.clone())
     })

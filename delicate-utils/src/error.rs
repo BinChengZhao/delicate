@@ -20,6 +20,8 @@ pub enum CommonError {
     DisSign(#[from] ras_error::Error),
     #[error("Consensus message signature verification failed.")]
     DisVerify,
+    #[error("DelayTimer's task operation failed.")]
+    DisOpeate(#[from] TaskError),
 }
 
 #[derive(ThisError, Debug)]

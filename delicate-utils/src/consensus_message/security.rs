@@ -1,5 +1,6 @@
 use crate::error::InitSchedulerError;
 use crate::prelude::*;
+use service_binding::BindRequest;
 
 pub trait SecurityRsaKey<T: TryFrom<pem::Pem>>
 where
@@ -53,10 +54,37 @@ impl Default for SchedulerSecurityConf {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug)]
 pub struct ExecutorSecurityConf {
     pub security_level: SecurityLevel,
     pub rsa_public_key: Option<SecurityeKey<RSAPublicKey>>,
+    pub bind_scheduler: BindScheduler,
+}
+
+#[derive(Debug)]
+pub struct BindScheduler {
+    pub inner: RwLock<Option<(BindRequest, String)>>,
+}
+
+impl ExecutorSecurityConf {
+    pub async fn get_bind_scheduler_inner_ref(
+        &self,
+    ) -> RwLockReadGuard<'_, Option<(BindRequest, String)>> {
+        self.bind_scheduler.inner.read().await
+    }
+
+    pub async fn get_bind_scheduler_inner_mut(
+        &self,
+    ) -> RwLockWriteGuard<'_, Option<(BindRequest, String)>> {
+        self.bind_scheduler.inner.write().await
+    }
+}
+
+impl Default for BindScheduler {
+    fn default() -> BindScheduler {
+        let inner = RwLock::new(None);
+        BindScheduler { inner }
+    }
 }
 
 impl Default for ExecutorSecurityConf {
@@ -76,9 +104,12 @@ impl Default for ExecutorSecurityConf {
             unreachable!("When the security level is Normal, the initialization `delicate-executor` must contain the secret key (DELICATE_SECURITY_PUBLIC_KEY)");
         }
 
+        let bind_scheduler = BindScheduler::default();
+
         Self {
             security_level: SecurityLevel::get_app_security_level(),
             rsa_public_key: rsa_public_key.map(SecurityeKey).ok(),
+            bind_scheduler,
         }
     }
 }
