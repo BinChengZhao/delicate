@@ -32,21 +32,37 @@ impl CancelTaskRecord {
     }
     pub fn sign(
         self,
-        token: Option<String>,
+        token: Option<&str>,
     ) -> Result<SignedCancelTaskRecord, crate::error::CommonError> {
-        let json_str = to_json_string(&self)?;
-
-        let signature = token
-            .map(|t| {
-                let raw_str = json_str + &t;
-                digest(&SHA256, raw_str.as_bytes()).as_ref().to_vec()
-            })
-            .unwrap_or_default();
+        let signature = make_signature(&self, token)?;
 
         Ok(SignedCancelTaskRecord {
             cancel_task_record: self,
             signature,
         })
+    }
+}
+
+impl SignedCancelTaskRecord {
+    pub fn verify(&self, token: Option<&str>) -> Result<(), crate::error::CommonError> {
+        let SignedCancelTaskRecord {
+            ref cancel_task_record,
+            ref signature,
+        } = self;
+
+        verify_signature_by_raw_data(cancel_task_record, token, signature)
+    }
+
+    pub fn get_cancel_task_record_after_verify(
+        self,
+        token: Option<&str>,
+    ) -> Result<CancelTaskRecord, crate::error::CommonError> {
+        self.verify(token)?;
+        let SignedCancelTaskRecord {
+            cancel_task_record, ..
+        } = self;
+
+        Ok(cancel_task_record)
     }
 }
 

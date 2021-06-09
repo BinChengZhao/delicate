@@ -9,37 +9,109 @@ async fn create_task(
     shared_delay_timer: SharedDelayTimer,
     executor_conf: SharedExecutorSecurityConf,
 ) -> impl Responder {
-    let response = UnitUnifiedResponseMessages::error();
-    // if let Ok(task) = Task::try_from(task_conf.0) {
-    //     response = shared_delay_timer.add_task(task).into();
-    // }
-    let guard = executor_conf.get_bind_scheduler_inner_ref().await;
-    let token = guard.as_ref().map(|b| (&b.1).deref());
-    let task_package = signed_task_package
-        .get_task_package_after_verify(token)
-        .map(|t| {});
+    let response: UnitUnifiedResponseMessages =
+        Into::into(pre_create_task(signed_task_package, shared_delay_timer, executor_conf).await);
 
     HttpResponse::Ok().json(response)
 }
 
-#[get("/remove_task/{id}")]
-async fn remove_task(
-    web::Path(task_id): web::Path<u64>,
+pub async fn pre_create_task(
+    signed_task_package: SignedTaskPackage,
     shared_delay_timer: SharedDelayTimer,
-) -> HttpResponse {
-    let response: UnitUnifiedResponseMessages = shared_delay_timer.remove_task(task_id).into();
-    HttpResponse::Ok().json(response) // <- send response
+    executor_conf: SharedExecutorSecurityConf,
+) -> Result<(), CommonError> {
+    let guard = executor_conf.get_bind_scheduler_inner_ref().await;
+    let token = guard.as_ref().map(|b| (&b.1).deref());
+    let task = signed_task_package
+        .get_task_package_after_verify(token)
+        .map(TryInto::<Task>::try_into)??;
+
+    Ok(shared_delay_timer.add_task(task)?)
 }
 
-// TODO: Recive by json.
-#[get("/cancel_task/{task_id}/{record_id}")]
-async fn cancel_task(
-    web::Path((task_id, record_id)): web::Path<(u64, i64)>,
+#[get("/api/task/remove")]
+async fn remove_task(
+    web::Json(signed_suspend_task_record): web::Json<SignedSuspendTaskRecord>,
     shared_delay_timer: SharedDelayTimer,
+    executor_conf: SharedExecutorSecurityConf,
+) -> HttpResponse {
+    let response: UnitUnifiedResponseMessages = pre_remove_task(
+        signed_suspend_task_record,
+        shared_delay_timer,
+        executor_conf,
+    )
+    .await
+    .into();
+    HttpResponse::Ok().json(response)
+}
+
+pub async fn pre_remove_task(
+    signed_suspend_task_record: SignedSuspendTaskRecord,
+    shared_delay_timer: SharedDelayTimer,
+    executor_conf: SharedExecutorSecurityConf,
+) -> Result<(), CommonError> {
+    let guard = executor_conf.get_bind_scheduler_inner_ref().await;
+    let token = guard.as_ref().map(|b| (&b.1).deref());
+    let suspend_task_record =
+        signed_suspend_task_record.get_suspend_task_record_after_verify(token)?;
+    Ok(shared_delay_timer.remove_task(suspend_task_record.task_id as u64)?)
+}
+
+// TODO: Scheduler wait for impl.
+#[get("/api/task/advance")]
+async fn advance_task(
+    web::Json(signed_suspend_task_record): web::Json<SignedSuspendTaskRecord>,
+    shared_delay_timer: SharedDelayTimer,
+    executor_conf: SharedExecutorSecurityConf,
+) -> HttpResponse {
+    let response: UnitUnifiedResponseMessages = pre_advance_task(
+        signed_suspend_task_record,
+        shared_delay_timer,
+        executor_conf,
+    )
+    .await
+    .into();
+    HttpResponse::Ok().json(response)
+}
+
+pub async fn pre_advance_task(
+    signed_suspend_task_record: SignedSuspendTaskRecord,
+    shared_delay_timer: SharedDelayTimer,
+    executor_conf: SharedExecutorSecurityConf,
+) -> Result<(), CommonError> {
+    let guard = executor_conf.get_bind_scheduler_inner_ref().await;
+    let token = guard.as_ref().map(|b| (&b.1).deref());
+    let suspend_task_record =
+        signed_suspend_task_record.get_suspend_task_record_after_verify(token)?;
+    Ok(shared_delay_timer.remove_task(suspend_task_record.task_id as u64)?)
+}
+
+#[get("/api/task_instance/kill")]
+async fn cancel_task(
+    web::Json(signed_cancel_task_record): web::Json<SignedCancelTaskRecord>,
+    shared_delay_timer: SharedDelayTimer,
+    executor_conf: SharedExecutorSecurityConf,
 ) -> HttpResponse {
     let response: UnitUnifiedResponseMessages =
-        shared_delay_timer.cancel_task(task_id, record_id).into();
-    HttpResponse::Ok().json(response) // <- send response
+        pre_cancel_task(signed_cancel_task_record, shared_delay_timer, executor_conf)
+            .await
+            .into();
+    HttpResponse::Ok().json(response)
+}
+
+pub async fn pre_cancel_task(
+    signed_cancel_task_record: SignedCancelTaskRecord,
+    shared_delay_timer: SharedDelayTimer,
+    executor_conf: SharedExecutorSecurityConf,
+) -> Result<(), CommonError> {
+    let guard = executor_conf.get_bind_scheduler_inner_ref().await;
+    let token = guard.as_ref().map(|b| (&b.1).deref());
+    let cancel_task_record =
+        signed_cancel_task_record.get_cancel_task_record_after_verify(token)?;
+    Ok(shared_delay_timer.cancel_task(
+        cancel_task_record.task_id as u64,
+        cancel_task_record.record_id,
+    )?)
 }
 
 #[allow(dead_code)]

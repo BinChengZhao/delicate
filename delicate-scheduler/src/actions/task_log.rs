@@ -196,13 +196,13 @@ async fn kill_one_task_instance(
     .await?;
 
     let client = RequestClient::default();
-    let url = "http://".to_string() + &host + "/cancel";
+    let url = "http://".to_string() + &host + "/api/task_instance/kill";
 
     let record = delicate_utils_task_log::CancelTaskRecord::default()
         .set_task_id(task_id)
         .set_record_id(record_id)
         .set_time(get_timestamp())
-        .sign(token)?;
+        .sign(token.as_deref())?;
 
     let response = client
         .post(url)

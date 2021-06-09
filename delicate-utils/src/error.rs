@@ -22,6 +22,8 @@ pub enum CommonError {
     DisVerify,
     #[error("DelayTimer's task operation failed.")]
     DisOpeate(#[from] TaskError),
+    #[error("Invalid operation, or invalid data.(`{0}`)")]
+    DisPass(String),
 }
 
 #[derive(ThisError, Debug)]

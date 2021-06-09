@@ -245,7 +245,7 @@ async fn pre_run_task(
 
     let client = RequestClient::default();
     for (task_package, executor_token) in task_packages.into_iter() {
-        let executor_host = task_package.host.clone() + "/run";
+        let executor_host = "http://".to_string() + &task_package.host + "/api/task/create";
         info!("Run task{} at:{}", &task_package, &executor_host);
         let signed_task_package = task_package.sign(Some(&executor_token))?;
 
@@ -287,10 +287,10 @@ async fn pre_suspend_task(
             .set_task_id(task_id)
             .set_time(get_timestamp());
 
-        let executor_host = executor_host + "/remove";
+        let executor_host = "http://".to_string() + &executor_host + "/api/task/remove";
 
         info!("Suspend task{} at:{}", message, &executor_host);
-        let signed_task_package = message.sign(executor_token)?;
+        let signed_task_package = message.sign(Some(&executor_token))?;
 
         client
             .post(executor_host)

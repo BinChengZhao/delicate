@@ -47,16 +47,22 @@ pub struct FrequencyModel<'a> {
     pub cron_expression: &'a str,
 }
 
-impl<'a> TryInto<Frequency<'a>> for FrequencyModel<'a> {
+impl<'a> TryFrom<FrequencyModel<'a>> for Frequency<'a> {
     type Error = CommonError;
-    fn try_into(self) -> Result<Frequency<'a>, Self::Error> {
-        match self.metadata.mode {
-            1 => {}
-            // FrequencyModelType::Once as i8 => {}
-            // FrequencyModelType::Once as i8 => {}
-            _ => {}
-        }
-        todo!();
+    fn try_from(value: FrequencyModel<'a>) -> Result<Frequency<'a>, Self::Error> {
+        // FrequencyModelType
+        let frequency = match value.metadata.mode {
+            1 => Frequency::Once(value.cron_expression),
+            2 => Frequency::CountDown(value.metadata.extend.count, value.cron_expression),
+            3 => Frequency::Repeated(value.cron_expression),
+            _ => {
+                return Err(CommonError::DisPass(String::from(
+                    "Ineffective frequency mode.",
+                )));
+            }
+        };
+
+        Ok(frequency)
     }
 }
 #[derive(Copy, Clone, Debug, Default, Serialize, Deserialize)]
@@ -67,7 +73,7 @@ pub struct FrequencyObject {
 
 #[derive(Copy, Clone, Debug, Default, Serialize, Deserialize)]
 pub struct FrequencyExtend {
-    pub count: u64,
+    pub count: u32,
     pub time_zone: u8,
 }
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
@@ -120,7 +126,7 @@ pub struct SuspendTaskRecord {
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
 
 pub struct SignedSuspendTaskRecord {
-    suspend_task_record: SuspendTaskRecord,
+    pub suspend_task_record: SuspendTaskRecord,
     pub signature: Vec<u8>,
 }
 
@@ -134,11 +140,11 @@ impl SuspendTaskRecord {
         self.time = time;
         self
     }
-    pub fn sign(self, token: String) -> Result<SignedSuspendTaskRecord, crate::error::CommonError> {
-        let json_str = to_json_string(&self)?;
-
-        let raw_str = json_str + &token;
-        let signature = digest(&SHA256, raw_str.as_bytes()).as_ref().to_vec();
+    pub fn sign(
+        self,
+        token: Option<&str>,
+    ) -> Result<SignedSuspendTaskRecord, crate::error::CommonError> {
+        let signature = make_signature(&self, token)?;
         Ok(SignedSuspendTaskRecord {
             suspend_task_record: self,
             signature,
@@ -146,30 +152,59 @@ impl SuspendTaskRecord {
     }
 }
 
+impl SignedSuspendTaskRecord {
+    pub fn verify(&self, token: Option<&str>) -> Result<(), crate::error::CommonError> {
+        let SignedSuspendTaskRecord {
+            ref suspend_task_record,
+            ref signature,
+        } = self;
+
+        verify_signature_by_raw_data(suspend_task_record, token, signature)
+    }
+
+    pub fn get_suspend_task_record_after_verify(
+        self,
+        token: Option<&str>,
+    ) -> Result<SuspendTaskRecord, crate::error::CommonError> {
+        self.verify(token)?;
+        let SignedSuspendTaskRecord {
+            suspend_task_record,
+            ..
+        } = self;
+
+        Ok(suspend_task_record)
+    }
+}
+
 impl TryFrom<TaskPackage> for Task {
     type Error = CommonError;
     fn try_from(task_package: TaskPackage) -> Result<Self, Self::Error> {
-        // let TaskPackage {
-        //     id,
-        //     command,
-        //     frequency,
-        //     cron_expression,
-        //     timeout,
-        //     maximun_parallel_runnable_num,
-        //     ..
-        // } = task_package;
+        let TaskPackage {
+            id,
+            command,
+            frequency,
+            cron_expression,
+            timeout,
+            maximun_parallel_runnable_num,
+            ..
+        } = task_package;
 
-        // let frequency: FrequencyObject = json_from_slice(frequency.as_bytes())?;
+        let metadata: FrequencyObject = json_from_slice(frequency.as_bytes())?;
+        let cron_expression = &cron_expression;
+        let frequency_model: FrequencyModel = FrequencyModel {
+            metadata,
+            cron_expression,
+        };
+        let frequency: Frequency = frequency_model.try_into()?;
 
-        // let mut task_builder = TaskBuilder::default();
-        // let task = task_builder
-        //     .set_task_id(id as u64)
-        //     .set_frequency(frequency)
-        //     .set_maximum_running_time(timeout as u64)
-        //     .set_maximun_parallel_runable_num(maximun_parallel_runnable_num as u64)
-        //     .spawn(unblock_process_task_fn(command))?;
+        let mut task_builder = TaskBuilder::default();
+        let task = task_builder
+            .set_task_id(id as u64)
+            .set_frequency(frequency)
+            .set_maximum_running_time(timeout as u64)
+            .set_maximun_parallel_runable_num(maximun_parallel_runnable_num as u64)
+            .spawn(unblock_process_task_fn(command))?;
 
-        // Ok(task)
-        todo!();
+        Ok(task)
     }
 }

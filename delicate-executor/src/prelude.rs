@@ -14,9 +14,10 @@ pub(crate) use delicate_utils::consensus_message::service_binding::{
 };
 
 #[allow(unused_imports)]
-pub(crate) use delicate_utils::consensus_message::task::{
-    FrequencyModelType, SignedTaskPackage, TaskPackage,
-};
+pub(crate) use delicate_utils::consensus_message::task::*;
+pub(crate) use delicate_utils::consensus_message::task_log::*;
+
+pub(crate) use delicate_utils::error::*;
 pub(crate) use delicate_utils::uniform_data::UnifiedResponseMessages;
 
 pub(crate) use serde::{Deserialize, Serialize};
