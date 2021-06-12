@@ -31,59 +31,50 @@ pub async fn pre_create_task(
 
 #[get("/api/task/remove")]
 async fn remove_task(
-    web::Json(signed_suspend_task_record): web::Json<SignedSuspendTaskRecord>,
+    web::Json(signed_task_unit): web::Json<SignedTaskUnit>,
     shared_delay_timer: SharedDelayTimer,
     executor_conf: SharedExecutorSecurityConf,
 ) -> HttpResponse {
-    let response: UnitUnifiedResponseMessages = pre_remove_task(
-        signed_suspend_task_record,
-        shared_delay_timer,
-        executor_conf,
-    )
-    .await
-    .into();
+    let response: UnitUnifiedResponseMessages =
+        pre_remove_task(signed_task_unit, shared_delay_timer, executor_conf)
+            .await
+            .into();
     HttpResponse::Ok().json(response)
 }
 
 pub async fn pre_remove_task(
-    signed_suspend_task_record: SignedSuspendTaskRecord,
+    signed_task_unit: SignedTaskUnit,
     shared_delay_timer: SharedDelayTimer,
     executor_conf: SharedExecutorSecurityConf,
 ) -> Result<(), CommonError> {
     let guard = executor_conf.get_bind_scheduler_inner_ref().await;
     let token = guard.as_ref().map(|b| (&b.1).deref());
-    let suspend_task_record =
-        signed_suspend_task_record.get_suspend_task_record_after_verify(token)?;
-    Ok(shared_delay_timer.remove_task(suspend_task_record.task_id as u64)?)
+    let task_unit = signed_task_unit.get_task_unit_after_verify(token)?;
+    Ok(shared_delay_timer.remove_task(task_unit.task_id as u64)?)
 }
 
-// TODO: Scheduler wait for impl.
 #[get("/api/task/advance")]
 async fn advance_task(
-    web::Json(signed_suspend_task_record): web::Json<SignedSuspendTaskRecord>,
+    web::Json(signed_task_unit): web::Json<SignedTaskUnit>,
     shared_delay_timer: SharedDelayTimer,
     executor_conf: SharedExecutorSecurityConf,
 ) -> HttpResponse {
-    let response: UnitUnifiedResponseMessages = pre_advance_task(
-        signed_suspend_task_record,
-        shared_delay_timer,
-        executor_conf,
-    )
-    .await
-    .into();
+    let response: UnitUnifiedResponseMessages =
+        pre_advance_task(signed_task_unit, shared_delay_timer, executor_conf)
+            .await
+            .into();
     HttpResponse::Ok().json(response)
 }
 
 pub async fn pre_advance_task(
-    signed_suspend_task_record: SignedSuspendTaskRecord,
+    signed_task_unit: SignedTaskUnit,
     shared_delay_timer: SharedDelayTimer,
     executor_conf: SharedExecutorSecurityConf,
 ) -> Result<(), CommonError> {
     let guard = executor_conf.get_bind_scheduler_inner_ref().await;
     let token = guard.as_ref().map(|b| (&b.1).deref());
-    let suspend_task_record =
-        signed_suspend_task_record.get_suspend_task_record_after_verify(token)?;
-    Ok(shared_delay_timer.remove_task(suspend_task_record.task_id as u64)?)
+    let task_unit = signed_task_unit.get_task_unit_after_verify(token)?;
+    Ok(shared_delay_timer.advance_task(task_unit.task_id as u64)?)
 }
 
 #[get("/api/task_instance/kill")]
@@ -122,7 +113,7 @@ async fn maintenance(shared_delay_timer: SharedDelayTimer) -> impl Responder {
 }
 
 //Health Screening
-#[get("/health_screen")]
+#[get("/api/executor/health_screen")]
 async fn health_screen(system_mirror: SharedSystemMirror) -> impl Responder {
     HttpResponse::Ok().json(
         UnifiedResponseMessages::<SystemSnapshot>::success_with_data(
@@ -131,7 +122,7 @@ async fn health_screen(system_mirror: SharedSystemMirror) -> impl Responder {
     )
 }
 
-#[get("/bind_executor")]
+#[get("/api/executor/bind")]
 // token.
 
 // Or use middleware to reach consensus.
@@ -184,6 +175,7 @@ async fn main() -> std::io::Result<()> {
             .service(remove_task)
             .service(cancel_task)
             .service(health_screen)
+            .service(bind_executor)
             .app_data(shared_delay_timer.clone())
             .app_data(shared_security_conf.clone())
             .app_data(shared_system_mirror.clone())

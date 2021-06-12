@@ -178,7 +178,19 @@ async fn suspend_task(
     web::Json(model::TaskId { task_id }): web::Json<model::TaskId>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
-    let result: UnifiedResponseMessages<()> = Into::into(pre_suspend_task(task_id, pool).await);
+    let result: UnifiedResponseMessages<()> =
+        Into::into(pre_operate_task(pool, (task_id, "/api/task/remove", "Suspend")).await);
+
+    HttpResponse::Ok().json(result)
+}
+
+#[post("/api/task/advance")]
+async fn advance_task(
+    web::Json(model::TaskId { task_id }): web::Json<model::TaskId>,
+    pool: ShareData<db::ConnectionPool>,
+) -> HttpResponse {
+    let result: UnifiedResponseMessages<()> =
+        Into::into(pre_operate_task(pool, (task_id, "/api/task/advance", "Advance")).await);
 
     HttpResponse::Ok().json(result)
 }
@@ -260,9 +272,9 @@ async fn pre_run_task(
     Ok(())
 }
 
-async fn pre_suspend_task(
-    task_id: i64,
+async fn pre_operate_task(
     pool: ShareData<db::ConnectionPool>,
+    (task_id, url, action): (i64, &str, &str),
 ) -> Result<(), CommonError> {
     use db::schema::executor_processor::dsl::{host, token};
     use db::schema::{executor_processor, executor_processor_bind, task, task_bind};
@@ -283,18 +295,18 @@ async fn pre_suspend_task(
 
     let client = RequestClient::default();
     for (executor_host, executor_token) in executor_packages {
-        let message = delicate_utils_task::SuspendTaskRecord::default()
+        let message = delicate_utils_task::TaskUnit::default()
             .set_task_id(task_id)
             .set_time(get_timestamp());
 
-        let executor_host = "http://".to_string() + &executor_host + "/api/task/remove";
+        let executor_host = "http://".to_string() + &executor_host + url;
 
-        info!("Suspend task{} at:{}", message, &executor_host);
-        let signed_task_package = message.sign(Some(&executor_token))?;
+        info!("{} task{} at:{}", action, message, &executor_host);
+        let signed_task_unit = message.sign(Some(&executor_token))?;
 
         client
             .post(executor_host)
-            .send_json(&signed_task_package)
+            .send_json(&signed_task_unit)
             .await
             .map_err(|e| error!("{}", e))
             .ok();

@@ -118,19 +118,19 @@ impl SignedTaskPackage {
 #[derive(Copy, Clone, Default, Debug, Serialize, Deserialize, Display)]
 #[display(fmt = "task-id:{} time:{}", task_id, time)]
 
-pub struct SuspendTaskRecord {
+pub struct TaskUnit {
     pub task_id: i64,
     pub time: u64,
 }
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
 
-pub struct SignedSuspendTaskRecord {
-    pub suspend_task_record: SuspendTaskRecord,
+pub struct SignedTaskUnit {
+    pub task_unit: TaskUnit,
     pub signature: Vec<u8>,
 }
 
-impl SuspendTaskRecord {
+impl TaskUnit {
     pub fn set_task_id(mut self, task_id: i64) -> Self {
         self.task_id = task_id;
         self
@@ -140,39 +140,33 @@ impl SuspendTaskRecord {
         self.time = time;
         self
     }
-    pub fn sign(
-        self,
-        token: Option<&str>,
-    ) -> Result<SignedSuspendTaskRecord, crate::error::CommonError> {
+    pub fn sign(self, token: Option<&str>) -> Result<SignedTaskUnit, crate::error::CommonError> {
         let signature = make_signature(&self, token)?;
-        Ok(SignedSuspendTaskRecord {
-            suspend_task_record: self,
+        Ok(SignedTaskUnit {
+            task_unit: self,
             signature,
         })
     }
 }
 
-impl SignedSuspendTaskRecord {
+impl SignedTaskUnit {
     pub fn verify(&self, token: Option<&str>) -> Result<(), crate::error::CommonError> {
-        let SignedSuspendTaskRecord {
-            ref suspend_task_record,
+        let SignedTaskUnit {
+            ref task_unit,
             ref signature,
         } = self;
 
-        verify_signature_by_raw_data(suspend_task_record, token, signature)
+        verify_signature_by_raw_data(task_unit, token, signature)
     }
 
-    pub fn get_suspend_task_record_after_verify(
+    pub fn get_task_unit_after_verify(
         self,
         token: Option<&str>,
-    ) -> Result<SuspendTaskRecord, crate::error::CommonError> {
+    ) -> Result<TaskUnit, crate::error::CommonError> {
         self.verify(token)?;
-        let SignedSuspendTaskRecord {
-            suspend_task_record,
-            ..
-        } = self;
+        let SignedTaskUnit { task_unit, .. } = self;
 
-        Ok(suspend_task_record)
+        Ok(task_unit)
     }
 }
 
