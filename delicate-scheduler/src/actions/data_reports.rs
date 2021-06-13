@@ -16,7 +16,6 @@ async fn show_one_day_tasks_state(pool: ShareData<db::ConnectionPool>) -> HttpRe
                     let now = NaiveDateTime::from_timestamp(get_timestamp() as i64, 0);
                     let past_day = now - ChronoDuration::days(1);
 
-                    // TODO: Optimize it.
                     // the number of tasks started in a given hour ( By created_time ), the
                     // the number of tasks that ended normally at a certain time
                     // the number of tasks that ended abnormally at a certain time

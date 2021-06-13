@@ -3,7 +3,6 @@
 #![warn(missing_docs, missing_debug_implementations, rust_2018_idioms)]
 
 //! delicate-scheduler.
-// TODO: diesel's io operations are offloaded to `actix_web::web::block`.
 
 #[macro_use]
 extern crate diesel;
@@ -23,9 +22,6 @@ pub(crate) mod macros;
 use {cfg_mysql_support, cfg_postgres_support};
 
 pub(crate) use prelude::*;
-
-// TODO: return front-end json is small hump patten.
-// TODO:
 
 #[actix_web::main]
 async fn main() -> AnyResut<()> {

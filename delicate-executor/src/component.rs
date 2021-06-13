@@ -1,7 +1,6 @@
 use crate::prelude::*;
 
 /// This is a mirror of the system that can reflect the current state of the system.
-// TODO:
 #[derive(Debug)]
 pub(crate) struct SystemMirror {
     inner_system: RwLock<System>,
@@ -81,7 +80,7 @@ struct Process {
     parent: Option<i32>,
     start_time: u64,
     cpu_usage: f32,
-    status: u32, //TODO: ProcessStatus should be stored in Process;
+    status: u32,
 }
 
 #[derive(Debug, Copy, Clone, Default, Serialize, Deserialize)]
