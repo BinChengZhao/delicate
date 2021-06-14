@@ -227,6 +227,7 @@ async fn pre_run_task(
     })
     .await?;
 
+    // TODO: Here it is processed simultaneously.
     let client = RequestClient::default();
     for (task_package, executor_token) in task_packages.into_iter() {
         let executor_host = "http://".to_string() + &task_package.host + "/api/task/create";
@@ -264,6 +265,8 @@ async fn pre_operate_task(
     })
     .await?
     .into_iter();
+
+    // TODO: Here it is processed simultaneously.
 
     let client = RequestClient::default();
     for (executor_host, executor_token) in executor_packages {
