@@ -227,20 +227,26 @@ async fn pre_run_task(
     })
     .await?;
 
-    // TODO: Here it is processed simultaneously.
-    let client = RequestClient::default();
-    for (task_package, executor_token) in task_packages.into_iter() {
-        let executor_host = "http://".to_string() + &task_package.host + "/api/task/create";
-        info!("Run task{} at:{}", &task_package, &executor_host);
-        let signed_task_package = task_package.sign(Some(&executor_token))?;
+    let request_all: JoinAll<_> = task_packages
+        .into_iter()
+        .filter_map(|(task_package, executor_token)| {
+            let executor_host = "http://".to_string() + &task_package.host + "/api/task/create";
+            info!("Run task{} at:{}", &task_package, &executor_host);
+            task_package
+                .sign(Some(&executor_token))
+                .map(|s| (s, executor_host))
+                .ok()
+        })
+        .map(|(signed_task_package, executor_host)| {
+            RequestClient::default()
+                .post(executor_host)
+                .send_json(&signed_task_package)
+        })
+        .collect::<Vec<_>>()
+        .into_iter()
+        .collect();
 
-        client
-            .post(executor_host)
-            .send_json(&signed_task_package)
-            .await
-            .map_err(|e| error!("{}", e))
-            .ok();
-    }
+    request_all.await;
 
     Ok(())
 }
@@ -255,7 +261,7 @@ async fn pre_operate_task(
     let conn = pool.get()?;
 
     // Many machine.
-    let executor_packages = web::block(move || {
+    let executor_packages: IntoIter<(String, String)> = web::block(move || {
         task_bind::table
             .inner_join(executor_processor_bind::table.inner_join(executor_processor::table))
             .inner_join(task::table)
@@ -266,26 +272,29 @@ async fn pre_operate_task(
     .await?
     .into_iter();
 
-    // TODO: Here it is processed simultaneously.
+    let request_all: JoinAll<_> = executor_packages
+        .filter_map(|(executor_host, executor_token)| {
+            let message = delicate_utils_task::TaskUnit::default()
+                .set_task_id(task_id)
+                .set_time(get_timestamp());
 
-    let client = RequestClient::default();
-    for (executor_host, executor_token) in executor_packages {
-        let message = delicate_utils_task::TaskUnit::default()
-            .set_task_id(task_id)
-            .set_time(get_timestamp());
+            let executor_host = "http://".to_string() + &executor_host + url;
 
-        let executor_host = "http://".to_string() + &executor_host + url;
-
-        info!("{} task{} at:{}", action, message, &executor_host);
-        let signed_task_unit = message.sign(Some(&executor_token))?;
-
-        client
-            .post(executor_host)
-            .send_json(&signed_task_unit)
-            .await
-            .map_err(|e| error!("{}", e))
-            .ok();
-    }
+            info!("{} task{} at:{}", action, message, &executor_host);
+            message
+                .sign(Some(&executor_token))
+                .map(|s| (s, executor_host))
+                .ok()
+        })
+        .map(|(signed_task_unit, executor_host)| {
+            RequestClient::default()
+                .post(executor_host)
+                .send_json(&signed_task_unit)
+        })
+        .collect::<Vec<_>>()
+        .into_iter()
+        .collect();
+    request_all.await;
 
     Ok(())
 }

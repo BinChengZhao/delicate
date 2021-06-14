@@ -15,16 +15,18 @@ pub(crate) use delicate_utils::error::CommonError;
 pub(crate) use delicate_utils::uniform_data::*;
 
 pub(crate) use chrono::Duration as ChronoDuration;
+
 pub(crate) use std::env;
 pub(crate) use std::fmt::Debug;
 pub(crate) use std::pin::Pin;
 pub(crate) use std::task::{Context, Poll};
+pub(crate) use std::vec::IntoIter;
 
 pub(crate) use actix_web::dev::{
     HttpResponseBuilder, Service, ServiceRequest, ServiceResponse, Transform,
 };
 pub(crate) use actix_web::{Error as ActixWebError, Result};
-pub(crate) use futures::future::{ok, Ready};
+pub(crate) use futures::future::{ok, JoinAll, Ready};
 pub(crate) use futures::Future;
 
 pub(crate) use cached::proc_macro::cached;
