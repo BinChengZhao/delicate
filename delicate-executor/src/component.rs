@@ -105,6 +105,9 @@ impl From<&SysProcess> for Process {
             SysProcessStatus::Stop => 4,
             SysProcessStatus::Zombie => 5,
             SysProcessStatus::Unknown(s) => s,
+            // Compatible with process states on different systems.
+            #[allow(unreachable_patterns)]
+            _ => 80,
         };
 
         Process {
