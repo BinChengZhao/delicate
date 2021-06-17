@@ -70,7 +70,14 @@ impl<T: UniformData + Default, E: std::error::Error> From<Result<T, E>>
     fn from(value: Result<T, E>) -> Self {
         match value {
             Ok(d) => Self::success_with_data(d),
-            Err(e) => Self::error().customized_error_msg(e.to_string()),
+            Err(e) => {
+                let message = format!(
+                    "{} ({})",
+                    e.to_string(),
+                    e.source().map(|s| { s.to_string() }).unwrap_or_default()
+                );
+                Self::error().customized_error_msg(message)
+            }
         }
     }
 }

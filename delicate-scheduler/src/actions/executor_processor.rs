@@ -4,7 +4,8 @@ pub(crate) fn config(cfg: &mut web::ServiceConfig) {
     cfg.service(show_executor_processors)
         .service(create_executor_processor)
         .service(update_executor_processor)
-        .service(delete_executor_processor);
+        .service(delete_executor_processor)
+        .service(activate_executor_processor);
 }
 
 #[post("/api/executor_processor/create")]
