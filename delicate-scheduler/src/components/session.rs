@@ -1,5 +1,14 @@
 use super::prelude::*;
 
+// Register the actual session middleware that is used to maintain session state.
+
+// `CookieSession` is an actual session processing backend
+// that does the initialization of the state of the `Session` instance inside the application (ServiceRequest::get_session)
+// when the request is received.
+
+// And when the request is processed `CookieSession` gets the latest state content
+// in the `Session` and sets it to the client
+// (all this is done in the middleware of `CookieSession`).
 pub(crate) fn session_middleware() -> CookieSession {
     CookieSession::signed(
         &env::var("SESSION_TOKEN")
@@ -8,6 +17,11 @@ pub(crate) fn session_middleware() -> CookieSession {
     )
     .domain(env::var("SCHEDULER_DOMAIN").expect("Without `SCHEDULER_DOMAIN` set in .env"))
     .name(env::var("SCHEDULER_NAME").expect("Without `SCHEDULER_NAME` set in .env"))
+}
+
+// Register authentication middleware to check login status based on `CookieSession`.
+pub(crate) fn auth_middleware() -> SessionAuth {
+    SessionAuth
 }
 
 // The public middleware output type.
@@ -55,17 +69,23 @@ where
     fn call(&mut self, req: ServiceRequest) -> Self::Future {
         let session = req.get_session();
 
+        // TODO: Judgment, if it is a special api will not check the token.
+        // (for example: login-api, event-collection-api)
         if let Ok(Some(_token)) = session.get::<String>("token") {
             let fut = self.service.call(req);
 
             Box::pin(async move {
                 let res = fut.await?;
-
                 Ok(res)
             })
         } else {
             Box::pin(async move {
-                Ok(req.error_response(HttpResponseBuilder::new(StatusCode::default())))
+                Ok(req.error_response(
+                    HttpResponseBuilder::new(StatusCode::default()).json(
+                        UnifiedResponseMessages::<()>::error()
+                            .customized_error_msg(String::from("Please log in and operate.")),
+                    ),
+                ))
             })
         }
     }
