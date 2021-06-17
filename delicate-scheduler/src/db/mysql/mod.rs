@@ -1,9 +1,7 @@
 use diesel::mysql::MysqlConnection;
-use diesel::prelude::*;
 use diesel::r2d2::{Builder, ConnectionManager, Pool, PooledConnection};
-use std::env;
 
-pub(crate) use super::prelude;
+pub(crate) use super::prelude::{self, *};
 
 pub(crate) mod extension;
 pub(crate) mod model;
@@ -22,9 +20,14 @@ pub(crate) fn establish_connection() -> MysqlConnection {
 pub(crate) fn get_connection_pool() -> Pool<ConnectionManager<MysqlConnection>> {
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     let manager: ConnectionManager<MysqlConnection> = ConnectionManager::new(database_url);
+   
+    // Supports user configuration via .env.
+    let max_size = env::var("CONNECTION_POOL_MAX_SIZE").map(|s|str::parse::<u32>(&s).unwrap_or(64)).unwrap_or(64);
+    let min_idle = env::var("CONNECTION_POOL_MIN_IDLE").map(|s|str::parse::<u32>(&s).unwrap_or(32)).unwrap_or(32);
+
     Builder::new()
-        .max_size(1024)
-        .min_idle(Some(128))
+        .max_size(max_size)
+        .min_idle(Some(min_idle))
         .build(manager)
         .expect("Connection pool initialization failed")
 }
