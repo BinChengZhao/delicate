@@ -124,8 +124,6 @@ impl QueryParamsExecutorProcessor {
     }
 }
 
-
-
 #[cached(
     type = "TimedSizedCache<i64, Option<String>>",
     create = "{ TimedSizedCache::with_size_and_lifespan(1024, 60) }",

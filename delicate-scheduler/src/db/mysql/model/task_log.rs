@@ -1,6 +1,6 @@
 use super::prelude::*;
 use super::schema::{task_log, task_log_extend};
-use delicate_utils_task_log::{ExecutorEventCollection, ExecutorEvent, ChildOutput, FinishOutput};
+use delicate_utils_task_log::{ChildOutput, ExecutorEvent, ExecutorEventCollection, FinishOutput};
 
 pub(crate) struct TaskLogQueryBuilder;
 impl TaskLogQueryBuilder {
@@ -21,7 +21,6 @@ impl From<ExecutorEventCollection> for NewTaskLogs {
         NewTaskLogs(events.into_iter().map(|e| e.into()).collect())
     }
 }
-
 
 impl From<ExecutorEvent> for NewTaskLog {
     fn from(
@@ -101,7 +100,6 @@ impl From<ExecutorEvent> for SupplyTaskLogTuple {
         )
     }
 }
-
 
 // TODO: Use `replace_into` instead of `insert_into` to process data.
 
@@ -202,7 +200,6 @@ pub struct TaskRecord {
     pub(crate) record_id: i64,
     pub(crate) executor_processor_id: i64,
 }
-
 
 impl PaginateTaskLogs {
     pub(crate) fn set_task_logs(mut self, task_logs: Vec<TaskLog>) -> Self {

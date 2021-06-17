@@ -7,7 +7,7 @@ pub struct QueryNewUser {
     user_name: String,
     #[validate(length(min = 1))]
     nick_name: String,
-    #[validate(phone)]
+    #[validate(length(max = 11))]
     mobile: String,
     #[validate(email)]
     email: String,
@@ -19,15 +19,15 @@ pub struct QueryNewUser {
 #[table_name = "user"]
 
 pub struct User {
-    id: u64,
-    user_name: String,
-    nick_name: String,
-    mobile: String,
-    email: String,
-    face: String,
-    status: i8,
-    created_time: NaiveDateTime,
-    updated_time: NaiveDateTime,
+   pub id: u64,
+   pub user_name: String,
+   pub nick_name: String,
+   pub mobile: String,
+   pub email: String,
+   pub face: String,
+   pub status: i8,
+   pub created_time: NaiveDateTime,
+   pub updated_time: NaiveDateTime,
 }
 
 #[derive(Insertable, Debug, Serialize, Deserialize)]
@@ -78,13 +78,8 @@ impl From<(QueryNewUser, u64)> for NewUserAuths {
         ): (QueryNewUser, u64),
     ) -> NewUserAuths {
         let user_auth_arr: [NewUserAuth; 3];
-        let encrypted_certificate: String;
-        let encrypted_certificate_digest = digest(&SHA256, certificate.as_bytes());
 
-        unsafe {
-            encrypted_certificate =
-                std::str::from_utf8_unchecked(encrypted_certificate_digest.as_ref()).to_string();
-        }
+        let encrypted_certificate = get_encrypted_certificate_by_raw_certificate(&certificate);
 
         let mobile_auth = NewUserAuth {
             user_id,
@@ -114,17 +109,23 @@ impl From<(QueryNewUser, u64)> for NewUserAuths {
     }
 }
 
+pub fn get_encrypted_certificate_by_raw_certificate(certificate: &str) -> String {
+    let encrypted_certificate_digest = digest(&SHA256, certificate.as_bytes());
+
+    String::from_utf8_lossy(encrypted_certificate_digest.as_ref()).into_owned()
+}
+
 #[derive(Queryable, Identifiable, AsChangeset, Debug, Clone, Serialize, Deserialize)]
 #[table_name = "user_auth"]
 pub struct UserAuth {
-    id: i64,
-    user_id: u64,
-    identity_type: u8,
-    identifier: String,
-    certificate: String,
-    status: i8,
-    created_time: NaiveDateTime,
-    updated_time: NaiveDateTime,
+   pub id: i64,
+   pub user_id: u64,
+   pub identity_type: u8,
+   pub identifier: String,
+   pub certificate: String,
+   pub status: i8,
+   pub created_time: NaiveDateTime,
+   pub updated_time: NaiveDateTime,
 }
 
 #[derive(Insertable, Debug, Serialize, Deserialize)]

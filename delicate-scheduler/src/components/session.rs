@@ -56,14 +56,11 @@ where
         let session = req.get_session();
 
         if let Ok(Some(_token)) = session.get::<String>("token") {
-            println!("Hi from start. You requested: {}", req.path());
-
             let fut = self.service.call(req);
 
             Box::pin(async move {
                 let res = fut.await?;
 
-                println!("Hi from response");
                 Ok(res)
             })
         } else {

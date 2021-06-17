@@ -1,7 +1,7 @@
 use crate::prelude::*;
 use actix_web::client::JsonPayloadError;
 pub(crate) use actix_web::client::SendRequestError as ClientSendRequestError;
-use actix_web::error::BlockingError;
+use actix_web::error::{BlockingError, Error as ActixWebError};
 use diesel::r2d2::PoolError;
 
 #[derive(ThisError, Debug)]
@@ -24,6 +24,8 @@ pub enum CommonError {
     DisOpeate(#[from] TaskError),
     #[error("Invalid operation, or invalid data.(`{0}`)")]
     DisPass(String),
+    #[error("The errors reported by the framework cannot be ignored.")]
+    DisAccept(#[from] ActixWebError),
 }
 
 #[derive(ThisError, Debug)]

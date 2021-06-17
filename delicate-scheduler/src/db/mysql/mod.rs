@@ -20,10 +20,14 @@ pub(crate) fn establish_connection() -> MysqlConnection {
 pub(crate) fn get_connection_pool() -> Pool<ConnectionManager<MysqlConnection>> {
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     let manager: ConnectionManager<MysqlConnection> = ConnectionManager::new(database_url);
-   
+
     // Supports user configuration via .env.
-    let max_size = env::var("CONNECTION_POOL_MAX_SIZE").map(|s|str::parse::<u32>(&s).unwrap_or(64)).unwrap_or(64);
-    let min_idle = env::var("CONNECTION_POOL_MIN_IDLE").map(|s|str::parse::<u32>(&s).unwrap_or(32)).unwrap_or(32);
+    let max_size = env::var("CONNECTION_POOL_MAX_SIZE")
+        .map(|s| str::parse::<u32>(&s).unwrap_or(64))
+        .unwrap_or(64);
+    let min_idle = env::var("CONNECTION_POOL_MIN_IDLE")
+        .map(|s| str::parse::<u32>(&s).unwrap_or(32))
+        .unwrap_or(32);
 
     Builder::new()
         .max_size(max_size)

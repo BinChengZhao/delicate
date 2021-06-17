@@ -3,7 +3,9 @@ pub(crate) fn config(cfg: &mut web::ServiceConfig) {
     cfg.service(create_user)
         .service(show_users)
         .service(update_user)
-        .service(delete_user);
+        .service(delete_user)
+        .service(login_user)
+        .service(logout_user);
 }
 
 #[post("/api/user/create")]
@@ -115,37 +117,63 @@ async fn delete_user(
 
 #[post("/api/user/login")]
 async fn login_user(
-    web::Json(model::UserAuthLogin {
-        login_type,
-        account,
-        password,
-    }): web::Json<model::UserAuthLogin>,
+    web::Json(user_login): web::Json<model::UserAuthLogin>,
     session: Session,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
-    use model::schema::user_auth;
+    let login_result = pre_login_user(user_login, session, pool).await;
 
-    if let Ok(conn) = pool.get() {
-        let user_auth_result = web::block::<_, _, diesel::result::Error>(move || {
-            user_auth::table
-                .select(user_auth::all_columns)
-                .filter(user_auth::identity_type.eq(login_type))
-                .filter(user_auth::identifier.eq(account))
-                .filter(user_auth::certificate.eq(password))
-                .first::<model::UserAuth>(&conn)
-        })
-        .await;
-
-        if let Ok(_user_auth) = user_auth_result {
-            return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<()>>::into(
-                session.set("login_time", get_timestamp()),
-            ));
-        } else {
-            return HttpResponse::Ok().json(UnifiedResponseMessages::<()>::error());
-        }
+    if let Ok(user) = login_result {
+        return HttpResponse::Ok().json(UnifiedResponseMessages::<model::User>::success_with_data(
+            user,
+        ));
     }
 
-    HttpResponse::Ok().json(UnifiedResponseMessages::<()>::error())
+    HttpResponse::Ok().json(
+        UnifiedResponseMessages::<()>::error()
+            .customized_error_msg(login_result.expect_err("").to_string()),
+    )
+}
+
+async fn pre_login_user(
+    model::UserAuthLogin {
+        login_type,
+        account,
+        password,
+    }: model::UserAuthLogin,
+    session: Session,
+    pool: ShareData<db::ConnectionPool>,
+) -> Result<model::User, CommonError> {
+    use model::schema::{user, user_auth};
+    use model::user::get_encrypted_certificate_by_raw_certificate;
+
+    let conn = pool.get()?;
+    let user_package: (model::UserAuth, model::User) =
+        web::block::<_, _, diesel::result::Error>(move || {
+            user_auth::table
+                .inner_join(user::table)
+                .select((user_auth::all_columns, user::all_columns))
+                .filter(user_auth::identity_type.eq(login_type))
+                .filter(user_auth::identifier.eq(account))
+                .filter(
+                    user_auth::certificate
+                        .eq(get_encrypted_certificate_by_raw_certificate(&password)),
+                )
+                .first::<(model::UserAuth, model::User)>(&conn)
+        })
+        .await?;
+    sava_session(session, user_package)
+}
+
+fn sava_session(
+    session: Session,
+    (_, user): (model::UserAuth, model::User),
+) -> Result<model::User, CommonError> {
+    session.set("login_time", get_timestamp())?;
+    session.set("user_id", user.id)?;
+    session.set("user_name", user.user_name.clone())?;
+    session.set("nick_name", user.nick_name.clone())?;
+    Ok(user)
 }
 
 #[post("/api/user/logout")]
