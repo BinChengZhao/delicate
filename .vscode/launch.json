@@ -1,0 +1,55 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    
+    // lldb's configuration solution.
+    // https://github.com/microsoft/vscode-cmake-tools/issues/506#issuecomment-446083634.
+    // https://github.com/microsoft/vscode-cmake-tools/issues/506
+
+    // gbd's configuration solution.
+    // https://apple.stackexchange.com/questions/309017/unknown-error-2-147-414-007-on-creating-certificate-with-certificate-assist
+    // https://www.ics.uci.edu/~pattis/common/handouts/macmingweclipse/allexperimental/mac-gdb-install.html
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "executor-lldb",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceRoot}/target/debug/delicate-executor",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${fileDirname}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "lldb",
+            "miDebuggerPath" : "/Users/sht/.vscode/extensions/ms-vscode.cpptools-1.4.1/debugAdapters/lldb-mi/bin/lldb-mi",
+            "logging": {
+                "trace": true,
+                "engineLogging": true,
+                "traceResponse": true
+            }
+        },
+        {
+            "name": "executor-gdb",
+            "type": "gdb",
+            "request": "launch",
+            "target": "${workspaceRoot}/target/debug/delicate-executor",
+            "cwd": "${fileDirname}",
+        },
+        {
+            "name": "scheduler-lldb",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceRoot}/target/debug/delicate-scheduler",
+            "cwd": "${fileDirname}",
+        },
+        {
+            "name": "scheduler-gbd",
+            "type": "gdb",
+            "request": "launch",
+            "target": "${workspaceRoot}/target/debug/delicate-scheduler",
+            "cwd": "${fileDirname}",
+        }
+    ]
+}

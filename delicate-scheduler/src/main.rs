@@ -25,8 +25,11 @@ pub(crate) use prelude::*;
 
 #[actix_web::main]
 async fn main() -> AnyResut<()> {
+    // Loads environment variables.
     dotenv().ok();
+
     db::init();
+
     let logger = Logger::with_str("info")
         .log_target(LogTarget::File)
         .buffer_and_flush()
@@ -59,8 +62,7 @@ async fn main() -> AnyResut<()> {
             .app_data(shared_connection_pool.clone())
             .app_data(shared_scheduler_meta_info.clone())
             .wrap(components::session::session_middleware())
-            // Optimize there.
-            // .wrap(components::session::auth_middleware())
+            .wrap(components::session::auth_middleware())
             .wrap(MiddlewareLogger::default())
     })
     .bind(

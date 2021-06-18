@@ -12,7 +12,7 @@ pub struct CancelTaskRecord {
 
 pub struct SignedCancelTaskRecord {
     cancel_task_record: CancelTaskRecord,
-    pub signature: Vec<u8>,
+    pub signature: String,
 }
 
 impl CancelTaskRecord {

@@ -80,7 +80,7 @@ pub struct FrequencyExtend {
 
 pub struct SignedTaskPackage {
     pub task_package: TaskPackage,
-    pub signature: Vec<u8>,
+    pub signature: String,
 }
 
 impl TaskPackage {
@@ -127,7 +127,7 @@ pub struct TaskUnit {
 
 pub struct SignedTaskUnit {
     pub task_unit: TaskUnit,
-    pub signature: Vec<u8>,
+    pub signature: String,
 }
 
 impl TaskUnit {

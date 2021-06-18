@@ -3,7 +3,7 @@ mod prelude;
 use prelude::*;
 
 /// This handler uses json extractor
-#[get("/api/task/create")]
+#[post("/api/task/create")]
 async fn create_task(
     web::Json(signed_task_package): web::Json<SignedTaskPackage>,
     shared_delay_timer: SharedDelayTimer,
@@ -29,7 +29,7 @@ pub async fn pre_create_task(
     Ok(shared_delay_timer.add_task(task)?)
 }
 
-#[get("/api/task/remove")]
+#[post("/api/task/remove")]
 async fn remove_task(
     web::Json(signed_task_unit): web::Json<SignedTaskUnit>,
     shared_delay_timer: SharedDelayTimer,
@@ -53,7 +53,7 @@ pub async fn pre_remove_task(
     Ok(shared_delay_timer.remove_task(task_unit.task_id as u64)?)
 }
 
-#[get("/api/task/advance")]
+#[post("/api/task/advance")]
 async fn advance_task(
     web::Json(signed_task_unit): web::Json<SignedTaskUnit>,
     shared_delay_timer: SharedDelayTimer,
@@ -77,7 +77,7 @@ pub async fn pre_advance_task(
     Ok(shared_delay_timer.advance_task(task_unit.task_id as u64)?)
 }
 
-#[get("/api/task_instance/kill")]
+#[post("/api/task_instance/kill")]
 async fn cancel_task(
     web::Json(signed_cancel_task_record): web::Json<SignedCancelTaskRecord>,
     shared_delay_timer: SharedDelayTimer,
@@ -113,7 +113,7 @@ async fn maintenance(shared_delay_timer: SharedDelayTimer) -> impl Responder {
 }
 
 //Health Screening
-#[get("/api/executor/health_screen")]
+#[post("/api/executor/health_screen")]
 async fn health_screen(system_mirror: SharedSystemMirror) -> impl Responder {
     HttpResponse::Ok().json(
         UnifiedResponseMessages::<SystemSnapshot>::success_with_data(
@@ -122,12 +122,7 @@ async fn health_screen(system_mirror: SharedSystemMirror) -> impl Responder {
     )
 }
 
-#[get("/api/executor/bind")]
-// token.
-
-// Or use middleware to reach consensus.
-// Register token at executor startup, check token when RequestScheduler bind executor.
-
+#[post("/api/executor/bind")]
 // Or set security level, no authentication at level 0, public and private keys required at level 1.
 async fn bind_executor(
     web::Json(request_bind_scheduler): web::Json<SignedBindRequest>,
@@ -161,12 +156,16 @@ async fn bind_executor(
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    let delay_timer = DelayTimerBuilder::default().enable_status_report().build();
+    // Loads environment variables.
+    dotenv().ok();
 
+    let delay_timer = DelayTimerBuilder::default().enable_status_report().build();
     let shared_delay_timer: SharedDelayTimer = ShareData::new(delay_timer);
+
     let shared_security_conf: SharedExecutorSecurityConf =
         ShareData::new(ExecutorSecurityConf::default());
-    let shared_system_mirror: SharedSystemMirror = ShareData::new(SystemMirror::default());
+
+    // let shared_system_mirror: SharedSystemMirror = ShareData::new(SystemMirror::default());
 
     HttpServer::new(move || {
         App::new()
@@ -178,7 +177,7 @@ async fn main() -> std::io::Result<()> {
             .service(health_screen)
             .app_data(shared_delay_timer.clone())
             .app_data(shared_security_conf.clone())
-            .app_data(shared_system_mirror.clone())
+        // .app_data(shared_system_mirror.clone())
     })
     .bind(
         env::var("EXECUTOR_LISTENING_ADDRESS")
