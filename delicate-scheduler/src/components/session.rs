@@ -68,25 +68,39 @@ where
 
     fn call(&mut self, req: ServiceRequest) -> Self::Future {
         let session = req.get_session();
+        let uri = req.uri();
+        let path = uri.path();
 
-        // TODO: Judgment, if it is a special api will not check the token.
+        // Judgment, if it is a special api will not check the token.
         // (for example: login-api, event-collection-api)
-        if let Ok(Some(_token)) = session.get::<String>("token") {
-            let fut = self.service.call(req);
 
-            Box::pin(async move {
-                let res = fut.await?;
-                Ok(res)
-            })
-        } else {
-            Box::pin(async move {
-                Ok(req.error_response(
-                    HttpResponseBuilder::new(StatusCode::default()).json(
-                        UnifiedResponseMessages::<()>::error()
-                            .customized_error_msg(String::from("Please log in and operate.")),
-                    ),
-                ))
-            })
+        match path {
+            "/api/user/login" | "/api/task_logs/event_trigger" => {
+                let fut = self.service.call(req);
+                Box::pin(async move {
+                    let res = fut.await?;
+                    Ok(res)
+                })
+            }
+            _ => {
+                if let Ok(Some(_)) = session.get::<String>("user_id") {
+                    let fut = self.service.call(req);
+                    Box::pin(async move {
+                        let res = fut.await?;
+                        Ok(res)
+                    })
+                } else {
+                    Box::pin(async move {
+                        Ok(req.error_response(
+                            HttpResponseBuilder::new(StatusCode::default()).json(
+                                UnifiedResponseMessages::<()>::error().customized_error_msg(
+                                    String::from("Please log in and operate."),
+                                ),
+                            ),
+                        ))
+                    })
+                }
+            }
         }
     }
 }
