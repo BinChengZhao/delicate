@@ -17,6 +17,5 @@ serde_json = "^1.0.62"
 json = "^0.12.4"
 anyhow = "^1.0.38"
 async-lock = "^2.3.0"
-fastrand = "^1.4.1"
 dotenv = "^0.15.0"
 delicate-utils = { path = "../delicate-utils" }

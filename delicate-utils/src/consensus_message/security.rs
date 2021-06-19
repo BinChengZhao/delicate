@@ -67,6 +67,13 @@ pub struct BindScheduler {
 }
 
 impl ExecutorSecurityConf {
+    pub fn generate_token(&self) -> String {
+        match self.security_level {
+            SecurityLevel::Normal => repeat_with(fastrand::alphanumeric).take(32).collect(),
+            SecurityLevel::ZeroRestriction => String::default(),
+        }
+    }
+
     pub async fn get_bind_scheduler_inner_ref(
         &self,
     ) -> RwLockReadGuard<'_, Option<(BindRequest, String)>> {
@@ -165,22 +172,21 @@ impl TryFrom<u16> for SecurityLevel {
 pub fn make_signature<T: Serialize>(
     data: &T,
     token: Option<&str>,
-) -> Result<String, crate::error::CommonError> {
+) -> Result<Vec<u8>, crate::error::CommonError> {
     if let Some(token) = token {
         let json_str = to_json_string(data)?;
         let raw_str = json_str + token;
         let sign = digest(&SHA256, raw_str.as_bytes()).as_ref().to_vec();
-        let sign_str = format!("{:x}", byte_buf::ByteBuf(&sign));
-        Ok(sign_str)
+        Ok(sign)
     } else {
-        Ok(String::default())
+        Ok(Vec::default())
     }
 }
 
 pub fn verify_signature_by_raw_data<T: Serialize>(
     data: &T,
     token: Option<&str>,
-    signature: &str,
+    signature: &[u8],
 ) -> Result<(), crate::error::CommonError> {
     let signature_new = make_signature(data, token)?;
     if signature_new.eq(signature) {

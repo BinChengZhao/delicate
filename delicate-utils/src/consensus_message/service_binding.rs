@@ -12,6 +12,7 @@ pub struct BindRequest {
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct SignedBindRequest {
     pub bind_request: BindRequest,
+    #[serde(with = "hex")]
     pub signature: Vec<u8>,
 }
 
@@ -99,6 +100,7 @@ impl BindResponse {
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct EncryptedBindResponse {
+    #[serde(with = "hex")]
     pub bind_response: Vec<u8>,
 }
 

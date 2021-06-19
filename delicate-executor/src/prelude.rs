@@ -16,9 +16,10 @@ pub(crate) use delicate_utils::consensus_message::service_binding::{
     BindResponse, EncryptedBindResponse, SignedBindRequest,
 };
 
-#[allow(unused_imports)]
 pub(crate) use delicate_utils::consensus_message::task::*;
 pub(crate) use delicate_utils::consensus_message::task_log::*;
+#[allow(unused_imports)]
+pub(crate) use delicate_utils::prelude::*;
 
 pub(crate) use delicate_utils::error::*;
 pub(crate) use delicate_utils::uniform_data::UnifiedResponseMessages;
@@ -30,13 +31,12 @@ pub(crate) use std::collections::HashMap;
 pub(crate) use std::convert::{From, Into, TryInto};
 pub(crate) use std::env;
 pub(crate) use std::fmt::Debug;
-pub(crate) use std::iter::repeat_with;
 pub(crate) use std::ops::Deref;
 pub(crate) use std::path::PathBuf;
 
 pub(crate) use sysinfo::{
     Process as SysProcess, ProcessExt, ProcessStatus as SysProcessStatus,
-    Processor as SysProcessor, ProcessorExt, RefreshKind, System, SystemExt,
+    Processor as SysProcessor, ProcessorExt, System, SystemExt,
 };
 
 pub(crate) type SharedDelayTimer = ShareData<DelayTimer>;

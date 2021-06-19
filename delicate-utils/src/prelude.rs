@@ -1,4 +1,8 @@
-pub use crate::consensus_message::security::{self, make_signature, verify_signature_by_raw_data};
+pub use hex;
+
+pub use crate::consensus_message::security::{
+    self, make_signature, verify_signature_by_raw_data, SecurityLevel,
+};
 pub use crate::consensus_message::service_binding;
 pub use crate::helper_structure::*;
 
@@ -26,4 +30,5 @@ pub(crate) use std::convert::{TryFrom, TryInto};
 pub(crate) use std::env;
 pub(crate) use std::fmt::Debug;
 pub(crate) use std::fs;
+pub(crate) use std::iter::repeat_with;
 pub(crate) use std::str::FromStr;

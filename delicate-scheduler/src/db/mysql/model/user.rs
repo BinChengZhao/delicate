@@ -112,7 +112,7 @@ impl From<(QueryNewUser, u64)> for NewUserAuths {
 pub fn get_encrypted_certificate_by_raw_certificate(certificate: &str) -> String {
     let encrypted_certificate_digest = digest(&SHA256, certificate.as_bytes());
  
-    format!("{:x}", byte_buf::ByteBuf(encrypted_certificate_digest.as_ref()))
+    hex::encode(encrypted_certificate_digest.as_ref())
 }
 
 #[derive(Queryable, Identifiable, AsChangeset, Debug, Clone, Serialize, Deserialize)]

@@ -11,8 +11,8 @@ pub(crate) use delicate_utils::consensus_message::service_binding;
 pub(crate) use delicate_utils::consensus_message::{
     task as delicate_utils_task, task_log as delicate_utils_task_log,
 };
-pub(crate) use delicate_utils::prelude::*;
 pub(crate) use delicate_utils::error::CommonError;
+pub(crate) use delicate_utils::prelude::*;
 pub(crate) use delicate_utils::uniform_data::*;
 
 pub(crate) use chrono::Duration as ChronoDuration;

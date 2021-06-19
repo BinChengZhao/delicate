@@ -12,7 +12,8 @@ pub struct CancelTaskRecord {
 
 pub struct SignedCancelTaskRecord {
     cancel_task_record: CancelTaskRecord,
-    pub signature: String,
+    #[serde(with = "hex")]
+    pub signature: Vec<u8>,
 }
 
 impl CancelTaskRecord {
@@ -69,7 +70,8 @@ impl SignedCancelTaskRecord {
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct ExecutorEventCollection {
     pub events: Vec<ExecutorEvent>,
-    signature: String,
+    #[serde(with = "hex")]
+    signature: Vec<u8>,
     timestamp: i64,
 }
 

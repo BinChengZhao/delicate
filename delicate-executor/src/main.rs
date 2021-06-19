@@ -132,7 +132,7 @@ async fn bind_executor(
     if verify_result.is_ok() {
         let SignedBindRequest { bind_request, .. } = request_bind_scheduler;
 
-        let token: String = repeat_with(fastrand::alphanumeric).take(32).collect();
+        let token: String = security_conf.generate_token();
         security_conf
             .get_bind_scheduler_inner_mut()
             .await
