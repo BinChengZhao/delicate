@@ -34,11 +34,19 @@ impl SystemMirror {
 
 impl Default for SystemMirror {
     fn default() -> SystemMirror {
-        let inner_system = RwLock::new(System::new());
+        let inner_system = RwLock::new(System::new_with_specifics(
+            RefreshKind::new()
+                .without_users_list()
+                .without_components()
+                .with_components_list()
+                .without_networks()
+                .without_networks_list(),
+        ));
+        let inner_snapshot = RwLock::new(SystemSnapshot::default());
 
         SystemMirror {
             inner_system,
-            ..Default::default()
+            inner_snapshot,
         }
     }
 }

@@ -20,8 +20,8 @@ pub async fn pre_create_task(
     shared_delay_timer: SharedDelayTimer,
     executor_conf: SharedExecutorSecurityConf,
 ) -> Result<(), CommonError> {
-    let guard = executor_conf.get_bind_scheduler_inner_ref().await;
-    let token = guard.as_ref().map(|b| (&b.1).deref());
+    let guard = executor_conf.get_bind_scheduler_token_ref().await;
+    let token = guard.as_ref().map(|s| s.deref());
     let task = signed_task_package
         .get_task_package_after_verify(token)
         .map(TryInto::<Task>::try_into)??;
@@ -47,8 +47,8 @@ pub async fn pre_remove_task(
     shared_delay_timer: SharedDelayTimer,
     executor_conf: SharedExecutorSecurityConf,
 ) -> Result<(), CommonError> {
-    let guard = executor_conf.get_bind_scheduler_inner_ref().await;
-    let token = guard.as_ref().map(|b| (&b.1).deref());
+    let guard = executor_conf.get_bind_scheduler_token_ref().await;
+    let token = guard.as_ref().map(|s| s.deref());
     let task_unit = signed_task_unit.get_task_unit_after_verify(token)?;
     Ok(shared_delay_timer.remove_task(task_unit.task_id as u64)?)
 }
@@ -71,8 +71,8 @@ pub async fn pre_advance_task(
     shared_delay_timer: SharedDelayTimer,
     executor_conf: SharedExecutorSecurityConf,
 ) -> Result<(), CommonError> {
-    let guard = executor_conf.get_bind_scheduler_inner_ref().await;
-    let token = guard.as_ref().map(|b| (&b.1).deref());
+    let guard = executor_conf.get_bind_scheduler_token_ref().await;
+    let token = guard.as_ref().map(|s| s.deref());
     let task_unit = signed_task_unit.get_task_unit_after_verify(token)?;
     Ok(shared_delay_timer.advance_task(task_unit.task_id as u64)?)
 }
@@ -95,8 +95,8 @@ pub async fn pre_cancel_task(
     shared_delay_timer: SharedDelayTimer,
     executor_conf: SharedExecutorSecurityConf,
 ) -> Result<(), CommonError> {
-    let guard = executor_conf.get_bind_scheduler_inner_ref().await;
-    let token = guard.as_ref().map(|b| (&b.1).deref());
+    let guard = executor_conf.get_bind_scheduler_token_ref().await;
+    let token = guard.as_ref().map(|s| s.deref());
     let cancel_task_record =
         signed_cancel_task_record.get_cancel_task_record_after_verify(token)?;
     Ok(shared_delay_timer.cancel_task(
@@ -132,11 +132,9 @@ async fn bind_executor(
     if verify_result.is_ok() {
         let SignedBindRequest { bind_request, .. } = request_bind_scheduler;
 
-        let token: String = security_conf.generate_token();
-        security_conf
-            .get_bind_scheduler_inner_mut()
-            .await
-            .replace((bind_request, token.clone()));
+        let token: Option<String> = security_conf.generate_token();
+        *security_conf.get_bind_scheduler_inner_mut().await = Some(bind_request);
+        *security_conf.get_bind_scheduler_token_mut().await = token.clone();
 
         let bind_response = BindResponse {
             time: get_timestamp() as i64,
@@ -165,7 +163,7 @@ async fn main() -> std::io::Result<()> {
     let shared_security_conf: SharedExecutorSecurityConf =
         ShareData::new(ExecutorSecurityConf::default());
 
-    // let shared_system_mirror: SharedSystemMirror = ShareData::new(SystemMirror::default());
+    let shared_system_mirror: SharedSystemMirror = ShareData::new(SystemMirror::default());
 
     HttpServer::new(move || {
         App::new()
@@ -177,7 +175,7 @@ async fn main() -> std::io::Result<()> {
             .service(health_screen)
             .app_data(shared_delay_timer.clone())
             .app_data(shared_security_conf.clone())
-        // .app_data(shared_system_mirror.clone())
+            .app_data(shared_system_mirror.clone())
     })
     .bind(
         env::var("EXECUTOR_LISTENING_ADDRESS")

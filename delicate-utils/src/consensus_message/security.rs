@@ -63,34 +63,41 @@ pub struct ExecutorSecurityConf {
 
 #[derive(Debug)]
 pub struct BindScheduler {
-    pub inner: RwLock<Option<(BindRequest, String)>>,
+    pub inner: RwLock<Option<BindRequest>>,
+    pub token: RwLock<Option<String>>,
 }
 
 impl ExecutorSecurityConf {
-    pub fn generate_token(&self) -> String {
+    pub fn generate_token(&self) -> Option<String> {
         match self.security_level {
-            SecurityLevel::Normal => repeat_with(fastrand::alphanumeric).take(32).collect(),
-            SecurityLevel::ZeroRestriction => String::default(),
+            SecurityLevel::Normal => Some(repeat_with(fastrand::alphanumeric).take(32).collect()),
+            SecurityLevel::ZeroRestriction => None,
         }
     }
 
-    pub async fn get_bind_scheduler_inner_ref(
-        &self,
-    ) -> RwLockReadGuard<'_, Option<(BindRequest, String)>> {
+    pub async fn get_bind_scheduler_inner_ref(&self) -> RwLockReadGuard<'_, Option<BindRequest>> {
         self.bind_scheduler.inner.read().await
     }
 
-    pub async fn get_bind_scheduler_inner_mut(
-        &self,
-    ) -> RwLockWriteGuard<'_, Option<(BindRequest, String)>> {
+    pub async fn get_bind_scheduler_inner_mut(&self) -> RwLockWriteGuard<'_, Option<BindRequest>> {
         self.bind_scheduler.inner.write().await
+    }
+
+    pub async fn get_bind_scheduler_token_ref(&self) -> RwLockReadGuard<'_, Option<String>> {
+        self.bind_scheduler.token.read().await
+    }
+
+    pub async fn get_bind_scheduler_token_mut(&self) -> RwLockWriteGuard<'_, Option<String>> {
+        self.bind_scheduler.token.write().await
     }
 }
 
 impl Default for BindScheduler {
     fn default() -> BindScheduler {
         let inner = RwLock::new(None);
-        BindScheduler { inner }
+        let token = RwLock::new(None);
+
+        BindScheduler { inner, token }
     }
 }
 
@@ -173,13 +180,14 @@ pub fn make_signature<T: Serialize>(
     data: &T,
     token: Option<&str>,
 ) -> Result<Vec<u8>, crate::error::CommonError> {
-    if let Some(token) = token {
-        let json_str = to_json_string(data)?;
-        let raw_str = json_str + token;
-        let sign = digest(&SHA256, raw_str.as_bytes()).as_ref().to_vec();
-        Ok(sign)
-    } else {
-        Ok(Vec::default())
+    match token {
+        Some(token) if !token.is_empty() => {
+            let json_str = to_json_string(data)?;
+            let raw_str = json_str + token;
+            let sign = digest(&SHA256, raw_str.as_bytes()).as_ref().to_vec();
+            Ok(sign)
+        }
+        _ => Ok(Vec::default()),
     }
 }
 

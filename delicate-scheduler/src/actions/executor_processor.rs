@@ -192,7 +192,7 @@ async fn activate_executor_row(
     web::block::<_, usize, diesel::result::Error>(move || {
         diesel::update(executor_processor.find(executor_processor_id))
             .set((
-                token.eq(&bind_info.token),
+                token.eq(&bind_info.token.unwrap_or_default()),
                 status.eq(state::executor_processor::State::Enabled as i16),
             ))
             .execute(&conn)

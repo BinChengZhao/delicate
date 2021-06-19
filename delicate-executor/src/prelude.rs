@@ -36,7 +36,7 @@ pub(crate) use std::path::PathBuf;
 
 pub(crate) use sysinfo::{
     Process as SysProcess, ProcessExt, ProcessStatus as SysProcessStatus,
-    Processor as SysProcessor, ProcessorExt, System, SystemExt,
+    Processor as SysProcessor, ProcessorExt, RefreshKind, System, SystemExt,
 };
 
 pub(crate) type SharedDelayTimer = ShareData<DelayTimer>;

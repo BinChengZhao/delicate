@@ -72,7 +72,7 @@ impl SignedBindRequest {
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct BindResponse {
-    pub token: String,
+    pub token: Option<String>,
     pub time: i64,
 }
 
