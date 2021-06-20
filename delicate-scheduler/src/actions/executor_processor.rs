@@ -150,6 +150,7 @@ async fn activate_executor(
     .await?;
 
     let model::UpdateExecutorProcessor {
+        id,
         name,
         host,
         machine_id,
@@ -160,9 +161,12 @@ async fn activate_executor(
     let url = "http://".to_string() + &host + "/bind";
 
     let private_key = scheduler.get_app_security_key();
+    let scheduler_host = scheduler.get_app_host_name().clone();
     let signed_scheduler = service_binding::BindRequest::default()
-        .set_executor_name(name)
-        .set_scheduler_host(host)
+        .set_scheduler_host(scheduler_host)
+        .set_executor_processor_id(id)
+        .set_executor_processor_host(host)
+        .set_executor_processor_name(name)
         .set_executor_machine_id(machine_id)
         .set_time(get_timestamp())
         .sign(private_key)?;

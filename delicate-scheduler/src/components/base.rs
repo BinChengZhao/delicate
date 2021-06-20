@@ -11,6 +11,10 @@ pub(crate) struct SchedulerMetaInfo {
 }
 
 impl SchedulerMetaInfo {
+    pub(crate) fn get_app_host_name(&self) -> &String {
+        &self.domain
+    }
+
     #[allow(dead_code)]
     pub(crate) fn get_app_security_level(&self) -> SecurityLevel {
         self.security_conf.security_level

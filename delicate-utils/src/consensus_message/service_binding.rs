@@ -1,10 +1,12 @@
 use crate::error::InitSchedulerError;
 use crate::prelude::*;
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, Eq, PartialEq)]
 pub struct BindRequest {
     pub scheduler_host: String,
-    pub executor_name: String,
+    pub executor_processor_id: i64,
+    pub executor_processor_host: String,
+    pub executor_processor_name: String,
     pub executor_machine_id: i16,
     pub time: u64,
 }
@@ -22,8 +24,18 @@ impl BindRequest {
         self
     }
 
-    pub fn set_executor_name(mut self, executor_name: String) -> Self {
-        self.executor_name = executor_name;
+    pub fn set_executor_processor_id(mut self, executor_processor_id: i64) -> Self {
+        self.executor_processor_id = executor_processor_id;
+        self
+    }
+
+    pub fn set_executor_processor_host(mut self, executor_processor_host: String) -> Self {
+        self.executor_processor_host = executor_processor_host;
+        self
+    }
+
+    pub fn set_executor_processor_name(mut self, executor_processor_name: String) -> Self {
+        self.executor_processor_name = executor_processor_name;
         self
     }
 

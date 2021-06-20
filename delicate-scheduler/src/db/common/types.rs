@@ -1,27 +1,11 @@
 use super::state::task_log::State;
-#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
-pub(crate) enum EventType {
-    TaskPerform = 1,
-    TaskFinish = 2,
-    TaskTimeout = 3,
-    Unknown = 81,
-}
+use crate::prelude::*;
+use delicate_utils_task_log::EventType;
 
 pub(crate) enum IdentityType {
     Mobile = 1,
     Email = 2,
     Username = 3,
-}
-
-impl From<i16> for EventType {
-    fn from(value: i16) -> Self {
-        match value {
-            1 => EventType::TaskPerform,
-            2 => EventType::TaskFinish,
-            3 => EventType::TaskTimeout,
-            _ => EventType::Unknown,
-        }
-    }
 }
 
 impl From<EventType> for State {

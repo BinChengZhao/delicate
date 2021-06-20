@@ -34,7 +34,7 @@ impl From<ExecutorEvent> for NewTaskLog {
             ..
         }: ExecutorEvent,
     ) -> Self {
-        let state: state::task_log::State = Into::<types::EventType>::into(event_type).into();
+        let state: state::task_log::State = Into::<delicate_utils_task_log::EventType>::into(event_type).into();
 
         let status = state as i16;
 
@@ -63,7 +63,7 @@ impl From<ExecutorEvent> for SupplyTaskLogTuple {
     ) -> Self {
         let mut stdout: String = String::new();
         let mut stderr: String = String::new();
-        let mut state: state::task_log::State = Into::<types::EventType>::into(event_type).into();
+        let mut state: state::task_log::State = Into::<delicate_utils_task_log::EventType>::into(event_type).into();
 
         if let Some(output) = output {
             match output {

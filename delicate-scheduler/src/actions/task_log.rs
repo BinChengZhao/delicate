@@ -13,7 +13,7 @@ async fn create_task_logs(
     web::Json(events_collection): web::Json<delicate_utils_task_log::ExecutorEventCollection>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
-    use db::common::types::EventType;
+    use delicate_utils_task_log::EventType;
 
     if !events_collection.verify_signature("") {
         return HttpResponse::Ok().json(

@@ -70,14 +70,42 @@ impl SignedCancelTaskRecord {
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct ExecutorEventCollection {
     pub events: Vec<ExecutorEvent>,
+    timestamp: i64,
+}
+
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+pub struct SignedExecutorEventCollection {
+    pub event_collection: ExecutorEventCollection,
     #[serde(with = "hex")]
     signature: Vec<u8>,
-    timestamp: i64,
 }
 
 impl ExecutorEventCollection {
     pub fn verify_signature(&self, _token: &str) -> bool {
         todo!();
+    }
+}
+
+impl SignedExecutorEventCollection {
+    pub fn verify(&self, token: Option<&str>) -> Result<(), crate::error::CommonError> {
+        let SignedExecutorEventCollection {
+            ref event_collection,
+            ref signature,
+        } = self;
+
+        verify_signature_by_raw_data(event_collection, token, signature)
+    }
+
+    pub fn get_executor_event_collection_after_verify(
+        self,
+        token: Option<&str>,
+    ) -> Result<ExecutorEventCollection, crate::error::CommonError> {
+        self.verify(token)?;
+        let SignedExecutorEventCollection {
+            event_collection, ..
+        } = self;
+
+        Ok(event_collection)
     }
 }
 
@@ -90,6 +118,53 @@ pub struct ExecutorEvent {
     pub executor_processor_name: String,
     pub executor_processor_host: String,
     pub output: Option<FinishOutput>,
+}
+
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub enum EventType {
+    TaskPerform = 1,
+    TaskFinish = 2,
+    TaskTimeout = 3,
+    Unknown = 81,
+}
+
+impl From<i16> for EventType {
+    fn from(value: i16) -> Self {
+        match value {
+            1 => EventType::TaskPerform,
+            2 => EventType::TaskFinish,
+            3 => EventType::TaskTimeout,
+            _ => EventType::Unknown,
+        }
+    }
+}
+
+impl From<PublicFinishOutput> for FinishOutput {
+    fn from(value: PublicFinishOutput) -> Self {
+        match value {
+            PublicFinishOutput::ExceptionOutput(str) => FinishOutput::ExceptionOutput(str),
+            PublicFinishOutput::ProcessOutput(child_output) => {
+                FinishOutput::ProcessOutput(child_output.into())
+            }
+        }
+    }
+}
+
+impl From<StdOutput> for ChildOutput {
+    fn from(value: StdOutput) -> Self {
+        let StdOutput {
+            status,
+            stdout,
+            stderr,
+        } = value;
+
+        let status = status.code().unwrap_or(81);
+        ChildOutput {
+            child_status: status,
+            child_stdout: stdout,
+            child_stderr: stderr,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -19,7 +19,7 @@ impl SystemMirror {
 
         let memory: Memory = Memory {
             total_memory: system.get_total_memory(),
-            free_memory: system.get_free_memory(),
+            free_memory: system.get_available_memory(),
             used_memory: system.get_used_memory(),
         };
 
@@ -76,7 +76,6 @@ impl From<&HashMap<i32, SysProcess>> for Processes {
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 struct Process {
     name: String,
-    cmd: Vec<String>,
     exe: PathBuf,
     pid: i32,
     memory: u64,
@@ -116,7 +115,6 @@ impl From<&SysProcess> for Process {
 
         Process {
             name: sys_process.name().to_string(),
-            cmd: sys_process.cmd().to_vec(),
             exe: sys_process.exe().to_path_buf(),
             pid: sys_process.pid() as i32,
             memory: sys_process.memory(),
