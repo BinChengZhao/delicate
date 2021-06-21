@@ -59,12 +59,12 @@ pub(crate) struct SystemSnapshot {
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 struct Processes {
-    inner: HashMap<i32, Process>,
+    inner: HashMap<SysPid, Process>,
 }
 use std::iter::Iterator;
-impl From<&HashMap<i32, SysProcess>> for Processes {
-    fn from(value: &HashMap<i32, SysProcess>) -> Processes {
-        let inner: HashMap<i32, Process> = value
+impl From<&HashMap<SysPid, SysProcess>> for Processes {
+    fn from(value: &HashMap<SysPid, SysProcess>) -> Processes {
+        let inner: HashMap<SysPid, Process> = value
             .iter()
             .map(|(index, process)| (*index, Into::<Process>::into(process)))
             .collect();
@@ -77,10 +77,10 @@ impl From<&HashMap<i32, SysProcess>> for Processes {
 struct Process {
     name: String,
     exe: PathBuf,
-    pid: i32,
+    pid: SysPid,
     memory: u64,
     virtual_memory: u64,
-    parent: Option<i32>,
+    parent: Option<SysPid>,
     start_time: u64,
     cpu_usage: f32,
     status: u32,
@@ -102,11 +102,16 @@ pub struct Memory {
 impl From<&SysProcess> for Process {
     fn from(sys_process: &SysProcess) -> Self {
         let status: u32 = match sys_process.status() {
-            SysProcessStatus::Idle => 1,
             SysProcessStatus::Run => 2,
+            #[cfg(target_family = "unix")]
+            SysProcessStatus::Idle => 1,
+            #[cfg(target_family = "unix")]
             SysProcessStatus::Sleep => 3,
+            #[cfg(target_family = "unix")]
             SysProcessStatus::Stop => 4,
+            #[cfg(target_family = "unix")]
             SysProcessStatus::Zombie => 5,
+            #[cfg(target_family = "unix")]
             SysProcessStatus::Unknown(s) => s,
             // Compatible with process states on different systems.
             #[allow(unreachable_patterns)]
@@ -116,10 +121,10 @@ impl From<&SysProcess> for Process {
         Process {
             name: sys_process.name().to_string(),
             exe: sys_process.exe().to_path_buf(),
-            pid: sys_process.pid() as i32,
+            pid: sys_process.pid(),
             memory: sys_process.memory(),
             virtual_memory: sys_process.virtual_memory(),
-            parent: sys_process.parent() as Option<i32>,
+            parent: sys_process.parent(),
             start_time: sys_process.start_time(),
             cpu_usage: sys_process.cpu_usage(),
             status,

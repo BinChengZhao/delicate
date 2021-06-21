@@ -41,7 +41,7 @@ pub(crate) use std::time::Duration;
 
 pub(crate) use sysinfo::{
     Process as SysProcess, ProcessExt, ProcessStatus as SysProcessStatus,
-    Processor as SysProcessor, ProcessorExt, RefreshKind, System, SystemExt,
+    Processor as SysProcessor, ProcessorExt, RefreshKind, System, SystemExt, Pid as SysPid
 };
 
 pub(crate) type SharedDelayTimer = ShareData<DelayTimer>;
