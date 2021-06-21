@@ -13,42 +13,57 @@ async fn create_task_logs(
     web::Json(events_collection): web::Json<delicate_utils_task_log::SignedExecutorEventCollection>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
+    let response = Into::<UnifiedResponseMessages<usize>>::into(
+        pre_create_task_logs(events_collection, pool).await,
+    );
+    HttpResponse::Ok().json(response)
+}
+
+async fn pre_create_task_logs(
+    events_collection: delicate_utils_task_log::SignedExecutorEventCollection,
+    pool: ShareData<db::ConnectionPool>,
+) -> Result<usize, CommonError> {
     use delicate_utils_task_log::EventType;
 
-    // TODO: Set token.
-    if let Ok(delicate_utils_task_log::ExecutorEventCollection { events, .. }) =
-        events_collection.get_executor_event_collection_after_verify(Some(""))
-    {
-        if let Ok(conn) = pool.get() {
-            return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
-                web::block::<_, _, diesel::result::Error>(move || {
-                    conn.transaction(|| {
-                        let mut effect_num = 0;
+    let executor_processor_id = (events_collection)
+        .event_collection
+        .events
+        .get(0)
+        .map(|e| e.executor_processor_id)
+        .ok_or_else(|| CommonError::DisPass(" `event_collection` is empty . ".into()))?;
 
-                        let mut new_task_logs: Vec<model::NewTaskLog> = Vec::new();
-                        let mut supply_task_logs: Vec<model::SupplyTaskLogTuple> = Vec::new();
+    let token = model::get_executor_token_by_id(executor_processor_id, pool.get()?).await;
 
-                        events.into_iter().for_each(|e| {
-                            match Into::<EventType>::into(e.event_type) {
-                                EventType::TaskPerform => new_task_logs.push(e.into()),
-                                EventType::Unknown => {}
-                                _ => supply_task_logs.push(e.into()),
-                            }
-                        });
+    let delicate_utils_task_log::ExecutorEventCollection { events, .. } =
+        events_collection.get_executor_event_collection_after_verify(token.as_deref())?;
 
-                        effect_num += batch_insert_task_logs(&conn, new_task_logs)?;
+    let conn = pool.get()?;
 
-                        effect_num += batch_update_task_logs(&conn, supply_task_logs)?;
+    let num = web::block::<_, _, diesel::result::Error>(move || {
+        conn.transaction(|| {
+            let mut effect_num = 0;
 
-                        Ok(effect_num)
-                    })
-                })
-                .await,
-            ));
-        }
-    }
+            let mut new_task_logs: Vec<model::NewTaskLog> = Vec::new();
+            let mut supply_task_logs: Vec<model::SupplyTaskLogTuple> = Vec::new();
 
-    HttpResponse::Ok().json(UnifiedResponseMessages::<usize>::error())
+            events
+                .into_iter()
+                .for_each(|e| match Into::<EventType>::into(e.event_type) {
+                    EventType::TaskPerform => new_task_logs.push(e.into()),
+                    EventType::Unknown => {}
+                    _ => supply_task_logs.push(e.into()),
+                });
+
+            effect_num += batch_insert_task_logs(&conn, new_task_logs)?;
+
+            effect_num += batch_update_task_logs(&conn, supply_task_logs)?;
+
+            Ok(effect_num)
+        })
+    })
+    .await?;
+
+    Ok(num)
 }
 
 #[post("/api/task_log/list")]

@@ -129,7 +129,6 @@ async fn bind_executor(
     security_conf: web::Data<ExecutorSecurityConf>,
     shared_delay_timer: SharedDelayTimer,
 ) -> impl Responder {
-
     info!("{}", &request_bind_scheduler.bind_request);
 
     let verify_result = request_bind_scheduler.verify(security_conf.get_ref().get_rsa_public_key());
@@ -242,9 +241,9 @@ fn launch_status_reporter(
 
                     if fresh_scheduler_time != scheduler_time {
                         scheduler.clone_from(&fresh_scheduler);
-                       
-                                    // Adjust the internal host to avoid the need to clone String when calling RequestClient::post.
-            //+ "/api/task_logs/event_trigger"
+
+                        // Adjust the internal host to avoid the need to clone String when calling RequestClient::post.
+                        //+ "/api/task_logs/event_trigger"
                         if let Some(scheduler_mut_ref) = scheduler.as_mut() {
                             scheduler_mut_ref.scheduler_host += "/api/task_logs/event_trigger";
                         }
