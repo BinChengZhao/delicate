@@ -129,17 +129,23 @@ async fn bind_executor(
     security_conf: web::Data<ExecutorSecurityConf>,
     shared_delay_timer: SharedDelayTimer,
 ) -> impl Responder {
+
+    info!("{}", &request_bind_scheduler.bind_request);
+
     let verify_result = request_bind_scheduler.verify(security_conf.get_ref().get_rsa_public_key());
     if verify_result.is_ok() {
         let SignedBindRequest { bind_request, .. } = request_bind_scheduler;
 
         let token: Option<String> = security_conf.generate_token();
 
-        // FIXME:
-        // first erase the first 6 bits.
-        // then take two sets of ids.
-        // bind_request.executor_machine_id;
-        shared_delay_timer.update_id_generator_conf(1, 1);
+        // Take 10 bits from executor_machine_id and do machine_id and node_id in two groups.
+
+        let executor_machine_id = bind_request.executor_machine_id;
+        let extractor: i16 = 0b00_0001_1111;
+        let node_id = executor_machine_id & extractor;
+        let machine_id = (executor_machine_id >> 5) & extractor;
+
+        shared_delay_timer.update_id_generator_conf(machine_id as i32, node_id as i32);
 
         *security_conf.get_bind_scheduler_inner_mut().await = Some(bind_request);
         *security_conf.get_bind_scheduler_token_mut().await = token.clone();
@@ -161,9 +167,19 @@ async fn bind_executor(
 }
 
 #[actix_web::main]
-async fn main() -> std::io::Result<()> {
+async fn main() -> AnyResult<()> {
     // Loads environment variables.
     dotenv().ok();
+
+    let logger = Logger::with_str("info")
+        .log_target(LogTarget::File)
+        .buffer_and_flush()
+        .rotate(
+            Criterion::Age(Age::Day),
+            Naming::Timestamps,
+            Cleanup::KeepLogFiles(10),
+        )
+        .start()?;
 
     let shared_security_conf: SharedExecutorSecurityConf =
         ShareData::new(ExecutorSecurityConf::default());
@@ -191,12 +207,16 @@ async fn main() -> std::io::Result<()> {
             .expect("Without `EXECUTOR_LISTENING_ADDRESS` set in .env"),
     )?
     .run()
-    .await
+    .await?;
+
+    logger.shutdown();
+
+    Ok(())
 }
 
 fn launch_status_reporter(
     delay_timer: &mut DelayTimer,
-    _shared_security_conf: SharedExecutorSecurityConf,
+    shared_security_conf: SharedExecutorSecurityConf,
 ) {
     let status_reporter_option = delay_timer.take_status_reporter();
 
@@ -204,85 +224,104 @@ fn launch_status_reporter(
         rt_spawn(async move {
             // After taking the lock, get the resource quickly and release the lock.
 
-            let mut _scheduler: Option<BindRequest> = None;
-            let _convert_event = |public_event: PublicEvent, _conf: &BindRequest| {
-                let mut event = ExecutorEvent::default();
-                match public_event {
-                    PublicEvent::FinishTask(mut body) => {
-                        event.id = body.get_record_id();
-                        event.task_id = body.get_task_id() as i64;
-                        event.event_type = EventType::TaskFinish as i16;
-                        event.output = body.get_finish_output().map(|o| o.into());
-                    }
-                    PublicEvent::RemoveTask(_task_id) => {
-                        todo!();
-                    }
-                    PublicEvent::RunningTask(task_id, record_id) => {
-                        event.id = record_id;
-                        event.task_id = task_id as i64;
-                        event.event_type = EventType::TaskPerform as i16;
-                    }
-                    PublicEvent::TimeoutTask(task_id, record_id) => {
-                        event.id = record_id;
-                        event.task_id = task_id as i64;
-                        event.event_type = EventType::TaskTimeout as i16;
-                    }
-                }
-            };
+            let mut token: Option<String> = None;
+            let mut scheduler: Option<BindRequest> = None;
 
             loop {
-                //     let event : Vec<i8> = Vec::new();
-                for _ in 0..10 {
-                    let event_future = rt_timeout(
+                {
+                    let scheduler_token = shared_security_conf.get_bind_scheduler_token_ref().await;
+                    if scheduler_token.as_ref() != token.as_ref() {
+                        token.clone_from(&scheduler_token);
+                    }
+                }
+
+                {
+                    let fresh_scheduler = shared_security_conf.get_bind_scheduler_inner_ref().await;
+                    let fresh_scheduler_time = fresh_scheduler.as_ref().map(|s| s.time);
+                    let scheduler_time = scheduler.as_ref().map(|s| s.time);
+
+                    if fresh_scheduler_time != scheduler_time {
+                        scheduler.clone_from(&fresh_scheduler);
+                       
+                                    // Adjust the internal host to avoid the need to clone String when calling RequestClient::post.
+            //+ "/api/task_logs/event_trigger"
+                        if let Some(scheduler_mut_ref) = scheduler.as_mut() {
+                            scheduler_mut_ref.scheduler_host += "/api/task_logs/event_trigger";
+                        }
+                    }
+                }
+
+                let mut events: Vec<ExecutorEvent> = Vec::new();
+                'event_collection: for _i in 0..10 {
+                    let event_future: RtTimeout<_> = rt_timeout(
                         Duration::from_secs(3),
                         status_reporter.next_public_event_with_async_wait(),
                     );
 
                     match event_future.await {
-                        Err(_) => break,
+                        Err(_) => break 'event_collection,
                         Ok(Err(_)) => {
                             return;
                         }
-                        Ok(Ok(_event)) => {}
+                        Ok(Ok(event)) => {
+                            scheduler
+                                .as_ref()
+                                .map(|conf| convert_event(event, conf).map(|e| events.push(e)));
+                        }
                     }
-                    //         if timeout(future).is_err{
-                    //             break;
-                    //         }
-
-                    //         if ok(result){
-                    //            if result.is_err(){
-                    //                // channel close.
-                    //                 return;
-                    //             }
-                    //             else{
-                    //                 event.push(1);
-                    //             }
-                    //         }
                 }
 
-                //     if !event.is_empty(){
-                //         client.send();
-                //     }
+                if let Some(scheduler_ref) = scheduler.as_ref() {
+                    if let Ok(executor_event_collection) =
+                        Into::<ExecutorEventCollection>::into(events).sign(token.as_deref())
+                    {
+                        RequestClient::new()
+                            .post(&scheduler_ref.scheduler_host)
+                            .send_json(&executor_event_collection)
+                            .await
+                            .map_err(|e| {
+                                error!(
+                                    "Failed to send the event collection: {} - {} - {:?}",
+                                    e, &scheduler_ref, &executor_event_collection.event_collection
+                                )
+                            })
+                            .ok();
+                    }
+                }
             }
-            // while let Ok(event) = status_reporter.next_public_event_with_async_wait().await {
-            //     if let Some(scheduler_guard) = shared_security_conf
-            //         .get_bind_scheduler_inner_ref()
-            //         .await
-            //         .as_ref()
-            //     {
-            //         if &scheduler_host != &scheduler_guard.scheduler_host {
-            //             Clone::clone_from(&mut scheduler_host, &scheduler_guard.scheduler_host);
-            //         }
-            //     }
-
-            //     if !scheduler_host.is_empty() {
-            //         // RequestClient::new()
-            //         //     .post(&self, scheduler_host + "/api/task_logs/event_trigger")
-            //         //     .send_json(1)
-            //         //     .await;
-            //         todo!();
-            //     }
-            // }
         })
     }
+}
+
+fn convert_event(public_event: PublicEvent, conf: &BindRequest) -> Option<ExecutorEvent> {
+    let mut event = delicate_utils::consensus_message::task_log::ExecutorEvent {
+        executor_processor_host: conf.executor_processor_host.clone(),
+        executor_processor_id: conf.executor_processor_id,
+        executor_processor_name: conf.executor_processor_name.clone(),
+        ..Default::default()
+    };
+
+    match public_event {
+        PublicEvent::FinishTask(mut body) => {
+            event.id = body.get_record_id();
+            event.task_id = body.get_task_id() as i64;
+            event.event_type = EventType::TaskFinish as i16;
+            event.output = body.get_finish_output().map(|o| o.into());
+        }
+        PublicEvent::RemoveTask(_) => {
+            return None;
+        }
+        PublicEvent::RunningTask(task_id, record_id) => {
+            event.id = record_id;
+            event.task_id = task_id as i64;
+            event.event_type = EventType::TaskPerform as i16;
+        }
+        PublicEvent::TimeoutTask(task_id, record_id) => {
+            event.id = record_id;
+            event.task_id = task_id as i64;
+            event.event_type = EventType::TaskTimeout as i16;
+        }
+    }
+
+    Some(event)
 }

@@ -73,6 +73,13 @@ pub struct ExecutorEventCollection {
     timestamp: i64,
 }
 
+impl From<Vec<ExecutorEvent>> for ExecutorEventCollection {
+    fn from(events: Vec<ExecutorEvent>) -> Self {
+        let timestamp = get_timestamp() as i64;
+        ExecutorEventCollection { events, timestamp }
+    }
+}
+
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct SignedExecutorEventCollection {
     pub event_collection: ExecutorEventCollection,
@@ -81,8 +88,16 @@ pub struct SignedExecutorEventCollection {
 }
 
 impl ExecutorEventCollection {
-    pub fn verify_signature(&self, _token: &str) -> bool {
-        todo!();
+    pub fn sign(
+        self,
+        token: Option<&str>,
+    ) -> Result<SignedExecutorEventCollection, crate::error::CommonError> {
+        let signature = make_signature(&self, token)?;
+
+        Ok(SignedExecutorEventCollection {
+            event_collection: self,
+            signature,
+        })
     }
 }
 

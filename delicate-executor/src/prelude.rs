@@ -3,7 +3,7 @@ pub(crate) use crate::component::{SystemMirror, SystemSnapshot};
 #[allow(unused_imports)]
 pub(crate) use actix_web::client::Client as RequestClient;
 pub(crate) use actix_web::rt::spawn as rt_spawn;
-pub(crate) use actix_web::rt::time::timeout as rt_timeout;
+pub(crate) use actix_web::rt::time::{timeout as rt_timeout, Timeout as RtTimeout};
 
 pub(crate) use actix_web::web::{self, Data as ShareData};
 pub(crate) use actix_web::{post, App, HttpResponse, HttpServer, Responder};
@@ -28,8 +28,10 @@ pub(crate) use delicate_utils::uniform_data::UnifiedResponseMessages;
 
 pub(crate) use serde::{Deserialize, Serialize};
 
-pub(crate) use std::collections::HashMap;
+pub(crate) use flexi_logger::{Age, Cleanup, Criterion, LogTarget, Logger, Naming};
+pub(crate) use log::{error, info};
 
+pub(crate) use std::collections::HashMap;
 pub(crate) use std::convert::{From, Into, TryInto};
 pub(crate) use std::env;
 pub(crate) use std::fmt::Debug;

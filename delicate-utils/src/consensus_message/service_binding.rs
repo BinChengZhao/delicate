@@ -1,7 +1,16 @@
 use crate::error::InitSchedulerError;
 use crate::prelude::*;
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize, Eq, PartialEq)]
+#[derive(Debug, Display, Clone, Default, Serialize, Deserialize, Eq, PartialEq)]
+#[display(
+    fmt = "scheduler_host:{} executor_processor_id:{} executor_processor_host:{} executor_processor_name:{} executor_machine_id:{} time:{}",
+    scheduler_host,
+    executor_processor_id,
+    executor_processor_host,
+    executor_processor_name,
+    executor_machine_id,
+    time
+)]
 pub struct BindRequest {
     pub scheduler_host: String,
     pub executor_processor_id: i64,

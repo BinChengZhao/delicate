@@ -10,45 +10,42 @@ pub(crate) fn config(cfg: &mut web::ServiceConfig) {
 // Bulk operations are supported for log messages passed from delicate-executor.
 #[post("/api/task_logs/event_trigger")]
 async fn create_task_logs(
-    web::Json(events_collection): web::Json<delicate_utils_task_log::ExecutorEventCollection>,
+    web::Json(events_collection): web::Json<delicate_utils_task_log::SignedExecutorEventCollection>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
     use delicate_utils_task_log::EventType;
 
-    if !events_collection.verify_signature("") {
-        return HttpResponse::Ok().json(
-            UnifiedResponseMessages::<usize>::error()
-                .customized_error_msg(String::from("Signature verification failure.")),
-        );
-    }
+    // TODO: Set token.
+    if let Ok(delicate_utils_task_log::ExecutorEventCollection { events, .. }) =
+        events_collection.get_executor_event_collection_after_verify(Some(""))
+    {
+        if let Ok(conn) = pool.get() {
+            return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
+                web::block::<_, _, diesel::result::Error>(move || {
+                    conn.transaction(|| {
+                        let mut effect_num = 0;
 
-    if let Ok(conn) = pool.get() {
-        return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
-            web::block::<_, _, diesel::result::Error>(move || {
-                conn.transaction(|| {
-                    let mut effect_num = 0;
-                    let delicate_utils_task_log::ExecutorEventCollection { events, .. } =
-                        events_collection;
-                    let mut new_task_logs: Vec<model::NewTaskLog> = Vec::new();
-                    let mut supply_task_logs: Vec<model::SupplyTaskLogTuple> = Vec::new();
+                        let mut new_task_logs: Vec<model::NewTaskLog> = Vec::new();
+                        let mut supply_task_logs: Vec<model::SupplyTaskLogTuple> = Vec::new();
 
-                    events
-                        .into_iter()
-                        .for_each(|e| match Into::<EventType>::into(e.event_type) {
-                            EventType::TaskPerform => new_task_logs.push(e.into()),
-                            EventType::Unknown => {}
-                            _ => supply_task_logs.push(e.into()),
+                        events.into_iter().for_each(|e| {
+                            match Into::<EventType>::into(e.event_type) {
+                                EventType::TaskPerform => new_task_logs.push(e.into()),
+                                EventType::Unknown => {}
+                                _ => supply_task_logs.push(e.into()),
+                            }
                         });
 
-                    effect_num += batch_insert_task_logs(&conn, new_task_logs)?;
+                        effect_num += batch_insert_task_logs(&conn, new_task_logs)?;
 
-                    effect_num += batch_update_task_logs(&conn, supply_task_logs)?;
+                        effect_num += batch_update_task_logs(&conn, supply_task_logs)?;
 
-                    Ok(effect_num)
+                        Ok(effect_num)
+                    })
                 })
-            })
-            .await,
-        ));
+                .await,
+            ));
+        }
     }
 
     HttpResponse::Ok().json(UnifiedResponseMessages::<usize>::error())
