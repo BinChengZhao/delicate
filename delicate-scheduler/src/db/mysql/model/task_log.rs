@@ -72,10 +72,10 @@ impl From<ExecutorEvent> for SupplyTaskLogTuple {
                     child_stdout,
                     child_stderr,
                 }) => {
-                    unsafe {
-                        stdout = String::from_utf8_unchecked(child_stdout);
-                        stderr = String::from_utf8_unchecked(child_stderr);
-                    }
+                    stdout = child_stdout;
+                    stderr = child_stderr;
+
+                    
                     if child_status != 0 {
                         state = state::task_log::State::AbnormalEnding;
                     }

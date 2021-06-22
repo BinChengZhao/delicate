@@ -173,11 +173,14 @@ impl From<StdOutput> for ChildOutput {
             stderr,
         } = value;
 
-        let status = status.code().unwrap_or(81);
+        let child_status = status.code().unwrap_or(81);
+        let child_stdout = String::from_utf8_lossy(&stdout).into_owned();
+        let child_stderr = String::from_utf8_lossy(&stderr).into_owned();
+
         ChildOutput {
-            child_status: status,
-            child_stdout: stdout,
-            child_stderr: stderr,
+            child_status,
+            child_stdout,
+            child_stderr,
         }
     }
 }
@@ -191,6 +194,6 @@ pub enum FinishOutput {
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct ChildOutput {
     pub child_status: i32,
-    pub child_stdout: Vec<u8>,
-    pub child_stderr: Vec<u8>,
+    pub child_stdout: String,
+    pub child_stderr: String,
 }

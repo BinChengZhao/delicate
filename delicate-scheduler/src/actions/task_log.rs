@@ -138,13 +138,14 @@ fn batch_insert_task_logs(
                 .collect();
 
         new_task_logs.iter_mut().for_each(|t| {
-            let task = &tasks[&t.id];
-            t.name.clone_from(&task.name);
-            t.description.clone_from(&task.description);
-            t.command.clone_from(&task.command);
-            t.frequency.clone_from(&task.frequency);
-            t.cron_expression.clone_from(&task.cron_expression);
-            t.tag.clone_from(&task.tag);
+            if let Some(task) = tasks.get(&t.id) {
+                t.name.clone_from(&task.name);
+                t.description.clone_from(&task.description);
+                t.command.clone_from(&task.command);
+                t.frequency.clone_from(&task.frequency);
+                t.cron_expression.clone_from(&task.cron_expression);
+                t.tag.clone_from(&task.tag);
+            }
         });
 
         return diesel::insert_into(task_log::table)
