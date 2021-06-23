@@ -31,12 +31,14 @@ pub(crate) use futures::future::{ok, JoinAll, Ready};
 pub(crate) use futures::Future;
 
 pub(crate) use cached::proc_macro::cached;
+
 pub(crate) use cached::TimedSizedCache;
 pub(crate) use chrono::NaiveDateTime;
 pub(crate) use diesel::mysql::Mysql;
 pub(crate) use diesel::prelude::*;
 pub(crate) use diesel::query_builder::{AsQuery, AstPass, Query, QueryFragment};
 pub(crate) use diesel::query_dsl::methods::LoadQuery;
+pub(crate) use diesel::r2d2::CustomizeConnection;
 pub(crate) use diesel::sql_types;
 
 pub(crate) use actix_session::{CookieSession, Session, UserSession};

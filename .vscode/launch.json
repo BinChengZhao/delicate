@@ -42,7 +42,18 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceRoot}/target/debug/delicate-scheduler",
+            "args": [],
+            "stopAtEntry": false,
             "cwd": "${fileDirname}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "lldb",
+            "miDebuggerPath" : "/Users/sht/.vscode/extensions/ms-vscode.cpptools-1.4.1/debugAdapters/lldb-mi/bin/lldb-mi",
+            "logging": {
+                "trace": true,
+                "engineLogging": true,
+                "traceResponse": true
+            }
         },
         {
             "name": "scheduler-gbd",

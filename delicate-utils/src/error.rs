@@ -9,7 +9,9 @@ pub enum CommonError {
     #[error("db connect fail.")]
     DisConn(#[from] PoolError),
     #[error("data query fail.")]
-    DisQuery(#[from] BlockingError<diesel::result::Error>),
+    DisQuery(#[from] diesel::result::Error),
+    #[error("data blocking-query fail.")]
+    DisBlockingQuery(#[from] BlockingError<diesel::result::Error>),
     #[error("data send fail.")]
     DisSend(#[from] ClientSendRequestError),
     #[error("data parse-json fail.")]
