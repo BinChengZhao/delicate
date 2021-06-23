@@ -44,6 +44,18 @@ impl<T: UniformData> UnifiedResponseMessages<T> {
         self.code = -1 - self.code;
         self
     }
+
+    pub fn get_data(self) -> T {
+        self.data
+    }
+
+    pub fn get_msg(&self) -> String {
+        self.msg.clone()
+    }
+
+    pub fn is_err(&self) -> bool {
+        self.code != 0
+    }
 }
 
 impl<T: UniformData + Default> UnifiedResponseMessages<T> {

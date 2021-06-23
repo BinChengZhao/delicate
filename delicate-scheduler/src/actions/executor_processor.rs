@@ -158,7 +158,7 @@ async fn activate_executor(
     }: model::UpdateExecutorProcessor = query;
 
     let client = RequestClient::default();
-    let url = "http://".to_string() + &host + "/bind";
+    let url = "http://".to_string() + &host + "/api/executor/bind";
 
     let private_key = scheduler.get_app_security_key();
     let scheduler_host = scheduler.get_app_host_name().clone();
@@ -175,10 +175,14 @@ async fn activate_executor(
         .post(url)
         .send_json(&signed_scheduler)
         .await?
-        .json::<service_binding::EncryptedBindResponse>()
+        .json::<UnifiedResponseMessages<service_binding::EncryptedBindResponse>>()
         .await?;
 
-    Ok(response.decrypt_self(private_key)?)
+    if response.is_err() {
+        return Err(CommonError::DisPass(response.get_msg()));
+    }
+
+    Ok(response.get_data().decrypt_self(private_key)?)
 }
 
 async fn activate_executor_row(
