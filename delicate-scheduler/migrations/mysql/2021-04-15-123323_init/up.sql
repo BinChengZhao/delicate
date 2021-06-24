@@ -81,7 +81,8 @@ CREATE TABLE `executor_processor_bind` (
 `executor_id` bigint(20) NOT NULL DEFAULT '0' COMMENT 'Executor id',
 `weight` smallint(11) NOT NULL DEFAULT '0' COMMENT 'Execution weights of tasks between executor in a group',
 `created_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Executor-processor-group creation time',
-PRIMARY KEY (`id`)
+PRIMARY KEY (`id`),
+UNIQUE KEY `only` (`group_id`,`executor_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `task_bind` (

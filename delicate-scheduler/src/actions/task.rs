@@ -88,6 +88,8 @@ async fn update_task(
     use db::schema::task_bind;
     use std::collections::HashSet;
 
+    // TODO: If a task is running it is automatically removed & registered to new machine.
+
     if let Ok(conn) = pool.get() {
         return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<()>>::into(
             web::block::<_, _, diesel::result::Error>(move || {
@@ -179,7 +181,7 @@ async fn suspend_task(
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
     let result: UnifiedResponseMessages<()> =
-        Into::into(pre_operate_task(pool, (task_id, "/api/task/remove", "Suspend")).await);
+        Into::into(pre_operate_task(pool.clone(), (task_id, "/api/task/remove", "Suspend")).await);
 
     HttpResponse::Ok().json(result)
 }
@@ -203,10 +205,16 @@ async fn pre_run_task(
     use db::schema::task::dsl::*;
     use db::schema::{executor_processor, executor_processor_bind, task, task_bind};
 
+    use state::task::State;
+
     let conn = pool.get()?;
 
     // Many machine.
     let task_packages: Vec<(delicate_utils_task::TaskPackage, String)> = web::block(move || {
+        diesel::update(task.find(task_id))
+            .set(task::status.eq(State::Enabled as i16))
+            .execute(&conn)?;
+
         task_bind::table
             .inner_join(executor_processor_bind::table.inner_join(executor_processor::table))
             .inner_join(task::table)
@@ -253,15 +261,23 @@ async fn pre_run_task(
 
 async fn pre_operate_task(
     pool: ShareData<db::ConnectionPool>,
-    (task_id, url, action): (i64, &str, &str),
+    (task_id, url, action): (i64, &str, &'static str),
 ) -> Result<(), CommonError> {
     use db::schema::executor_processor::dsl::{host, token};
     use db::schema::{executor_processor, executor_processor_bind, task, task_bind};
+    use state::task::State;
 
     let conn = pool.get()?;
 
     // Many machine.
     let executor_packages: IntoIter<(String, String)> = web::block(move || {
+        // TODO: Optimize.
+        if action.eq("Suspend") {
+            diesel::update(task::table.find(task_id))
+                .set(task::status.eq(State::NotEnabled as i16))
+                .execute(&conn)?;
+        }
+
         task_bind::table
             .inner_join(executor_processor_bind::table.inner_join(executor_processor::table))
             .inner_join(task::table)

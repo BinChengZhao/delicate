@@ -171,18 +171,15 @@ async fn activate_executor(
         .set_time(get_timestamp())
         .sign(private_key)?;
 
-    let response = client
+    let response: Result<service_binding::EncryptedBindResponse, CommonError> = client
         .post(url)
         .send_json(&signed_scheduler)
         .await?
         .json::<UnifiedResponseMessages<service_binding::EncryptedBindResponse>>()
-        .await?;
+        .await?
+        .into();
 
-    if response.is_err() {
-        return Err(CommonError::DisPass(response.get_msg()));
-    }
-
-    Ok(response.get_data().decrypt_self(private_key)?)
+    Ok(response?.decrypt_self(private_key)?)
 }
 
 async fn activate_executor_row(
