@@ -24,10 +24,11 @@
 - **High Performance:** Lightweight and essential features speed up the performance.
 - **Observability:**  There are many meaningful statistics periodically in a readable way.
 - **Integration:**  etc.
+- **Upgrade:**  Dynamic upgrade of the system (upgrade is done by obtaining the latest source code and performing database migration.
 
 The architecture of delicate:
 
-![architecture](./doc/architecture.png)
+![architecture](./doc/architecture.svg)
 
 - **Service Management**
 	- **Security**
@@ -42,7 +43,12 @@ The architecture of delicate:
 
 ## Get Started
 
+
 The basic common usage of delicate is to quickly set up for the backend servers and executors. We split it into multiple simple steps to illustrate the delicate concepts and operations.
+
+The source code installation requires:
+ * rustc [rustup](https://www.rust-lang.org/tools/install) 
+ * libmysqlclient-dev libpq-dev 
 
 ### Setting up delicate
 
@@ -66,9 +72,32 @@ $ cargo *****
 
 See [reference](./doc/reference.md) and [developer guide](./doc/developer-guide.md) for more information.
 
+
+## To Do List
+- [ ] I18n.
+- [ ] Permission Management.
+- [ ] Multiple login protocols, LDAP CAS .
+- [ ] Machine resource panel, online view of processes, memory, cpu, etc.
+- [ ] Database back-end support Postgres.
+- [ ]  `scheduler & executor` communication using RPC, but currently there are problems with dependencies (RPC framework (`tonic ｜ tarpc`) both depend on tokio 1,current actix-web stable version 3, does not support integration with tokio 1 ).
+- [ ] Task flow support.
+- [ ] Dynamic actuator load adjustment, where the resource group adjusts the task load of the task execution nodes according to the machine metrics.
+
+
+
+
+
+
+
+
+
+
 ## Roadmap 
 
 See [delicate Roadmap](./doc/Roadmap.md) for details.
+
+## Thanks
+Sincere thanks to my friend `Walker-os` who helped me solve a lot of front-end resource problems and speed up the release of delicate.
 
 # Stargazers over time
 
