@@ -20,6 +20,7 @@ pub async fn pre_create_task(
     shared_delay_timer: SharedDelayTimer,
     executor_conf: SharedExecutorSecurityConf,
 ) -> Result<(), CommonError> {
+    info!("{}", &signed_task_package.task_package);
     let guard = executor_conf.get_bind_scheduler_token_ref().await;
     let token = guard.as_ref().map(|s| s.deref());
     let task = signed_task_package
@@ -258,7 +259,9 @@ fn launch_status_reporter(
                     );
 
                     match event_future.await {
+                        // No new events and timeout.
                         Err(_) => break 'event_collection,
+                        // Internal runtime exception.
                         Ok(Err(_)) => {
                             return;
                         }
@@ -268,6 +271,10 @@ fn launch_status_reporter(
                                 .map(|conf| convert_event(event, conf).map(|e| events.push(e)));
                         }
                     }
+                }
+
+                if events.is_empty() {
+                    continue;
                 }
 
                 if let Some(scheduler_ref) = scheduler.as_ref() {

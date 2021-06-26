@@ -109,14 +109,8 @@ async fn kill_task_instance(
 ) -> HttpResponse {
     let response_result = kill_one_task_instance(pool, task_record).await;
 
-    if let Ok(response) = response_result {
-        return HttpResponse::Ok().json(response);
-    }
-
-    HttpResponse::Ok().json(
-        UnifiedResponseMessages::<()>::error()
-            .customized_error_msg(response_result.expect_err("").to_string()),
-    )
+    let response = Into::<UnifiedResponseMessages<()>>::into(response_result);
+    HttpResponse::Ok().json(response)
 }
 
 fn batch_insert_task_logs(
@@ -189,7 +183,7 @@ async fn kill_one_task_instance(
         record_id,
         executor_processor_id,
     }: model::TaskRecord,
-) -> Result<UnifiedResponseMessages<()>, CommonError> {
+) -> Result<(), CommonError> {
     use db::schema::task_log;
 
     let token = model::get_executor_token_by_id(executor_processor_id, pool.get()?).await;
@@ -201,7 +195,9 @@ async fn kill_one_task_instance(
             .filter(task_log::status.eq(state::task_log::State::Running as i16))
             .select(task_log::executor_processor_host)
             .first::<String>(&conn)?;
+
         diesel::update(task_log::table.find(&record_id))
+            .filter(task_log::status.eq(state::task_log::State::Running as i16))
             .set(task_log::status.eq(state::task_log::State::TmanualCancellation as i16))
             .execute(&conn)?;
         Ok(host)
@@ -217,12 +213,11 @@ async fn kill_one_task_instance(
         .set_time(get_timestamp())
         .sign(token.as_deref())?;
 
-    let response = client
+    client
         .post(url)
         .send_json(&record)
         .await?
         .json::<UnifiedResponseMessages<()>>()
-        .await?;
-
-    Ok(response)
+        .await?
+        .into()
 }
