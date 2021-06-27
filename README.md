@@ -12,7 +12,7 @@
 
 ## What is delicate
 <a href="">
-    <img src="./doc/delicate.svg"
+    <img src="./doc/delicate_logo.svg"
          alt="delicate logo" title="delicate" height="100" width="100"  align="right"/>
 </a>
 
