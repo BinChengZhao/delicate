@@ -13,7 +13,7 @@
 ## What is delicate
 <a href="">
     <img src="./doc/delicate_logo.svg"
-         alt="delicate logo" title="delicate" height="100" width="100"  align="right"/>
+         alt="delicate logo" title="delicate" height="125" width="125"  align="right"/>
 </a>
 
 `delicate` A lightweight and distributed task scheduling platform written in rust.:
