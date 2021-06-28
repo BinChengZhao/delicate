@@ -12,34 +12,32 @@
 
 ## What is delicate
 <a href="">
-    <img src="./doc/delicate_logo.svg"
+    <img src="./doc/delicate_logo.png"
          alt="delicate logo" title="delicate" height="125" width="125"  align="right"/>
 </a>
 
 `delicate` A lightweight and distributed task scheduling platform written in rust.:
 
 ## features
-- **Friendly UI:** [Front-end] *** manage their task | executor, monitor the status, check the logs online, etc.
+- **Friendly UI:** [Front-end] Convenient management of tasks & executors, monitoring their status and supporting manual maintenance etc.
+
+- **Flexible Operations:** Flexible task operations, support for limiting the maximum number of parallelism in a single node, time zone settings corresponding to cron expressions, scheduling modes (single, fixed number, constantly repeating), the ability to manually trigger tasks at any time, manually terminate task instances, and view task logs online.
+
 - **High Availability:**  Delicate supports unlimited horizontal expansion. It's easy to achieve high availability and performance by deploying as many Delicate servers and executors.
-- **High Performance:** Lightweight and essential features speed up the performance.
+
+- **High Performance:** Lightweight and essential features speed up the performance, The basic resource overhead for `delicate` is roughly (less than 0.1% cpu usage, with about 10m of memory.)
+
 - **Observability:**  There are many meaningful statistics periodically in a readable way.
-- **Integration:**  etc.
+
 - **Upgrade:**  Dynamic upgrade of the system (upgrade is done by obtaining the latest source code and performing database migration.
 
 The architecture of delicate:
 
 ![architecture](./doc/architecture.svg)
 
-- **Service Management**
-	- **Security**
-- **High Performance and Availability**
-	- **Adaption**: .
-	- **Validation**: .
-	- **Load Balance:** .
-	- **Cache:** .
-	- **Hot-Update:** updates both config and binary of delicate in place without losing connections.
-
 ## Benchmark
+Task take about 10,080 ns - 15,089 ns per scheduling (varies by OS/hardware).
+The rest of the overall indicators await bench.
 
 ## Get Started
 
@@ -48,24 +46,41 @@ The basic common usage of delicate is to quickly set up for the backend servers 
 
 The source code installation requires:
  * rustc [rustup](https://www.rust-lang.org/tools/install) 
- * libmysqlclient-dev libpq-dev 
+ * libmysqlclient-dev & libpq-dev & libssl-dev
 
 ### Setting up delicate
 
-We can download the binary from [release page](https://github.com/BinChengZhao/delicate/releases). For example we use linux version:
+<!-- We can download the binary from [release page](https://github.com/BinChengZhao/delicate/releases).  -->
+<!-- 
+For example we use linux version:
 
 ```bash
 $ mkdir delicate
 $ wget https://github.com/BinChengZhao/delicate/releases/download/v1.0.0/delicate-v1.0.0-linux-amd64.tar.gz
-$ tar zxvf delicate-v1.0.0-linux-amd64.tar.gz -C delicate && cd delicate
-```
+$ tar zxvf delicate-v1.0.0-linux-amd64.tar.gz -C delicate && cd delicate -->
 
-or use source code:
 
-```bash
-$ git clone https://github.com/BinChengZhao/delicate && cd delicate
-$ cargo *****
-```
+1. install the rust suite: ` curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh `
+
+2. initialize cargo in the current shell, ` source $HOME/.cargo/env ` .  
+
+3. Get the delicate source code and compile it ( this is an example, please get the corresponding Tag version according to your needs ) : ` git clone https://github.com/BinChengZhao/delicate.git ` .
+
+4. ` cd delicate/ ` .
+
+5. ` cargo check ` , check for environment dependencies etc.
+
+6. when error: linker `cc` not found: solution : ` yum -y install gcc ` .
+
+7. when ` --- stderr thread 'main' panicked at 'Without `*` set in .env: NotPresent'` then you need to set the environment variable, using the project's  template.env ` .
+
+8. ` cp template.env .env ` and start modifying the configuration. 
+
+9. Compile the executable with ` cargo build --release ` after passing it.
+
+10. Start delicate-scheduler: ` nohup target/release/delicate-scheduler &   ` .
+
+11. start delicate-executor: ` nohup target/release/delicate-executor & ` .
 
 
 ## Documentation
@@ -81,15 +96,7 @@ See [reference](./doc/reference.md) and [developer guide](./doc/developer-guide.
 - [ ] Database back-end support Postgres.
 - [ ]  `scheduler & executor` communication using RPC, but currently there are problems with dependencies (RPC framework (`tonic ｜ tarpc`) both depend on tokio 1,current actix-web stable version 3, does not support integration with tokio 1 ).
 - [ ] Task flow support.
-- [ ] Dynamic actuator load adjustment, where the resource group adjusts the task load of the task execution nodes according to the machine metrics.
-
-
-
-
-
-
-
-
+- [ ] Dynamic executor load adjustment, where the resource group adjusts the task load of the task execution nodes according to the machine metrics.
 
 
 ## Roadmap 
@@ -97,7 +104,7 @@ See [reference](./doc/reference.md) and [developer guide](./doc/developer-guide.
 See [delicate Roadmap](./doc/Roadmap.md) for details.
 
 ## Thanks
-Sincere thanks to my friend `Walker-os` who helped me solve a lot of front-end resource problems and speed up the release of delicate.
+Sincere thanks to my friend `Walker-os` who helped me solve a lot of front-end resource problems and speed up the release of delicate and `liping Wang` help me beautify the logo.
 
 # Stargazers over time
 
@@ -109,8 +116,6 @@ Sincere thanks to my friend `Walker-os` who helped me solve a lot of front-end r
 Licensed under either of
 
  * MIT license ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
-
-## To Do List
 
 #### Contribution
 
