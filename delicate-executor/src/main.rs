@@ -2,7 +2,6 @@ mod component;
 mod prelude;
 use prelude::*;
 
-/// This handler uses json extractor
 #[post("/api/task/create")]
 async fn create_task(
     web::Json(signed_task_package): web::Json<SignedTaskPackage>,
@@ -20,7 +19,7 @@ pub async fn pre_create_task(
     shared_delay_timer: SharedDelayTimer,
     executor_conf: SharedExecutorSecurityConf,
 ) -> Result<(), CommonError> {
-    info!("{}", &signed_task_package.task_package);
+    info!("pre_create_task: {}", &signed_task_package.task_package);
     let guard = executor_conf.get_bind_scheduler_token_ref().await;
     let token = guard.as_ref().map(|s| s.deref());
     let task = signed_task_package
@@ -28,6 +27,33 @@ pub async fn pre_create_task(
         .map(TryInto::<Task>::try_into)??;
 
     Ok(shared_delay_timer.add_task(task)?)
+}
+
+#[post("/api/task/update")]
+async fn update_task(
+    web::Json(signed_task_package): web::Json<SignedTaskPackage>,
+    shared_delay_timer: SharedDelayTimer,
+    executor_conf: SharedExecutorSecurityConf,
+) -> impl Responder {
+    let response: UnitUnifiedResponseMessages =
+        Into::into(pre_update_task(signed_task_package, shared_delay_timer, executor_conf).await);
+
+    HttpResponse::Ok().json(response)
+}
+
+pub async fn pre_update_task(
+    signed_task_package: SignedTaskPackage,
+    shared_delay_timer: SharedDelayTimer,
+    executor_conf: SharedExecutorSecurityConf,
+) -> Result<(), CommonError> {
+    info!("pre_update_task: {}", &signed_task_package.task_package);
+    let guard = executor_conf.get_bind_scheduler_token_ref().await;
+    let token = guard.as_ref().map(|s| s.deref());
+    let task = signed_task_package
+        .get_task_package_after_verify(token)
+        .map(TryInto::<Task>::try_into)??;
+
+    Ok(shared_delay_timer.update_task(task)?)
 }
 
 #[post("/api/task/remove")]

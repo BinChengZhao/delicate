@@ -122,7 +122,7 @@ async fn update_task(
                         .map(|bind_id| model::NewTaskBind { task_id, bind_id })
                         .collect();
 
-                    for model::NewTaskBind { task_id, bind_id } in removed_task_binds {
+                    for model::NewTaskBind { task_id, bind_id } in removed_task_binds.iter() {
                         diesel::delete(
                             task_bind::table
                                 .filter(task_bind::task_id.eq(task_id))
@@ -143,6 +143,102 @@ async fn update_task(
 
     HttpResponse::Ok().json(UnifiedResponseMessages::<()>::error())
 }
+
+pub async fn pre_update_task(
+    model::UpdateTaskBody { task, binding_ids }: model::UpdateTaskBody,
+    pool: ShareData<db::ConnectionPool>,
+) -> Result<(), CommonError> {
+    use db::schema::{executor_processor, executor_processor_bind, task_bind};
+    use std::collections::HashSet;
+
+    let conn = pool.get()?;
+
+    let (removed_task_binds, append_task_binds) =
+        web::block::<_, _, diesel::result::Error>(move || {
+            conn.transaction(|| {
+                diesel::update(&task).set(&task).execute(&conn)?;
+
+                let original_bind_processors: Vec<(i64, String, String)> = task_bind::table
+                    .inner_join(
+                        executor_processor_bind::table.inner_join(executor_processor::table),
+                    )
+                    .select((
+                        task_bind::bind_id,
+                        executor_processor::host,
+                        executor_processor::token,
+                    ))
+                    .filter(task_bind::task_id.eq(task.id))
+                    .load(&conn)?;
+
+                // Contrast with binding updates.
+                let original_task_binds: HashSet<i64> =
+                    original_bind_processors.iter().map(|b| b.0).collect();
+
+                let current_task_binds: HashSet<i64> = binding_ids.into_iter().collect();
+
+                let task_id = task.id;
+
+                let removed_task_binds: Vec<model::NewTaskBind> = original_task_binds
+                    .difference(&current_task_binds)
+                    .into_iter()
+                    .copied()
+                    .map(|bind_id| model::NewTaskBind { task_id, bind_id })
+                    .collect();
+
+                let append_task_binds: Vec<model::NewTaskBind> = current_task_binds
+                    .difference(&original_task_binds)
+                    .into_iter()
+                    .copied()
+                    .map(|bind_id| model::NewTaskBind { task_id, bind_id })
+                    .collect();
+
+                let append_binds: Vec<i64> = append_task_binds.iter().map(|b| b.bind_id).collect();
+
+                let append_bind_processors: Vec<(i64, String, String)> =
+                    executor_processor_bind::table
+                        .inner_join(executor_processor::table)
+                        .select((executor_processor_bind::id ,executor_processor::host, executor_processor::token))
+                        .filter(executor_processor_bind::id.eq_any((&append_binds)))
+                        .load(&conn)?;
+
+                for model::NewTaskBind { task_id, bind_id } in removed_task_binds.iter() {
+                    diesel::delete(
+                        task_bind::table
+                            .filter(task_bind::task_id.eq(task_id))
+                            .filter(task_bind::bind_id.eq(bind_id)),
+                    )
+                    .execute(&conn)?;
+                }
+
+                diesel::insert_into(task_bind::table)
+                    .values(&append_task_binds[..])
+                    .execute(&conn)?;
+                Ok((removed_task_binds, append_task_binds))
+            })
+        })
+        .await?;
+
+    //    let remove_tasks_future : JoinAll<_> = removed_task_binds
+    //         .into_iter()
+    //         .filter_map(|(task_package, executor_token)| {
+    //             let executor_host = "http://".to_string() + &task_package.host + "/api/task/create";
+    //             info!("Run task{} at:{}", &task_package, &executor_host);
+    //             task_package
+    //                 .sign(Some(&executor_token))
+    //                 .map(|s| (s, executor_host))
+    //                 .ok()
+    //         })
+    //         .map(|(signed_task_package, executor_host)| {
+    //             RequestClient::default()
+    //                 .post(executor_host)
+    //                 .send_json(&signed_task_package)
+    //         })
+    //         .collect::<Vec<_>>()
+    //         .into_iter()
+    //         .collect();
+    todo!();
+}
+
 #[post("/api/task/delete")]
 async fn delete_task(
     web::Json(model::TaskId { task_id }): web::Json<model::TaskId>,

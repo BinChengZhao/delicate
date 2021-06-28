@@ -46,4 +46,6 @@ pub(crate) fn init() {
 
     // This will run the necessary migrations.
     embedded_migrations::run(&connection).unwrap();
+
+    // TODO: Initialize super administrator account password.
 }
