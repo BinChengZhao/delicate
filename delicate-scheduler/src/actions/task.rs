@@ -148,75 +148,13 @@ pub async fn pre_update_task(
     model::UpdateTaskBody { task, binding_ids }: model::UpdateTaskBody,
     pool: ShareData<db::ConnectionPool>,
 ) -> Result<(), CommonError> {
-    use db::schema::{executor_processor, executor_processor_bind, task_bind};
-    use std::collections::HashSet;
-
+    let task_id = task.id;
     let conn = pool.get()?;
-
     let (removed_task_binds, append_task_binds) =
-        web::block::<_, _, diesel::result::Error>(move || {
-            conn.transaction(|| {
-                diesel::update(&task).set(&task).execute(&conn)?;
+        pre_update_task_row(conn, task, binding_ids).await?;
 
-                let original_bind_processors: Vec<(i64, String, String)> = task_bind::table
-                    .inner_join(
-                        executor_processor_bind::table.inner_join(executor_processor::table),
-                    )
-                    .select((
-                        task_bind::bind_id,
-                        executor_processor::host,
-                        executor_processor::token,
-                    ))
-                    .filter(task_bind::task_id.eq(task.id))
-                    .load(&conn)?;
-
-                // Contrast with binding updates.
-                let original_task_binds: HashSet<i64> =
-                    original_bind_processors.iter().map(|b| b.0).collect();
-
-                let current_task_binds: HashSet<i64> = binding_ids.into_iter().collect();
-
-                let task_id = task.id;
-
-                let removed_task_binds: Vec<model::NewTaskBind> = original_task_binds
-                    .difference(&current_task_binds)
-                    .into_iter()
-                    .copied()
-                    .map(|bind_id| model::NewTaskBind { task_id, bind_id })
-                    .collect();
-
-                let append_task_binds: Vec<model::NewTaskBind> = current_task_binds
-                    .difference(&original_task_binds)
-                    .into_iter()
-                    .copied()
-                    .map(|bind_id| model::NewTaskBind { task_id, bind_id })
-                    .collect();
-
-                let append_binds: Vec<i64> = append_task_binds.iter().map(|b| b.bind_id).collect();
-
-                let append_bind_processors: Vec<(i64, String, String)> =
-                    executor_processor_bind::table
-                        .inner_join(executor_processor::table)
-                        .select((executor_processor_bind::id ,executor_processor::host, executor_processor::token))
-                        .filter(executor_processor_bind::id.eq_any((&append_binds)))
-                        .load(&conn)?;
-
-                for model::NewTaskBind { task_id, bind_id } in removed_task_binds.iter() {
-                    diesel::delete(
-                        task_bind::table
-                            .filter(task_bind::task_id.eq(task_id))
-                            .filter(task_bind::bind_id.eq(bind_id)),
-                    )
-                    .execute(&conn)?;
-                }
-
-                diesel::insert_into(task_bind::table)
-                    .values(&append_task_binds[..])
-                    .execute(&conn)?;
-                Ok((removed_task_binds, append_task_binds))
-            })
-        })
-        .await?;
+    //  .
+    // TODO: build futures.
 
     //    let remove_tasks_future : JoinAll<_> = removed_task_binds
     //         .into_iter()
@@ -237,6 +175,92 @@ pub async fn pre_update_task(
     //         .into_iter()
     //         .collect();
     todo!();
+}
+
+pub async fn pre_update_task_row(
+    conn: db::PoolConnection,
+    task: model::UpdateTask,
+    binding_ids: Vec<i64>,
+) -> Result<(Vec<model::BindProcessor>, Vec<model::BindProcessor>), CommonError> {
+    use db::schema::{executor_processor, executor_processor_bind, task_bind};
+    use model::BindProcessor;
+    use std::collections::{HashMap, HashSet};
+
+    let task_binds_pair = web::block::<_, _, diesel::result::Error>(move || {
+        conn.transaction(|| {
+            let task_id = task.id;
+            diesel::update(&task).set(&task).execute(&conn)?;
+
+            let original_bind_processors: Vec<BindProcessor> = task_bind::table
+                .inner_join(executor_processor_bind::table.inner_join(executor_processor::table))
+                .select((
+                    task_bind::bind_id,
+                    executor_processor::host,
+                    executor_processor::token,
+                ))
+                .filter(task_bind::task_id.eq(task_id))
+                .load(&conn)?;
+
+            // Contrast with binding updates.
+            let original_task_binds: HashSet<i64> =
+                original_bind_processors.iter().map(|b| b.bind_id).collect();
+
+            let current_task_binds: HashSet<i64> = binding_ids.into_iter().collect();
+
+            let removed_task_binds_set = original_task_binds.difference(&current_task_binds);
+
+            let removed_task_binds: Vec<model::NewTaskBind> = removed_task_binds_set
+                .clone()
+                .into_iter()
+                .copied()
+                .map(|bind_id| model::NewTaskBind { task_id, bind_id })
+                .collect();
+
+            let removed_task_binds_map: HashMap<i64, ()> =
+                removed_task_binds_set.map(|b| (*b, ())).collect();
+
+            let removed_bind_processors: Vec<BindProcessor> = original_bind_processors
+                .into_iter()
+                .filter(|b| removed_task_binds_map.get(&b.bind_id).is_some())
+                .collect();
+
+            let append_task_binds: Vec<model::NewTaskBind> = current_task_binds
+                .difference(&original_task_binds)
+                .into_iter()
+                .copied()
+                .map(|bind_id| model::NewTaskBind { task_id, bind_id })
+                .collect();
+
+            let append_binds: Vec<i64> = append_task_binds.iter().map(|b| b.bind_id).collect();
+
+            let append_bind_processors: Vec<BindProcessor> = executor_processor_bind::table
+                .inner_join(executor_processor::table)
+                .select((
+                    executor_processor_bind::id,
+                    executor_processor::host,
+                    executor_processor::token,
+                ))
+                .filter(executor_processor_bind::id.eq_any(&append_binds))
+                .load(&conn)?;
+
+            for model::NewTaskBind { task_id, bind_id } in removed_task_binds.iter() {
+                diesel::delete(
+                    task_bind::table
+                        .filter(task_bind::task_id.eq(task_id))
+                        .filter(task_bind::bind_id.eq(bind_id)),
+                )
+                .execute(&conn)?;
+            }
+
+            diesel::insert_into(task_bind::table)
+                .values(&append_task_binds[..])
+                .execute(&conn)?;
+            Ok((removed_bind_processors, append_bind_processors))
+        })
+    })
+    .await?;
+
+    Ok(task_binds_pair)
 }
 
 #[post("/api/task/delete")]
