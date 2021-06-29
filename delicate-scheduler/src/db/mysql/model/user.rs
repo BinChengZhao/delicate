@@ -4,15 +4,15 @@ use super::schema::{user, user_auth};
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 pub struct QueryNewUser {
     #[validate(length(min = 8))]
-    user_name: String,
+    pub(crate) user_name: String,
     #[validate(length(min = 1))]
-    nick_name: String,
+    pub(crate) nick_name: String,
     #[validate(length(max = 11))]
-    mobile: String,
+    pub(crate) mobile: String,
     #[validate(email)]
-    email: String,
+    pub(crate) email: String,
     #[validate(length(min = 8))]
-    certificate: String,
+    pub(crate) certificate: String,
 }
 
 #[derive(Queryable, Identifiable, AsChangeset, Debug, Clone, Serialize, Deserialize)]

@@ -1,14 +1,13 @@
 use crate::prelude::*;
 #[derive(Queryable, Clone, Debug, Default, Serialize, Deserialize, Display)]
 #[display(
-    fmt = "task-id:{} command:{} frequency:{} cron_expression:{} timeout:{} maximun_parallel_runnable_num:{} host:{}",
+    fmt = "task-id:{} command:{} frequency:{} cron_expression:{} timeout:{} maximun_parallel_runnable_num:{}",
     id,
     command,
     frequency,
     cron_expression,
     timeout,
-    maximun_parallel_runnable_num,
-    host
+    maximun_parallel_runnable_num
 )]
 
 pub struct TaskPackage {
@@ -24,8 +23,6 @@ pub struct TaskPackage {
     pub timeout: i16,
     /// Maximum parallel runable num (optional).
     pub maximun_parallel_runnable_num: i16,
-    /// Target executor host.
-    pub host: String,
 }
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize)]

@@ -49,3 +49,45 @@ pub(crate) fn init() {
 
     // TODO: Initialize super administrator account password.
 }
+
+pub(crate) fn init_admin_account() {
+    use model::QueryNewUser;
+    use schema::{user, user_auth};
+
+    let user_name = env::var("INITIAL_ADMINISTRATOR_USER_NAME").unwrap_or_else(|_| {
+        println!("`INITIAL_ADMINISTRATOR_USER_NAME` is not set in the environment variable");
+        println!("The default login user is `admin`  .");
+        println!("Please ignore this error if you have set or initialized delicate.");
+
+        "admin".into()
+    });
+    let certificate = env::var("INITIAL_ADMINISTRATOR_PASSWORD");
+    let nick_name = env::var("INITIAL_ADMINISTRATOR_NICK_NAME");
+    let mobile = env::var("INITIAL_ADMINISTRATOR_MOBILE");
+    let email = env::var("INITIAL_ADMINISTRATOR_EMAIL");
+
+    let conn = establish_connection();
+
+    // conn.transaction(|| {
+    //     let count = user::table
+    //         .filter(user::user_name.eq(""))
+    //         .count()
+    //         .load(&conn);
+
+        // diesel::insert_into(user::table)
+        //     .values(&(Into::<model::NewUser>::into(&user)))
+        //     .execute(&conn)?;
+
+        // let last_id = diesel::select(db::last_insert_id).get_result::<u64>(&conn)?;
+
+        // let user_auths: model::NewUserAuths =
+        //     From::<(model::QueryNewUser, u64)>::from((user, last_id));
+
+        // diesel::insert_into(user_auth::table)
+        //     .values(&user_auths.0[..])
+        //     .execute(&conn)?;
+    //     Ok(())
+    // });
+
+    todo!();
+}
