@@ -62,8 +62,7 @@ async fn main() -> AnyResut<()> {
             .app_data(shared_connection_pool.clone())
             .app_data(shared_scheduler_meta_info.clone())
             .wrap(components::session::session_middleware())
-            // TODO:
-            // .wrap(components::session::auth_middleware())
+            .wrap(components::session::auth_middleware())
             .wrap(MiddlewareLogger::default())
     })
     .bind(
