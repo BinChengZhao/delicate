@@ -93,7 +93,7 @@ async fn delete_executor_processor_bind(
 ) -> HttpResponse {
     use db::schema::executor_processor_bind::dsl::*;
 
-    // TODO: Manybe soft-delete.
+    // TODO: Check if there are associated tasks on the binding.
     if let Ok(conn) = pool.get() {
         return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
             web::block(move || {

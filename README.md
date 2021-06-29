@@ -42,7 +42,6 @@ The rest of the overall indicators await bench.
 
 ## Get Started
 
-
 The basic common usage of delicate is to quickly set up for the backend servers and executors. We split it into multiple simple steps to illustrate the delicate concepts and operations.
 
 The source code installation requires:

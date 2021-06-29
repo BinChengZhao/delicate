@@ -102,8 +102,6 @@ impl From<ExecutorEvent> for SupplyTaskLogTuple {
     }
 }
 
-// TODO: Use `replace_into` instead of `insert_into` to process data.
-
 #[derive(Queryable, Identifiable, AsChangeset, Debug, Clone, Serialize, Deserialize)]
 #[table_name = "task_log"]
 pub struct TaskLog {

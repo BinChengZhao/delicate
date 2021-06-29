@@ -8,9 +8,6 @@ pub(crate) mod task_bind;
 pub(crate) mod task_log;
 pub(crate) mod user;
 
-// TODO: Create-task addtion task-bind related.
-// TODO: Update-task addtion task-bind related.
-
 pub(crate) use super::prelude;
 pub(crate) use data_reports::*;
 pub(crate) use executor_group::*;
