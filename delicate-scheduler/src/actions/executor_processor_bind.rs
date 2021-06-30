@@ -74,7 +74,10 @@ async fn update_executor_processor_bind(
     if let Ok(conn) = pool.get() {
         return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
             web::block(move || {
-                diesel::update(&executor_processor_bind)
+            
+               // TODO: Check if there are associated tasks on the binding.
+               // Tasks are automatically removed on the old machine and automatically created on the new machine.
+               diesel::update(&executor_processor_bind)
                     .set(&executor_processor_bind)
                     .execute(&conn)
             })
