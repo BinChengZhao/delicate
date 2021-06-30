@@ -15,13 +15,11 @@ pub(crate) mod actions;
 pub(crate) mod components;
 pub(crate) mod db;
 pub(crate) mod prelude;
-
 #[macro_use]
 pub(crate) mod macros;
 
-use {cfg_mysql_support, cfg_postgres_support};
-
 pub(crate) use prelude::*;
+use {cfg_mysql_support, cfg_postgres_support};
 
 #[actix_web::main]
 async fn main() -> AnyResut<()> {
