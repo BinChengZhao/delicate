@@ -11,6 +11,8 @@
 
 `delicate` A lightweight and distributed task scheduling platform written in rust & react.
 
+The front-end project of `delicate` is based on `zuiidea/antd-admin` development, thank you very much guys.
+
 [![MIT](https://img.shields.io/dub/l/vibe-d.svg?style=flat-square)](http://opensource.org/licenses/MIT)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://github.com/BinChengZhao/delicate/pulls)
 
