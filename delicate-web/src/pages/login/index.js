@@ -25,7 +25,7 @@ class Login extends PureComponent {
       {
         key: 'github',
         title: <GithubOutlined />,
-        href: 'https://github.com/zuiidea/antd-admin',
+        href: 'https://github.com/BinChengZhao/delicate',
         blankTarget: true,
       },
     ]
