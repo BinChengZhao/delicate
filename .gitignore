@@ -15,4 +15,27 @@ Cargo.lock
 /target
 *.log
 .env*
+
+
+# delicate-web
+coverage
+dist
+node_modules
+yarn.lock
+package-lock.json
+
+# ide
+.idea
+
+# Mac General
 .DS_Store
+.AppleDouble
+.LSOverride
+
+# umi
+.umi
+.umi-production
+
+# jslingui
+src/locales/_build
+src/locales/**/*.js
