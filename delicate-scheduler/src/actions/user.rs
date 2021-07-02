@@ -101,18 +101,23 @@ async fn delete_user(
     web::Json(model::UserId { user_id }): web::Json<model::UserId>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
-    use db::schema::user;
+    use db::schema::{user, user_auth};
 
     if let Ok(conn) = pool.get() {
-        return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
-            web::block(move || {
-                diesel::delete(user::table.filter(user::id.eq(user_id))).execute(&conn)
+        return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<()>>::into(
+            web::block::<_, _, diesel::result::Error>(move || {
+                conn.transaction(|| {
+                    diesel::delete(user::table.filter(user::id.eq(user_id))).execute(&conn)?;
+                    diesel::delete(user_auth::table.filter(user_auth::user_id.eq(user_id)))
+                        .execute(&conn)?;
+                    Ok(())
+                })
             })
             .await,
         ));
     }
 
-    HttpResponse::Ok().json(UnifiedResponseMessages::<usize>::error())
+    HttpResponse::Ok().json(UnifiedResponseMessages::<()>::error())
 }
 
 #[post("/api/user/login")]
