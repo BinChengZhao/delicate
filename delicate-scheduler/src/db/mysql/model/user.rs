@@ -157,34 +157,12 @@ pub(crate) struct QueryParamsUser {
     pub(crate) page: i64,
 }
 
-#[derive(Debug, Default, Clone, Serialize, Deserialize)]
-pub(crate) struct PaginateUser {
-    users: Vec<User>,
-    per_page: i64,
-    total_page: i64,
-}
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub(crate) struct UserId {
     pub(crate) user_id: u64,
 }
 
-impl PaginateUser {
-    pub(crate) fn set_users(mut self, users: Vec<User>) -> Self {
-        self.users = users;
-        self
-    }
-
-    pub(crate) fn set_per_page(mut self, per_page: i64) -> Self {
-        self.per_page = per_page;
-        self
-    }
-
-    pub(crate) fn set_total_page(mut self, total: i64) -> Self {
-        self.total_page = (total as f64 / self.per_page as f64).ceil() as i64;
-        self
-    }
-}
 
 pub(crate) struct UserQueryBuilder;
 impl UserQueryBuilder {

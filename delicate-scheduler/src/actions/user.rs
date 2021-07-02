@@ -53,7 +53,7 @@ async fn show_users(
 ) -> HttpResponse {
     if let Ok(conn) = pool.get() {
         return HttpResponse::Ok().json(
-            Into::<UnifiedResponseMessages<model::PaginateUser>>::into(
+            Into::<UnifiedResponseMessages<PaginateData<model::User>>>::into(
                 web::block::<_, _, diesel::result::Error>(move || {
                     let query_builder = model::UserQueryBuilder::query_all_columns();
 
@@ -69,17 +69,17 @@ async fn show_users(
                         .query_filter(count_builder)
                         .get_result::<i64>(&conn)?;
 
-                    Ok(model::user::PaginateUser::default()
-                        .set_users(users)
-                        .set_per_page(per_page)
-                        .set_total_page(count))
+                    Ok(PaginateData::<model::User>::default()
+                        .set_data_source(users)
+                        .set_page_size(per_page)
+                        .set_total(count))
                 })
                 .await,
             ),
         );
     }
 
-    HttpResponse::Ok().json(UnifiedResponseMessages::<model::PaginateUser>::error())
+    HttpResponse::Ok().json(UnifiedResponseMessages::<PaginateData<model::User>>::error())
 }
 
 #[post("/api/user/update")]

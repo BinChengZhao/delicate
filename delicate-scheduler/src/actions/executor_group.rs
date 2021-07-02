@@ -35,7 +35,7 @@ async fn show_executor_groups(
 ) -> HttpResponse {
     if let Ok(conn) = pool.get() {
         return HttpResponse::Ok().json(Into::<
-            UnifiedResponseMessages<model::PaginateExecutorGroup>,
+            UnifiedResponseMessages<PaginateData<model::ExecutorGroup>>,
         >::into(
             web::block::<_, _, diesel::result::Error>(move || {
                 let query_builder = model::ExecutorGroupQueryBuilder::query_all_columns();
@@ -52,16 +52,16 @@ async fn show_executor_groups(
                     .query_filter(count_builder)
                     .get_result::<i64>(&conn)?;
 
-                Ok(model::executor_group::PaginateExecutorGroup::default()
-                    .set_tasks(executor_groups)
-                    .set_per_page(per_page)
-                    .set_total_page(count))
+                Ok(PaginateData::<model::ExecutorGroup>::default()
+                    .set_data_source(executor_groups)
+                    .set_page_size(per_page)
+                    .set_total(count))
             })
             .await,
         ));
     }
 
-    HttpResponse::Ok().json(UnifiedResponseMessages::<model::PaginateTask>::error())
+    HttpResponse::Ok().json(UnifiedResponseMessages::<PaginateData<model::ExecutorGroup>>::error())
 }
 
 #[post("/api/executor_group/update")]

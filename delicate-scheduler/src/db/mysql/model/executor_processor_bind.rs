@@ -29,6 +29,7 @@ pub struct UpdateExecutorProcessorBind {
 
 pub struct ExecutorBinding {
     id: i64,
+    #[serde(alias = "title")]
     name: String,
 }
 
@@ -54,33 +55,6 @@ pub(crate) struct QueryParamsExecutorProcessorBind {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ExecutorProcessorBindId {
     pub(crate) executor_processor_bind_id: i64,
-}
-
-#[derive(Debug, Default, Clone, Serialize, Deserialize)]
-pub(crate) struct PaginateExecutorProcessorBind {
-    executor_processor_binds: Vec<ExecutorProcessorBind>,
-    per_page: i64,
-    total_page: i64,
-}
-
-impl PaginateExecutorProcessorBind {
-    pub(crate) fn set_tasks(
-        mut self,
-        executor_processor_binds: Vec<ExecutorProcessorBind>,
-    ) -> Self {
-        self.executor_processor_binds = executor_processor_binds;
-        self
-    }
-
-    pub(crate) fn set_per_page(mut self, per_page: i64) -> Self {
-        self.per_page = per_page;
-        self
-    }
-
-    pub(crate) fn set_total_page(mut self, total: i64) -> Self {
-        self.total_page = (total as f64 / self.per_page as f64).ceil() as i64;
-        self
-    }
 }
 
 pub(crate) struct ExecutorProcessorBindQueryBuilder;

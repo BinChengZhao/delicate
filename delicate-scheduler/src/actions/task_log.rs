@@ -72,34 +72,34 @@ async fn show_task_logs(
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
     if let Ok(conn) = pool.get() {
-        return HttpResponse::Ok().json(
-            Into::<UnifiedResponseMessages<model::PaginateTaskLogs>>::into(
-                web::block::<_, _, diesel::result::Error>(move || {
-                    let query_builder = model::TaskLogQueryBuilder::query_all_columns();
+        return HttpResponse::Ok().json(Into::<
+            UnifiedResponseMessages<PaginateData<model::TaskLog>>,
+        >::into(
+            web::block::<_, _, diesel::result::Error>(move || {
+                let query_builder = model::TaskLogQueryBuilder::query_all_columns();
 
-                    let task_logs = query_params
-                        .clone()
-                        .query_filter(query_builder)
-                        .paginate(query_params.page)
-                        .load::<model::TaskLog>(&conn)?;
+                let task_logs = query_params
+                    .clone()
+                    .query_filter(query_builder)
+                    .paginate(query_params.page)
+                    .load::<model::TaskLog>(&conn)?;
 
-                    let per_page = query_params.per_page;
-                    let count_builder = model::TaskLogQueryBuilder::query_count();
-                    let count = query_params
-                        .query_filter(count_builder)
-                        .get_result::<i64>(&conn)?;
+                let per_page = query_params.per_page;
+                let count_builder = model::TaskLogQueryBuilder::query_count();
+                let count = query_params
+                    .query_filter(count_builder)
+                    .get_result::<i64>(&conn)?;
 
-                    Ok(model::task_log::PaginateTaskLogs::default()
-                        .set_task_logs(task_logs)
-                        .set_per_page(per_page)
-                        .set_total_page(count))
-                })
-                .await,
-            ),
-        );
+                Ok(PaginateData::<model::TaskLog>::default()
+                    .set_data_source(task_logs)
+                    .set_page_size(per_page)
+                    .set_total(count))
+            })
+            .await,
+        ));
     }
 
-    HttpResponse::Ok().json(UnifiedResponseMessages::<model::PaginateTask>::error())
+    HttpResponse::Ok().json(UnifiedResponseMessages::<PaginateData<model::TaskLog>>::error())
 }
 
 #[post("/api/task_instance/kill")]

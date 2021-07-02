@@ -35,7 +35,7 @@ async fn show_executor_processor_binds(
 ) -> HttpResponse {
     if let Ok(conn) = pool.get() {
         return HttpResponse::Ok().json(Into::<
-            UnifiedResponseMessages<model::PaginateExecutorProcessorBind>,
+            UnifiedResponseMessages<PaginateData<model::ExecutorProcessorBind>>,
         >::into(
             web::block::<_, _, diesel::result::Error>(move || {
                 let query_builder = model::ExecutorProcessorBindQueryBuilder::query_all_columns();
@@ -52,18 +52,16 @@ async fn show_executor_processor_binds(
                     .query_filter(count_builder)
                     .get_result::<i64>(&conn)?;
 
-                Ok(
-                    model::executor_processor_bind::PaginateExecutorProcessorBind::default()
-                        .set_tasks(executor_processor_binds)
-                        .set_per_page(per_page)
-                        .set_total_page(count),
-                )
+                Ok(PaginateData::<model::ExecutorProcessorBind>::default()
+                    .set_data_source(executor_processor_binds)
+                    .set_page_size(per_page)
+                    .set_total(count))
             })
             .await,
         ));
     }
 
-    HttpResponse::Ok().json(UnifiedResponseMessages::<model::PaginateTask>::error())
+    HttpResponse::Ok().json(UnifiedResponseMessages::<PaginateData<()>>::error())
 }
 
 #[post("/api/executor_processor_bind/update")]

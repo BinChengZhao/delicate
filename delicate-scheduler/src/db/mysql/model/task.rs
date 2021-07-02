@@ -101,30 +101,6 @@ pub(crate) struct QueryParamsTask {
     pub(crate) page: i64,
 }
 
-#[derive(Debug, Default, Clone, Serialize, Deserialize)]
-pub(crate) struct PaginateTask {
-    tasks: Vec<Task>,
-    per_page: i64,
-    total_page: i64,
-}
-
-impl PaginateTask {
-    pub(crate) fn set_tasks(mut self, tasks: Vec<Task>) -> Self {
-        self.tasks = tasks;
-        self
-    }
-
-    pub(crate) fn set_per_page(mut self, per_page: i64) -> Self {
-        self.per_page = per_page;
-        self
-    }
-
-    pub(crate) fn set_total_page(mut self, total: i64) -> Self {
-        self.total_page = (total as f64 / self.per_page as f64).ceil() as i64;
-        self
-    }
-}
-
 type SupplyTaskType = (Bigint, VarChar, VarChar, VarChar, VarChar, VarChar, VarChar);
 pub(crate) struct TaskQueryBuilder;
 impl TaskQueryBuilder {

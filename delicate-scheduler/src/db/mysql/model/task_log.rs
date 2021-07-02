@@ -185,36 +185,12 @@ pub struct QueryParamsTaskLog {
     pub(crate) page: i64,
 }
 
-#[derive(Debug, Default, Clone, Serialize, Deserialize)]
-pub(crate) struct PaginateTaskLogs {
-    task_logs: Vec<TaskLog>,
-    per_page: i64,
-    total_page: i64,
-}
-
 #[derive(Copy, Clone, Default, Debug, Serialize, Deserialize)]
 
 pub struct TaskRecord {
     pub(crate) task_id: i64,
     pub(crate) record_id: i64,
     pub(crate) executor_processor_id: i64,
-}
-
-impl PaginateTaskLogs {
-    pub(crate) fn set_task_logs(mut self, task_logs: Vec<TaskLog>) -> Self {
-        self.task_logs = task_logs;
-        self
-    }
-
-    pub(crate) fn set_per_page(mut self, per_page: i64) -> Self {
-        self.per_page = per_page;
-        self
-    }
-
-    pub(crate) fn set_total_page(mut self, total: i64) -> Self {
-        self.total_page = (total as f64 / self.per_page as f64).ceil() as i64;
-        self
-    }
 }
 
 impl QueryParamsTaskLog {

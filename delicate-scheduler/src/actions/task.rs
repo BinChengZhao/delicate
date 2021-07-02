@@ -51,7 +51,7 @@ async fn show_tasks(
 ) -> HttpResponse {
     if let Ok(conn) = pool.get() {
         return HttpResponse::Ok().json(
-            Into::<UnifiedResponseMessages<model::PaginateTask>>::into(
+            Into::<UnifiedResponseMessages<PaginateData<model::Task>>>::into(
                 web::block::<_, _, diesel::result::Error>(move || {
                     let query_builder = model::TaskQueryBuilder::query_all_columns();
 
@@ -67,17 +67,17 @@ async fn show_tasks(
                         .query_filter(count_builder)
                         .get_result::<i64>(&conn)?;
 
-                    Ok(model::task::PaginateTask::default()
-                        .set_tasks(tasks)
-                        .set_per_page(per_page)
-                        .set_total_page(count))
+                    Ok(PaginateData::<model::Task>::default()
+                        .set_data_source(tasks)
+                        .set_page_size(per_page)
+                        .set_total(count))
                 })
                 .await,
             ),
         );
     }
 
-    HttpResponse::Ok().json(UnifiedResponseMessages::<model::PaginateTask>::error())
+    HttpResponse::Ok().json(UnifiedResponseMessages::<PaginateData<model::Task>>::error())
 }
 
 #[post("/api/task/update")]
