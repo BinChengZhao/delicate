@@ -263,8 +263,7 @@ pub async fn pre_update_task_sevice(
             .into_iter()
             .collect();
 
-        remove_tasks_future.await;
-        append_tasks_future.await;
+        join(remove_tasks_future, append_tasks_future).await;
     }
 
     Ok(())

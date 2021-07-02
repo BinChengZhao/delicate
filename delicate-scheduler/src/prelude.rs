@@ -20,7 +20,7 @@ pub(crate) use std::pin::Pin;
 pub(crate) use std::task::{Context, Poll};
 pub(crate) use std::vec::IntoIter;
 
-pub(crate) use futures::future::{ok, JoinAll, Ready};
+pub(crate) use futures::future::{join, ok, JoinAll, Ready};
 pub(crate) use futures::Future;
 
 pub(crate) use cached::proc_macro::cached;
