@@ -15,7 +15,10 @@ pub(crate) fn session_middleware() -> CookieSession {
             .expect("Without `SESSION_TOKEN` set in .env")
             .into_bytes(),
     )
-    .domain(env::var("SCHEDULER_DOMAIN").expect("Without `SCHEDULER_DOMAIN` set in .env"))
+    .domain(
+        env::var("SCHEDULER_FRONT_END_DOMAIN")
+            .expect("Without `SCHEDULER_FRONT_END_DOMAIN` set in .env"),
+    )
     .name(env::var("SCHEDULER_NAME").expect("Without `SCHEDULER_NAME` set in .env"))
 }
 
