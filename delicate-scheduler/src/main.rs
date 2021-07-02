@@ -59,8 +59,17 @@ async fn main() -> AnyResut<()> {
             .app_data(shared_delay_timer.clone())
             .app_data(shared_connection_pool.clone())
             .app_data(shared_scheduler_meta_info.clone())
-            .wrap(components::session::session_middleware())
             .wrap(components::session::auth_middleware())
+            .wrap(components::session::session_middleware())
+            .wrap_fn(|req, srv| {
+                let fut = srv.call(req);
+                async {
+                    let mut res = fut.await?;
+                    res.headers_mut()
+                        .insert(ACCESS_CONTROL_ALLOW_ORIGIN, HeaderValue::from_static("*"));
+                    Ok(res)
+                }
+            })
             .wrap(MiddlewareLogger::default())
     })
     .bind(

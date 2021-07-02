@@ -41,7 +41,8 @@ pub(crate) use actix_web::client::Client as RequestClient;
 pub(crate) use actix_web::dev::{
     HttpResponseBuilder, Service, ServiceRequest, ServiceResponse, Transform,
 };
-pub(crate) use actix_web::http::StatusCode;
+pub(crate) use actix_web::http::header::ACCESS_CONTROL_ALLOW_ORIGIN;
+pub(crate) use actix_web::http::{HeaderValue, StatusCode};
 pub(crate) use actix_web::middleware::Logger as MiddlewareLogger;
 pub(crate) use actix_web::web::{self, Data as ShareData};
 pub(crate) use actix_web::{get, post, App, HttpResponse, HttpServer};
