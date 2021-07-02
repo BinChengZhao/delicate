@@ -29,7 +29,7 @@ pub struct UpdateExecutorProcessorBind {
 
 pub struct ExecutorBinding {
     id: i64,
-    #[serde(alias = "title")]
+    #[serde(rename(serialize = "title"))]
     name: String,
 }
 
