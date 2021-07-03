@@ -1,15 +1,21 @@
 
 - [Executor Group](#ExecutorGroup)
-    - [Configuration](#configuration)
+    - [Configuration](#configuration-1)
 
 - [Executor Processor](#ExecutorProcessor)
-    - [Configuration](#configuration)
+    - [Configuration](#configuration-2)
 
 - [Executor Processor Bind](#ExecutorProcessorBind)
-    - [Configuration](#configuration)
+    - [Configuration](#configuration-3)
 
 - [Task](#Task)
-    - [Configuration](#configuration)
+    - [Configuration](#configuration-4)
+
+- [Task Instance](#TaskInstance)
+    - [Configuration](#configuration-5)
+
+- [User](#User)
+    - [Configuration](#configuration-6)
 
 
 ## ExecutorGroup
@@ -22,7 +28,7 @@
 </a>
 
 
-### Configuration
+### Configuration-1
 
 | Name           | Type                                               | Description                                                                                                                                     | Required |
 | -------------- | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
@@ -45,7 +51,7 @@
 </a>
 
 
-### Configuration
+### Configuration-2
 
 | Name           | Type                                               | Description                                                                                                                                     | Required |
 | -------------- | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
@@ -72,7 +78,7 @@ When there are hundreds of tasks associated with a certain `Executor Processor B
 </a>
 
 
-### Configuration
+### Configuration-3
 
 | Name           | Type                                               | Description                                                                                                                                     | Required |
 | -------------- | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
@@ -92,11 +98,49 @@ When there are hundreds of tasks associated with a certain `Executor Processor B
 </a>
 
 
-### Configuration
+### Configuration-4
 
 | Name           | Type                                               | Description                                                                                                                                     | Required |
 | -------------- | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
 | *   | int64                                              |e                                                                     | No       |
 | * | boolean                                            | g       | No       |
+
+
+
+## TaskInstance
+
+`Task Instance` which corresponds to a set of commands given by the user that will be executed on the machine to generate task instances.
+
+<a href="">
+    <img src="./doc/delicate_logo.png"
+         alt="TaskInstance" title="TaskInstance"  />
+</a>
+
+
+### Configuration-5
+
+| Name           | Type                                               | Description                                                                                                                                     | Required |
+| -------------- | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| *   | int64                                              |e                                                                     | No       |
+| * | boolean                                            | g       | No       |
+
+
+## User
+
+`User` which corresponds to a set of commands given by the user that will be executed on the machine to generate task instances.
+
+<a href="">
+    <img src="./doc/delicate_logo.png"
+         alt="User" title="User"  />
+</a>
+
+
+### Configuration-6
+
+| Name           | Type                                               | Description                                                                                                                                     | Required |
+| -------------- | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| *   | int64                                              |e                                                                     | No       |
+| * | boolean                                            | g       | No       |
+
 
 

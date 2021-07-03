@@ -28,6 +28,15 @@ async fn main() -> AnyResut<()> {
 
     db::init();
 
+    let scheduler_listening_address = env::var("SCHEDULER_LISTENING_ADDRESS")
+        .expect("Without `SCHEDULER_LISTENING_ADDRESS` set in .env");
+        
+    let scheduler_front_end_domain: &'static str = Box::leak(
+        env::var("SCHEDULER_FRONT_END_DOMAIN")
+            .expect("Without `SCHEDULER_FRONT_END_DOMAIN` set in .env")
+            .into_boxed_str(),
+    );
+
     let logger = Logger::with_str("info")
         .log_target(LogTarget::File)
         .buffer_and_flush()
@@ -61,21 +70,26 @@ async fn main() -> AnyResut<()> {
             .app_data(shared_scheduler_meta_info.clone())
             .wrap(components::session::auth_middleware())
             .wrap(components::session::session_middleware())
-            .wrap_fn(|req, srv| {
+            .wrap_fn(move |req, srv| {
                 let fut = srv.call(req);
-                async {
+                async move {
                     let mut res = fut.await?;
-                    res.headers_mut()
-                        .insert(ACCESS_CONTROL_ALLOW_ORIGIN, HeaderValue::from_static("*"));
+                    res.headers_mut().insert(
+                        ACCESS_CONTROL_ALLOW_ORIGIN,
+                        HeaderValue::from_static(scheduler_front_end_domain),
+                    );
+
+                    res.headers_mut().insert(
+                        ACCESS_CONTROL_ALLOW_CREDENTIALS,
+                        HeaderValue::from_static("true"),
+                    );
+
                     Ok(res)
                 }
             })
             .wrap(MiddlewareLogger::default())
     })
-    .bind(
-        env::var("SCHEDULER_LISTENING_ADDRESS")
-            .expect("Without `SCHEDULER_LISTENING_ADDRESS` set in .env"),
-    )?
+    .bind(scheduler_listening_address)?
     .run()
     .await;
 
