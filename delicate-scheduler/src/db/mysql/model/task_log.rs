@@ -173,12 +173,12 @@ pub struct SupplyTaskLogExtend {
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct QueryParamsTaskLog {
+    id: Option<i64>,
+    task_id: Option<i64>,
     name: Option<String>,
     description: Option<String>,
     command: Option<String>,
     tag: Option<String>,
-    task_id: Option<i64>,
-    id: Option<i64>,
     status: Option<i16>,
     executor_processor_id: Option<i64>,
     pub(crate) per_page: i64,

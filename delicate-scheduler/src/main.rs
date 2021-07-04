@@ -30,7 +30,7 @@ async fn main() -> AnyResut<()> {
 
     let scheduler_listening_address = env::var("SCHEDULER_LISTENING_ADDRESS")
         .expect("Without `SCHEDULER_LISTENING_ADDRESS` set in .env");
-        
+
     let scheduler_front_end_domain: &'static str = Box::leak(
         env::var("SCHEDULER_FRONT_END_DOMAIN")
             .expect("Without `SCHEDULER_FRONT_END_DOMAIN` set in .env")
