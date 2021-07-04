@@ -4,8 +4,8 @@ import { connect } from 'umi'
 import { Button, Row, Input, Form } from 'antd'
 import { GlobalFooter } from 'components'
 import { GithubOutlined } from '@ant-design/icons'
-import { t } from '@lingui/macro'
-import { Trans } from '@lingui/macro'
+import { t, Trans } from '@lingui/macro'
+
 import { setLocale } from 'utils'
 import config from 'utils/config'
 
@@ -19,24 +19,22 @@ class Login extends PureComponent {
     const { dispatch, loading } = this.props
 
     const handleOk = (values) => {
-      dispatch({ type: 'login/login', payload: values })
+      dispatch({ type: 'login/login', payload: { ...values, login_type: 3 } })
     }
     let footerLinks = [
       {
         key: 'github',
         title: <GithubOutlined />,
         href: 'https://github.com/zuiidea/antd-admin',
-        blankTarget: true,
-      },
+        blankTarget: true
+      }
     ]
 
     if (config.i18n) {
       footerLinks = footerLinks.concat(
         config.i18n.languages.map((item) => ({
           key: item.key,
-          title: (
-            <span onClick={setLocale.bind(null, item.key)}>{item.title}</span>
-          ),
+          title: <span onClick={setLocale.bind(null, item.key)}>{item.title}</span>
         }))
       )
     }
@@ -56,11 +54,7 @@ class Login extends PureComponent {
               <Input type="password" placeholder={t`Password`} />
             </FormItem>
             <Row>
-              <Button
-                type="primary"
-                htmlType="submit"
-                loading={loading.effects.login}
-              >
+              <Button type="primary" htmlType="submit" loading={loading.effects.login}>
                 <Trans>Sign in</Trans>
               </Button>
               <p>
@@ -87,7 +81,7 @@ class Login extends PureComponent {
 Login.propTypes = {
   form: PropTypes.object,
   dispatch: PropTypes.func,
-  loading: PropTypes.object,
+  loading: PropTypes.object
 }
 
 export default Login

@@ -1,19 +1,14 @@
 import React, { PureComponent } from 'react'
 import { Page } from '../../../components'
-import { Button, Col, Descriptions, Dropdown, Form, Input, Row, Select, Space, Table, Tooltip } from 'antd'
+import { Button, Col, Descriptions, Form, Input, Row, Select, Table, Tooltip } from 'antd'
 import { t, Trans } from '@lingui/macro'
 import { connect } from 'umi'
 import PropTypes from 'prop-types'
-import { DownOutlined } from '@ant-design/icons'
 
 const { Option } = Select
 
 @connect(({ taskList }) => ({ taskList }))
 class TaskLog extends PureComponent {
-  constructor(props) {
-    super(props)
-  }
-
   formRef = React.createRef()
 
   optionAttr(value) {

@@ -32,17 +32,25 @@ const database = [
   {
     id: '3',
     breadcrumbParentId: '1',
-    name: 'Executor',
-    zh: { name: '执行器' },
+    name: 'Executor Resources',
+    zh: { name: '执行资源' },
     icon: 'executor-o'
   },
   {
     id: '31',
     menuParentId: '3',
     breadcrumbParentId: '3',
-    name: 'Execution node',
+    name: 'Execution Node',
     zh: { name: '执行节点' },
     route: '/executor'
+  },
+  {
+    id: '32',
+    menuParentId: '3',
+    breadcrumbParentId: '3',
+    name: 'Execution Group',
+    zh: { name: '执行组' },
+    route: '/executorGroup'
   },
   {
     id: '7',
