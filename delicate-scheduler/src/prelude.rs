@@ -37,15 +37,13 @@ pub(crate) use diesel::query_dsl::methods::LoadQuery;
 pub(crate) use diesel::r2d2::CustomizeConnection;
 pub(crate) use diesel::sql_types;
 
+pub(crate) use actix_cors::Cors;
 pub(crate) use actix_session::{CookieSession, Session, UserSession};
 pub(crate) use actix_web::client::Client as RequestClient;
 pub(crate) use actix_web::dev::{
     HttpResponseBuilder, Service, ServiceRequest, ServiceResponse, Transform,
 };
-pub(crate) use actix_web::http::header::{
-    ACCESS_CONTROL_ALLOW_CREDENTIALS, ACCESS_CONTROL_ALLOW_ORIGIN,
-};
-pub(crate) use actix_web::http::{HeaderValue, StatusCode};
+pub(crate) use actix_web::http::StatusCode;
 pub(crate) use actix_web::middleware::Logger as MiddlewareLogger;
 pub(crate) use actix_web::web::{self, Data as ShareData};
 pub(crate) use actix_web::{get, post, App, HttpResponse, HttpServer};
