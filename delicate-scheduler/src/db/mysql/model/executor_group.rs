@@ -41,7 +41,6 @@ pub(crate) struct QueryParamsExecutorGroup {
     pub(crate) page: i64,
 }
 
-
 #[derive(Copy, Clone, Debug, Serialize, Deserialize)]
 
 pub struct ExecutorGroupId {

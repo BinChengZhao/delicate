@@ -3,6 +3,7 @@ use super::prelude::*;
 pub(crate) fn config(cfg: &mut web::ServiceConfig) {
     cfg.service(create_task_logs)
         .service(show_task_logs)
+        .service(show_task_log_detail)
         .service(kill_task_instance);
 }
 
@@ -100,6 +101,31 @@ async fn show_task_logs(
     }
 
     HttpResponse::Ok().json(UnifiedResponseMessages::<PaginateData<model::TaskLog>>::error())
+}
+
+#[post("/api/task_log/detail")]
+async fn show_task_log_detail(
+    web::Json(query_params): web::Json<model::RecordId>,
+    pool: ShareData<db::ConnectionPool>,
+) -> HttpResponse {
+    use db::schema::task_log_extend;
+
+    if let Ok(conn) = pool.get() {
+        return HttpResponse::Ok().json(
+            Into::<UnifiedResponseMessages<model::TaskLogExtend>>::into(
+                web::block::<_, _, diesel::result::Error>(move || {
+                    let task_log_extend = task_log_extend::table
+                        .find(query_params.record_id)
+                        .first::<model::TaskLogExtend>(&conn)?;
+
+                    Ok(task_log_extend)
+                })
+                .await,
+            ),
+        );
+    }
+
+    HttpResponse::Ok().json(UnifiedResponseMessages::<model::TaskLogExtend>::error())
 }
 
 #[post("/api/task_instance/kill")]
