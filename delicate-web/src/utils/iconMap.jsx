@@ -14,7 +14,10 @@ import {
   LineOutlined,
   BarChartOutlined,
   AreaChartOutlined,
-  OrderedListOutlined
+  OrderedListOutlined,
+  BoxPlotOutlined,
+  CheckCircleOutlined,
+  StopOutlined
 } from '@ant-design/icons'
 
 export default {
@@ -27,6 +30,9 @@ export default {
   'bar-chart': <BarChartOutlined />,
   'task-list': <OrderedListOutlined />,
   'task-log': <OrderedListOutlined />,
+  'executor-o': <BoxPlotOutlined />,
+  'sure-o': <CheckCircleOutlined />,
+  'deny-o': <StopOutlined />,
   message: <MessageOutlined />,
   team: <TeamOutlined />,
   dashboard: <DashboardOutlined />,

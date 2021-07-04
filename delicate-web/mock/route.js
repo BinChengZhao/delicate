@@ -13,17 +13,36 @@ const database = [
   },
   {
     id: '2',
+    breadcrumbParentId: '1',
     name: 'Task List',
     zh: { name: '任务列表' },
     icon: 'task-list',
     route: '/taskList'
   },
   {
-    id: '3',
+    id: '21',
+    menuParentId: '-1',
+    breadcrumbParentId: '2',
     name: 'Task Log',
-    zh: { name: '调度日志' },
-    icon: 'task-log',
-    route: '/taskLog'
+    zh: {
+      name: '任务日志'
+    },
+    route: '/taskList/:id'
+  },
+  {
+    id: '3',
+    breadcrumbParentId: '1',
+    name: 'Executor',
+    zh: { name: '执行器' },
+    icon: 'executor-o'
+  },
+  {
+    id: '31',
+    menuParentId: '3',
+    breadcrumbParentId: '3',
+    name: 'Execution node',
+    zh: { name: '执行节点' },
+    route: '/executor'
   },
   {
     id: '7',
@@ -36,7 +55,7 @@ const database = [
     route: '/post'
   },
   {
-    id: '21',
+    id: '22',
     menuParentId: '-1',
     breadcrumbParentId: '2',
     name: 'User Detail',

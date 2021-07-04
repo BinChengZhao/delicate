@@ -1,36 +1,14 @@
 import React, { PureComponent } from 'react'
 import PropTypes from 'prop-types'
-import { connect, history } from 'umi'
+import { connect } from 'umi'
 import { t } from '@lingui/macro'
 import { Page } from '../../components'
-import { stringify } from 'qs'
 import List from './components/List'
 import Filter from './components/Filter'
 import TaskModal from './components/Modal'
 
 @connect(({ taskList, loading }) => ({ taskList, loading }))
 class Task extends PureComponent {
-  constructor(props) {
-    super(props)
-    console.log(this.props)
-  }
-
-  handleRefresh = (newQuery) => {
-    const { location } = this.props
-    const { query, pathname } = location
-
-    history.push({
-      pathname,
-      search: stringify(
-        {
-          ...query,
-          ...newQuery
-        },
-        { arrayFormat: 'repeat' }
-      )
-    })
-  }
-
   get modalProps() {
     const { dispatch, taskList, loading } = this.props
     const { currentItem, modalVisible, modalType } = taskList
@@ -64,10 +42,10 @@ class Task extends PureComponent {
 
   get listProps() {
     const { dispatch, taskList, loading } = this.props
-    const { list, pagination } = taskList
+    const { dataSource, pagination } = taskList
 
     return {
-      dataSource: list,
+      dataSource,
       loading: loading.effects['taskList/query'],
       pagination,
       onChange: (page) => {
@@ -103,14 +81,8 @@ class Task extends PureComponent {
     const { query } = location
 
     return {
-      filter: {
-        ...query
-      },
-      onFilterChange: (value) => {
-        this.handleRefresh({
-          ...value
-        })
-      },
+      filter: { ...query },
+      onFilterChange: (value) => dispatch({ type: 'taskList/query', payload: value }),
       onAdd() {
         dispatch({
           type: 'taskList/showModal',

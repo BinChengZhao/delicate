@@ -1,19 +1,22 @@
 export default {
-  queryRouteList: '/routes',
+  queryRouteList: '/v1/routes',
 
-  queryUserInfo: '/user',
-  logoutUser: '/user/logout',
-  loginUser: 'POST /user/login',
+  queryUserInfo: '/v1/user',
+  logoutUser: '/v1/user/logout',
+  loginUser: 'POST /v1/user/login',
 
-  queryUser: '/user/:id',
-  queryUserList: '/users',
-  updateUser: 'Patch /user/:id',
-  createUser: 'POST /user',
-  removeUser: 'DELETE /user/:id',
-  removeUserList: 'POST /users/delete',
+  queryUser: '/v1/user/:id',
+  queryUserList: '/v1/users',
+  updateUser: 'Patch /v1/user/:id',
+  createUser: 'POST /v1/user',
+  removeUser: 'DELETE /v1/user/:id',
+  removeUserList: 'POST /v1/users/delete',
 
-  queryPostList: '/posts',
+  queryPostList: '/v1/posts',
 
-  queryDashboard: '/dashboard',
+  queryDashboard: '/v1/dashboard',
   queryWeather: '/weather/now.json',
+
+  // 任务相关
+  queryTaskList: 'POST /task/list'
 }
