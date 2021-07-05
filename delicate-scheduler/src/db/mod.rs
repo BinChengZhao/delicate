@@ -45,7 +45,7 @@ pub(crate) fn init() {
     let connection = establish_connection();
 
     // This will run the necessary migrations.
-    embedded_migrations::run(&connection).unwrap();
+    embedded_migrations::run(&connection).expect("Migration execution failed, please check the database account permission and database service availability.");
     init_admin_account();
 }
 
