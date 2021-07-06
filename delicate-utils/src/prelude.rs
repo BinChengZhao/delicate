@@ -25,7 +25,7 @@ pub(crate) use thiserror::Error as ThisError;
 
 #[allow(unused_imports)]
 pub(crate) use rsa::{
-    errors as ras_error, hash, pem, PaddingScheme, PublicKey, RSAPrivateKey, RSAPublicKey,
+    errors as ras_error, hash, pem, Hash, PaddingScheme, PublicKey, RSAPrivateKey, RSAPublicKey,
 };
 
 pub(crate) use std::convert::{TryFrom, TryInto};

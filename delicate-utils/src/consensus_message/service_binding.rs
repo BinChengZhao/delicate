@@ -64,9 +64,15 @@ impl BindRequest {
         priv_key: Option<&RSAPrivateKey>,
     ) -> Result<SignedBindRequest, crate::error::CommonError> {
         let json_str = to_json_string(&self)?;
+        let hashed_str = digest(&SHA256, json_str.as_bytes()).as_ref().to_vec();
 
         let signature = priv_key
-            .map(|k| k.sign(PaddingScheme::new_pkcs1v15_sign(None), json_str.as_bytes()))
+            .map(|k| {
+                k.sign(
+                    PaddingScheme::new_pkcs1v15_sign(Some(Hash::SHA2_256)),
+                    &hashed_str,
+                )
+            })
             .transpose()?
             .unwrap_or_default();
 
@@ -79,11 +85,14 @@ impl BindRequest {
 
 impl SignedBindRequest {
     pub fn verify(&self, ras_key: Option<&RSAPublicKey>) -> Result<(), crate::error::CommonError> {
+        let json_str = to_json_string(&self.bind_request)?;
+        let hashed_str = digest(&SHA256, json_str.as_bytes()).as_ref().to_vec();
+
         Ok(ras_key
             .map(|k| {
                 k.verify(
-                    PaddingScheme::new_pkcs1v15_sign(None),
-                    &self.signature[..],
+                    PaddingScheme::new_pkcs1v15_sign(Some(Hash::SHA2_256)),
+                    &hashed_str[..],
                     &self.signature[..],
                 )
             })

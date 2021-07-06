@@ -14,6 +14,7 @@ Cargo.lock
 
 /target
 *.log
+*.pem
 .env*
 
 
