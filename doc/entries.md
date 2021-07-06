@@ -38,9 +38,6 @@
 
 
 
-
-
-
 ## ExecutorProcessor
 
 `Executor Processor` which corresponding to a physical machine, or a container.
@@ -109,7 +106,7 @@ When there are hundreds of tasks associated with a certain `Executor Processor B
 
 ## TaskInstance
 
-`Task Instance` which corresponds to a set of commands given by the user that will be executed on the machine to generate task instances.
+`Task Instance` which corresponds to an instance of a running task (e.g a running process).
 
 <a href="">
     <img src="./doc/delicate_logo.png"
@@ -127,7 +124,9 @@ When there are hundreds of tasks associated with a certain `Executor Processor B
 
 ## User
 
-`User` which corresponds to a set of commands given by the user that will be executed on the machine to generate task instances.
+`User` which corresponds to users of the system.
+
+PS: When the system is first installed, you can set the initial user in `.env`.
 
 <a href="">
     <img src="./doc/delicate_logo.png"
