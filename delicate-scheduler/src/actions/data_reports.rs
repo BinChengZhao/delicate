@@ -125,6 +125,8 @@ pub(crate) fn pre_show_one_day_tasks_state(
         daily_states
             .canceled
             .push(canceled_map.remove(h).unwrap_or(0));
+
+        daily_states.hours_range.push(*h);
     });
 
     daily_states

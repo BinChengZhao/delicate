@@ -8,10 +8,11 @@ pub(crate) struct TaskState {
 }
 
 #[derive(Queryable, Debug, Default, Clone, Serialize, Deserialize)]
-pub(crate) struct DailyState{
-  pub(crate) created:Vec<i64>,
-  pub(crate) timeout:Vec<i64>,
-  pub(crate) finished:Vec<i64>,
-  pub(crate) abnormal:Vec<i64>,
-  pub(crate) canceled:Vec<i64>,
+pub(crate) struct DailyState {
+    pub(crate) created: Vec<i64>,
+    pub(crate) timeout: Vec<i64>,
+    pub(crate) finished: Vec<i64>,
+    pub(crate) abnormal: Vec<i64>,
+    pub(crate) canceled: Vec<i64>,
+    pub(crate) hours_range: Vec<u32>,
 }
