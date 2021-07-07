@@ -18,6 +18,19 @@ pub mod task_log {
         TmanualCancellation = 5,
         Unknown = 81,
     }
+
+    impl From<i16> for State {
+        fn from(v: i16) -> State {
+            match v {
+                1 => State::Running,
+                2 => State::NormalEnding,
+                3 => State::AbnormalEnding,
+                4 => State::TimeoutEnding,
+                5 => State::TmanualCancellation,
+                _ => State::Unknown,
+            }
+        }
+    }
 }
 
 pub mod user {

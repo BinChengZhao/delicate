@@ -27,8 +27,7 @@ pub(crate) use futures::Future;
 pub(crate) use cached::proc_macro::cached;
 pub(crate) use cached::TimedSizedCache;
 
-pub(crate) use chrono::Duration as ChronoDuration;
-pub(crate) use chrono::NaiveDateTime;
+pub(crate) use chrono::{Duration as ChronoDuration, NaiveDateTime, Timelike};
 
 pub(crate) use diesel::mysql::Mysql;
 pub(crate) use diesel::prelude::*;
