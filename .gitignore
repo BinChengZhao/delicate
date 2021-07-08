@@ -16,6 +16,7 @@ Cargo.lock
 *.log
 *.pem
 .env*
+*.out
 
 
 # delicate-web

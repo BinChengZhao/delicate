@@ -1,5 +1,4 @@
 use super::prelude::*;
-
 // Register the actual session middleware that is used to maintain session state.
 
 // `CookieSession` is an actual session processing backend
@@ -87,7 +86,7 @@ where
                 })
             }
             _ => {
-                if let Ok(Some(_)) = session.get::<String>("user_id") {
+                if let Ok(Some(_)) = session.get::<u64>("user_id") {
                     let fut = self.service.call(req);
                     Box::pin(async move {
                         let res = fut.await?;
