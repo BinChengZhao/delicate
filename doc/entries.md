@@ -32,8 +32,10 @@
 
 | Name           | Type                                               | Description                                                                                                                                     | Required |
 | -------------- | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| *   | int64                                              | a                                                                        | No       |
-| * | boolean                                            |   b     | No       |
+| name   | string                                              | Group name                                                                        | Yes       |
+| description   | string                                              | Group description                                                                        | Yes       |
+| tag   | string                                              | Group tag                                                                        | Yes       |
+
 
 
 
@@ -52,11 +54,11 @@
 
 | Name           | Type                                               | Description                                                                                                                                     | Required |
 | -------------- | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| maxBodyBytes   | int64                                              | c                                                                         | No       |
-| partialSucceed | boolean                                            | d       | No       |
-| timeout        | string                                             |e                                                                                                  | No       |
-| mergeResponse  | boolean                                            | f | No       |
-
+| name   | string                                              | Processor name                                                                        | Yes       |
+| description   | string                                              | Processor description                                                                        | Yes       |
+| tag   | string                                              | Processor tag                                                                        | Yes       |
+| host   | string                                              | Processor host ,  No spaces between strings, (example: 12.34.56.78:9080 )                                                                      | Yes       |
+| machine_id   | int                                              | Processor machine-id , Value range (0 to 1023)                                                                      | Yes       |
 
 
 

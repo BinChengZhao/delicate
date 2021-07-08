@@ -126,18 +126,10 @@ async fn login_user(
     session: Session,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
-    let login_result = pre_login_user(user_login, session, pool).await;
+    let login_result: UnifiedResponseMessages<()> =
+        pre_login_user(user_login, session, pool).await.into();
 
-    if let Ok(user) = login_result {
-        return HttpResponse::Ok().json(UnifiedResponseMessages::<model::User>::success_with_data(
-            user,
-        ));
-    }
-
-    HttpResponse::Ok().json(
-        UnifiedResponseMessages::<()>::error()
-            .customized_error_msg(login_result.expect_err("").to_string()),
-    )
+    return HttpResponse::Ok().json(login_result);
 }
 
 async fn pre_login_user(
@@ -148,7 +140,7 @@ async fn pre_login_user(
     }: model::UserAuthLogin,
     session: Session,
     pool: ShareData<db::ConnectionPool>,
-) -> Result<model::User, CommonError> {
+) -> Result<(), CommonError> {
     use model::schema::{user, user_auth};
     use model::user::get_encrypted_certificate_by_raw_certificate;
 
@@ -167,17 +159,56 @@ async fn pre_login_user(
                 .first::<(model::UserAuth, model::User)>(&conn)
         })
         .await?;
-    sava_session(session, user_package)
+    save_session(session, user_package)
 }
 
-fn sava_session(
+fn save_session(
     session: Session,
     (_, user): (model::UserAuth, model::User),
-) -> Result<model::User, CommonError> {
+) -> Result<(), CommonError> {
     session.set("login_time", get_timestamp())?;
     session.set("user_id", user.id)?;
-    session.set("user_name", user.user_name.clone())?;
-    session.set("nick_name", user.nick_name.clone())?;
+    session.set("user_name", user.user_name)?;
+    session.set("nick_name", user.nick_name)?;
+    Ok(())
+}
+
+#[post("/api/user/check")]
+async fn check_user(session: Session, pool: ShareData<db::ConnectionPool>) -> HttpResponse {
+    let check_result = pre_check_user(session, pool).await;
+    if let Ok(user) = check_result {
+        return HttpResponse::Ok().json(UnifiedResponseMessages::<model::User>::success_with_data(
+            user,
+        ));
+    };
+
+    return HttpResponse::Ok().json(
+        UnifiedResponseMessages::<()>::error()
+            .customized_error_msg(check_result.expect_err("").to_string()),
+    );
+}
+
+async fn pre_check_user(
+    session: Session,
+    pool: ShareData<db::ConnectionPool>,
+) -> Result<model::User, CommonError> {
+    use model::schema::user;
+
+    let conn = pool.get()?;
+    let user_id = session
+        .get::<u64>("user_id")?
+        .ok_or_else(|| CommonError::DisPass("Without set `user_id` .".into()))?;
+
+    let user = web::block::<_, _, diesel::result::Error>(move || {
+        let user = user::table
+            .select(user::all_columns)
+            .find(user_id)
+            .first::<model::User>(&conn)?;
+
+        Ok(user)
+    })
+    .await?;
+
     Ok(user)
 }
 

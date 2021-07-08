@@ -19,7 +19,7 @@ pub(crate) fn session_middleware() -> CookieSession {
         env::var("SCHEDULER_COOKIE_DOMAIN").expect("Without `SCHEDULER_COOKIE_DOMAIN` set in .env"),
     )
     .name(env::var("SCHEDULER_NAME").expect("Without `SCHEDULER_NAME` set in .env"))
-    .http_only(false)
+    .http_only(true)
     .secure(false)
 }
 
