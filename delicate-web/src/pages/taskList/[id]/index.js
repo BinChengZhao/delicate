@@ -15,7 +15,7 @@ class TaskLog extends PureComponent {
     return { key: value, value }
   }
 
-  initFlitter() {
+  initFilter() {
     return {
       name: null,
       description: null,
@@ -93,7 +93,7 @@ class TaskLog extends PureComponent {
           </Descriptions.Item>
         </Descriptions>
 
-        <Form ref={this.formRef} name="control-ref" initialValues={this.initFlitter()}>
+        <Form ref={this.formRef} name="control-ref" initialValues={this.initFilter()}>
           <Row gutter={24}>
             <Col xl={{ span: 4 }} md={{ span: 8 }}>
               <Form.Item name="tag">

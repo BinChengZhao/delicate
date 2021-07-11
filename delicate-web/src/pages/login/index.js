@@ -47,7 +47,7 @@ class Login extends PureComponent {
             <span>{config.siteName}</span>
           </div>
           <Form onFinish={handleOk}>
-            <FormItem name="username" rules={[{ required: true }]} hasFeedback>
+            <FormItem name="account" rules={[{ required: true }]} hasFeedback>
               <Input placeholder={t`Username`} />
             </FormItem>
             <FormItem name="password" rules={[{ required: true }]} hasFeedback>

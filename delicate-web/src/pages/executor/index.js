@@ -1,131 +1,139 @@
 import React, { PureComponent } from 'react'
 import { connect } from 'dva'
 import { Page } from '../../components'
-import { t, Trans } from '@lingui/macro'
-import { Button, Col, Dropdown, Form, Input, Menu, Row, Select, Space, Table, Tooltip } from 'antd'
-import { DownOutlined } from '@ant-design/icons'
 import PropTypes from 'prop-types'
+import ExecutorModal from './components/Modal'
+import ExecutorList from './components/List'
+import ExecutorFilter from './components/Filter'
 
-function mapStateToProps(state) {
-  return {}
-}
-const FormItem = Form.Item
-const Option = Select.Option
+const NAMESPACE = 'executorModel'
+
 @connect(({ executorModel, loading }) => ({ executorModel, loading }))
 class Executor extends PureComponent {
   formRef = React.createRef()
 
-  get modalProps() {}
+  handleRefresh = (newQuery) => {
+    const { executorModel, dispatch } = this.props
+    const queryWhere = executorModel.queryWhere
+    const payload = { ...queryWhere, ...newQuery }
+    dispatch({ type: `${NAMESPACE}/query`, payload: payload })
+  }
+
+  get filterProps() {
+    const { dispatch } = this.props
+
+    return {
+      openModal: () => {
+        dispatch({
+          type: `${NAMESPACE}/showExecutorModal`,
+          payload: { modalType: 'create', currentItem: {} }
+        })
+      },
+      query: (payload) => {
+        dispatch({ type: `${NAMESPACE}/query`, payload: payload })
+      }
+    }
+  }
+
+  get modalProps() {
+    const { dispatch, executorModel, loading } = this.props
+    let { currentItem, modalVisible, modalType } = executorModel
+
+    let item = {}
+    let title = ''
+    switch (modalType) {
+      case 'create':
+        title = '创建执行器'
+        break
+      case 'copy':
+        title = '复制执行器'
+        item = { ...currentItem, id: null, tag: currentItem.tag.split(',') }
+        break
+      case 'update':
+        title = '编辑执行器'
+        item = item = { ...currentItem, tag: currentItem.tag.split(',') }
+        break
+    }
+    modalType = modalType === 'copy' ? 'create' : modalType
+    return {
+      item: item,
+      visible: modalVisible,
+      destroyOnClose: true,
+      maskClosable: false,
+      cancelText: '取消',
+      okText: '保存',
+      confirmLoading: loading.effects[`${NAMESPACE}/${modalType}`],
+      title: title,
+      centered: true,
+      width: 800,
+      onOk: (data) => {
+        dispatch({ type: `${NAMESPACE}/${modalType}`, payload: data }).then(() => this.handleRefresh())
+      },
+      onCancel() {
+        dispatch({
+          type: `${NAMESPACE}/hideExecutorModal`
+        })
+      }
+    }
+  }
+
+  get listProps() {
+    const { dispatch, executorModel, loading } = this.props
+    const { dataSource, pagination } = executorModel
+    return {
+      dataSource,
+      loading: loading.effects['executorModel/query'],
+      pagination,
+      onChange: (page) => {
+        this.handleRefresh({
+          page: page.current,
+          per_page: page.pageSize
+        })
+      },
+      onDeleteItem: (id) => {
+        dispatch({
+          type: 'executorModel/delete',
+          payload: { executor_processor_id: id }
+        }).then(() => {
+          this.handleRefresh()
+        })
+      },
+      onEditItem(item) {
+        dispatch({
+          type: 'executorModel/showExecutorModal',
+          payload: { modalType: 'update', currentItem: item }
+        })
+      },
+      onCopy(item) {
+        console.log(item)
+        dispatch({
+          type: 'executorModel/showExecutorModal',
+          payload: { modalType: 'copy', currentItem: item }
+        })
+      },
+      onActivation(id) {
+        dispatch({
+          type: 'executorModel/activation',
+          payload: { executor_processor_id: id }
+        }).then(() => {
+          this.handleRefresh()
+        })
+      }
+    }
+  }
 
   render() {
-    console.log(this.props)
-
-    const { location } = this.props
-    const Data = [{}, {}]
-    const columns = [
-      {
-        title: <Trans>Sn</Trans>,
-        dataIndex: 'id',
-        key: 'id',
-        fixed: 'left'
-      },
-      {
-        title: '节点名称',
-        dataIndex: 'name',
-        key: 'name',
-        fixed: 'left',
-        render: (text, row) => {
-          return (
-            <Tooltip title={t`Description` + ':' + row.description}>
-              <a>{text}</a>
-            </Tooltip>
-          )
-        }
-      },
-      {
-        title: 'Host',
-        dataIndex: 'host',
-        key: 'host'
-      },
-      {
-        title: '端口号',
-        dataIndex: 'port',
-        key: 'port'
-      },
-      {
-        title: '机器节点id',
-        dataIndex: 'machine_id',
-        key: 'machine_id'
-      },
-      {
-        title: <Trans>Tag</Trans>,
-        dataIndex: 'tag',
-        key: 'tag'
-      },
-      {
-        title: <Trans>Operation</Trans>,
-        key: 'operation',
-        render: (text) => {
-          return (
-            <Space split={'|'}>
-              <a type={'link'}>编辑</a>
-              <Dropdown
-                overlay={
-                  <Menu>
-                    <Menu.Item>复制节点</Menu.Item>
-                    <Menu.Item>激活节点</Menu.Item>
-                    <Menu.Item>冻结节点</Menu.Item>
-                    <Menu.Item danger>删除节点</Menu.Item>
-                  </Menu>
-                }
-              >
-                <a className="ant-dropdown-link" onClick={(e) => e.preventDefault()}>
-                  更多 <DownOutlined />
-                </a>
-              </Dropdown>
-            </Space>
-          )
-        }
-      }
-    ]
-
     return (
       <Page inner>
-        <Form ref={this.formRef} name="control-ref">
-          <Row gutter={24}>
-            <Col xl={{ span: 4 }} md={{ span: 8 }}>
-              <Form.Item name="tag">
-                <Input placeholder={t`Tag`} />
-              </Form.Item>
-            </Col>
-            <Col xl={{ span: 4 }} md={{ span: 8 }}>
-              <Form.Item name="name">
-                <Input placeholder="节点名称" />
-              </Form.Item>
-            </Col>
-            <Col xl={{ span: 4 }} md={{ span: 8 }}>
-              <Form.Item name="machine_id">
-                <Input placeholder="机器 ID" />
-              </Form.Item>
-            </Col>
-            <Button type="primary" htmlType="submit" className="margin-right">
-              <Trans>Search</Trans>
-            </Button>
-            <Button className="margin-right">
-              <Trans>Reset</Trans>
-            </Button>
-            <Button type="ghost">
-              <Trans>Create</Trans>
-            </Button>
-          </Row>
-        </Form>
-
-        <Table columns={columns} dataSource={Data} simple rowKey={(record) => record.id} />
+        <ExecutorFilter {...this.filterProps} />
+        <ExecutorList {...this.listProps} />
+        <ExecutorModal {...this.modalProps} />
       </Page>
     )
   }
 }
+
 Executor.propTypes = {
   executorModel: PropTypes.object
 }
-export default connect(mapStateToProps)(Executor)
+export default Executor

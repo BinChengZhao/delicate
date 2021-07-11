@@ -1,6 +1,5 @@
 import request from '../utils/request'
 import { apiPrefix } from '../utils/config'
-
 import api from './api'
 
 export const CONTENT_TYPE_JSON = 'application/json;charset=UTF-8'

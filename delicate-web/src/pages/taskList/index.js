@@ -60,7 +60,7 @@ class Task extends PureComponent {
           payload: id
         }).then(() => {
           this.handleRefresh({
-            page: list.length === 1 && pagination.current > 1 ? pagination.current - 1 : pagination.current
+            page: dataSource.length === 1 && pagination.current > 1 ? pagination.current - 1 : pagination.current
           })
         })
       },

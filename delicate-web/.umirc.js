@@ -1,5 +1,6 @@
 // https://umijs.org/config/
-import { resolve } from 'path'
+import {resolve} from 'path'
+
 const fs = require('fs')
 const path = require('path')
 const lessToJs = require('less-vars-to-js')
@@ -55,15 +56,10 @@ export default {
   },
   // Webpack Configuration
   proxy: {
-    '/api/weather': {
+    '/api/weather/now.json': {
       target: 'https://api.seniverse.com/',
       changeOrigin: true,
-      pathRewrite: { '^/api/weather': '/v3/weather' },
-    },
-    '/api': {
-      target: 'http://52.78.161.159:8090/',
-      changeOrigin: true,
-      pathRewrite: { '^/api': '/api' },
+      pathRewrite: {'^/api/weather': '/v3/weather'},
     },
   },
   // Theme for antd
@@ -72,7 +68,7 @@ export default {
     fs.readFileSync(path.join(__dirname, './src/themes/default.less'), 'utf8')
   ),
   webpack5: {},
-  chainWebpack: function (config, { webpack }) {
+  chainWebpack: function (config, {webpack}) {
     config.merge({
       optimization: {
         minimize: true,

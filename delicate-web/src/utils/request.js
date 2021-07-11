@@ -1,13 +1,17 @@
 import axios from 'axios'
 import { cloneDeep } from 'lodash'
-import { message } from 'antd'
+import { message, notification } from 'antd'
 import { CANCEL_REQUEST_MESSAGE } from './constant'
 import envConfig from './envConfig'
+
 const { parse, compile } = require('path-to-regexp')
 
 const { CancelToken } = axios
 window.cancelRequest = new Map()
+axios.defaults.withCredentials = true
 axios.defaults.baseURL = envConfig('DELICATE_API')
+
+const SUCCESS_CODE = 0
 
 const qs = function (obj) {
   const rs = []
@@ -72,6 +76,9 @@ export default function request(options) {
   return axios(options)
     .then((response) => {
       const { statusText, status, data } = response
+      if (data.code !== SUCCESS_CODE) {
+        notification.error({ message: 'Error', description: data.msg })
+      }
 
       let result = {}
       if (typeof data === 'object') {

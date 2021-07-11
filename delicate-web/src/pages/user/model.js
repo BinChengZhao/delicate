@@ -4,8 +4,7 @@ import { pageModel } from 'utils/model'
 import * as u from '../../utils/data'
 const { pathToRegexp } = require('path-to-regexp')
 
-const { queryUserList, createUser, removeUser, updateUser, removeUserList } =
-  api
+const { queryUserList, createUser, removeUser, updateUser, removeUserList } = api
 
 export default modelExtend(pageModel, {
   namespace: 'user',
@@ -14,20 +13,18 @@ export default modelExtend(pageModel, {
     currentItem: {},
     modalVisible: false,
     modalType: 'create',
-    selectedRowKeys: [],
+    selectedRowKeys: []
   },
 
   subscriptions: {
     setup({ dispatch, history }) {
       history.listen((location) => {
         if (pathToRegexp('/user').exec(location.pathname)) {
-          const payload = u.isEmpty(location.query)
-            ? { page: 1, pageSize: 10 }
-            : location.query
+          const payload = u.isEmpty(location.query) ? { page: 1, pageSize: 10 } : location.query
           dispatch({ type: 'query', payload })
         }
       })
-    },
+    }
   },
 
   effects: {
@@ -41,9 +38,9 @@ export default modelExtend(pageModel, {
             pagination: {
               current: Number(payload.page) || 1,
               pageSize: Number(payload.pageSize) || 10,
-              total: data.total,
-            },
-          },
+              total: data.total
+            }
+          }
         })
       }
     },
@@ -55,8 +52,8 @@ export default modelExtend(pageModel, {
         yield put({
           type: 'updateState',
           payload: {
-            selectedRowKeys: selectedRowKeys.filter((_) => _ !== payload),
-          },
+            selectedRowKeys: selectedRowKeys.filter((_) => _ !== payload)
+          }
         })
       } else {
         throw data
@@ -90,7 +87,7 @@ export default modelExtend(pageModel, {
       } else {
         throw data
       }
-    },
+    }
   },
 
   reducers: {
@@ -100,6 +97,6 @@ export default modelExtend(pageModel, {
 
     hideModal(state) {
       return { ...state, modalVisible: false }
-    },
-  },
+    }
+  }
 })

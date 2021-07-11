@@ -7,7 +7,7 @@ import { Button, Col, Form, Input, Row } from 'antd'
 class Filter extends Component {
   formRef = React.createRef()
 
-  initFlitter() {
+  initFilter() {
     return {
       name: null,
       description: null,
@@ -24,20 +24,17 @@ class Filter extends Component {
   handleSubmit() {
     const { onFilterChange } = this.props
     const values = this.formRef.current.getFieldsValue()
-    const initFlitter = this.initFlitter()
+    for (const i in values) {
+      values[i] = values[i] === '' ? null : values[i]
+    }
+    const initFlitter = this.initFilter()
     onFilterChange({ ...initFlitter, ...values })
   }
 
   handleReset() {
     const fields = this.formRef.current.getFieldsValue()
     for (const item in fields) {
-      if ({}.hasOwnProperty.call(fields, item)) {
-        if (fields[item] instanceof Array) {
-          fields[item] = []
-        } else {
-          fields[item] = undefined
-        }
-      }
+      if ({}.hasOwnProperty.call(fields, item)) fields[item] = undefined
     }
     this.formRef.current.setFieldsValue(fields)
     this.handleSubmit()
@@ -58,7 +55,7 @@ class Filter extends Component {
     }
 
     return (
-      <Form ref={this.formRef} name="control-ref" initialValues={this.initFlitter()}>
+      <Form ref={this.formRef} name="control-ref" initialValues={this.initFilter()}>
         <Row gutter={24}>
           <Col xl={{ span: 4 }} md={{ span: 8 }}>
             <Form.Item name="name">
