@@ -13,6 +13,23 @@ pub struct ExecutorGroup {
     deleted_time: Option<NaiveDateTime>,
 }
 
+#[derive(Queryable, Debug, Default, Clone, Serialize, Deserialize)]
+pub struct ExecutorGroupBinding {
+    bingding_id: i64,
+    bingding_name: String,
+    executor_id: i64,
+    weight: i16,
+    executor_name: String,
+    host: String,
+    machine_id: i16,
+}
+
+#[derive(Queryable, Debug, Clone, Serialize, Deserialize)]
+pub struct ExecutorGroupDetail{
+    pub(crate) inner: ExecutorGroup,
+    pub(crate) bindings: Vec<ExecutorGroupBinding>
+}
+
 #[derive(Queryable, Identifiable, AsChangeset, Debug, Clone, Serialize, Deserialize)]
 #[table_name = "executor_group"]
 

@@ -57,6 +57,16 @@ pub struct ExecutorProcessorId {
     pub(crate) executor_processor_id: i64,
 }
 
+#[derive(Queryable, AsChangeset, Identifiable, Debug, Clone, Serialize, Deserialize)]
+#[table_name = "executor_processor"]
+
+pub struct ExecutorSelection {
+    id: i64,
+    #[serde(rename(serialize = "title"))]
+    name: String,
+}
+
+
 pub(crate) struct ExecutorProcessorQueryBuilder;
 impl ExecutorProcessorQueryBuilder {
     pub(crate) fn query_all_columns() -> executor_processor::BoxedQuery<'static, Mysql> {
@@ -65,6 +75,13 @@ impl ExecutorProcessorQueryBuilder {
             .select(executor_processor::all_columns)
     }
 
+    pub(crate) fn query_selection_columns(
+    ) -> executor_processor::BoxedQuery<'static, Mysql, (sql_types::Bigint, sql_types::VarChar)>
+    {
+        executor_processor::table
+            .into_boxed()
+            .select((executor_processor::id, executor_processor::name))
+    }
     pub(crate) fn query_count(
     ) -> executor_processor::BoxedQuery<'static, Mysql, diesel::sql_types::Bigint> {
         executor_processor::table.into_boxed().count()

@@ -30,7 +30,7 @@ impl<T> PaginateData<T> {
     }
 
     pub(crate) fn set_total(mut self, total: i64) -> Self {
-        self.pagination.total = (total as f64 / self.pagination.page_size as f64).ceil() as i64;
+        self.pagination.total = total;
         self
     }
 }

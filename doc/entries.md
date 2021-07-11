@@ -164,8 +164,11 @@ PS: When the system is first installed, you can set the initial user in `.env`.
 
 | Name           | Type                                               | Description                                                                                                                                     | Required |
 | -------------- | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| *   | int64                                              |e                                                                     | No       |
-| * | boolean                                            | g       | No       |
+| user_name   | string                                              |User account, must be unique                                                                     | Yes       |
+| nick_name | string                                            | User nickname       | Yes       |
+| mobile | string                                            | Mobie-number(unique)       | Yes       |
+| email | string                                            | Email(unique)       | Yes       |
+| certificate | string                                            | Password credentials (the station saves the password, the station does not save or save the token)       | Yes       |
 
 
 
