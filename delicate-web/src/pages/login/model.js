@@ -1,6 +1,6 @@
 import { history } from 'umi'
-const { pathToRegexp } = require('path-to-regexp')
 import api from 'api'
+const { pathToRegexp } = require('path-to-regexp')
 
 const { loginUser } = api
 
@@ -32,6 +32,6 @@ export default {
       } else {
         throw data
       }
-    },
-  },
+    }
+  }
 }

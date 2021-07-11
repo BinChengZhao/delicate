@@ -1,154 +1,104 @@
 import React, { PureComponent } from 'react'
-import PropTypes from 'prop-types'
-import { connect } from 'umi'
-import { Row, Col, Card } from 'antd'
-import { Color } from 'utils'
-import { Page, ScrollBar } from 'components'
-import {
-  NumberCard,
-  Quote,
-  Sales,
-  Weather,
-  RecentSales,
-  Comments,
-  Completed,
-  Browser,
-  Cpu,
-  User,
-} from './components'
-import styles from './index.less'
-import store from 'store'
+import * as echarts from 'echarts'
 
-const bodyStyle = {
-  bodyStyle: {
-    height: 432,
-    background: '#fff',
-  },
-}
+import PropTypes, { instanceOf } from 'prop-types'
+import { connect } from 'umi'
+import { Page } from 'components'
+import styles from './index.less'
+import { Card } from 'antd'
 
 @connect(({ app, dashboard, loading }) => ({
   dashboard,
-  loading,
+  loading
 }))
 class Dashboard extends PureComponent {
+  componentDidMount() {
+    const { dashboard } = this.props
+    const { taskStatusEChart } = dashboard
+    console.log(taskStatusEChart)
+    const legend = Object.keys(taskStatusEChart)
+
+    const hourContainer = []
+    for (let i = 0; i < 24; i++) {
+      hourContainer.push(i + '时')
+    }
+
+    const series = []
+
+    for (const taskName in taskStatusEChart) {
+      if (taskStatusEChart.hasOwnProperty(taskName)) {
+        series.push({
+          name: taskName,
+          type: 'line',
+          stack: '总量',
+          label: {
+            show: true,
+            position: 'top'
+          },
+          areaStyle: {},
+          emphasis: {
+            focus: 'series'
+          },
+          data: taskStatusEChart[taskName]
+        })
+      }
+    }
+
+    const chartDom = document.getElementById('main')
+    const myChart = echarts.init(chartDom)
+    let option
+    option = {
+      title: {
+        text: '任务状态聚合(最近24小时)'
+      },
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: {
+          type: 'cross',
+          label: {
+            backgroundColor: '#6a7985'
+          }
+        }
+      },
+      legend: {
+        // todo legend
+        data: legend
+      },
+      toolbox: {
+        feature: {
+          saveAsImage: {}
+        }
+      },
+      grid: {
+        left: '3%',
+        right: '4%',
+        bottom: '3%',
+        containLabel: true
+      },
+      xAxis: [
+        {
+          type: 'category',
+          boundaryGap: false,
+          data: hourContainer
+        }
+      ],
+      yAxis: [
+        {
+          type: 'value'
+        }
+      ],
+      series: series
+    }
+
+    option && myChart.setOption(option)
+  }
+
   render() {
-    const userDetail = store.get('user')
-    const { avatar, username } = userDetail
-    const { dashboard, loading } = this.props
-    const {
-      weather,
-      sales,
-      quote,
-      numbers,
-      recentSales,
-      comments,
-      completed,
-      browser,
-      cpu,
-      user,
-    } = dashboard
-
-    const numberCards = numbers.map((item, key) => (
-      <Col key={key} lg={6} md={12}>
-        <NumberCard {...item} />
-      </Col>
-    ))
-
     return (
-      <Page
-        // loading={loading.models.dashboard && sales.length === 0}
-        className={styles.dashboard}
-      >
-        <Row gutter={24}>
-          {numberCards}
-          <Col lg={18} md={24}>
-            <Card
-              bordered={false}
-              bodyStyle={{
-                padding: '24px 36px 24px 0',
-              }}
-            >
-              <Sales data={sales} />
-            </Card>
-          </Col>
-          <Col lg={6} md={24}>
-            <Row gutter={24}>
-              <Col lg={24} md={12}>
-                <Card
-                  bordered={false}
-                  className={styles.weather}
-                  bodyStyle={{
-                    padding: 0,
-                    height: 204,
-                    background: Color.blue,
-                  }}
-                >
-                  <Weather
-                    {...weather}
-                    loading={loading.effects['dashboard/queryWeather']}
-                  />
-                </Card>
-              </Col>
-              <Col lg={24} md={12}>
-                <Card
-                  bordered={false}
-                  className={styles.quote}
-                  bodyStyle={{
-                    padding: 0,
-                    height: 204,
-                    background: Color.peach,
-                  }}
-                >
-                  <ScrollBar>
-                    <Quote {...quote} />
-                  </ScrollBar>
-                </Card>
-              </Col>
-            </Row>
-          </Col>
-          <Col lg={12} md={24}>
-            <Card bordered={false} {...bodyStyle}>
-              <RecentSales data={recentSales} />
-            </Card>
-          </Col>
-          <Col lg={12} md={24}>
-            <Card bordered={false} {...bodyStyle}>
-              <ScrollBar>
-                <Comments data={comments} />
-              </ScrollBar>
-            </Card>
-          </Col>
-          <Col lg={24} md={24}>
-            <Card
-              bordered={false}
-              bodyStyle={{
-                padding: '24px 36px 24px 0',
-              }}
-            >
-              <Completed data={completed} />
-            </Card>
-          </Col>
-          <Col lg={8} md={24}>
-            <Card bordered={false} {...bodyStyle}>
-              <Browser data={browser} />
-            </Card>
-          </Col>
-          <Col lg={8} md={24}>
-            <Card bordered={false} {...bodyStyle}>
-              <ScrollBar>
-                <Cpu {...cpu} />
-              </ScrollBar>
-            </Card>
-          </Col>
-          <Col lg={8} md={24}>
-            <Card
-              bordered={false}
-              bodyStyle={{ ...bodyStyle.bodyStyle, padding: 0 }}
-            >
-              <User {...user} avatar={avatar} username={username} />
-            </Card>
-          </Col>
-        </Row>
+      <Page className={styles.dashboard}>
+        <Card>
+          <div id="main" style={{ width: '99%', height: 500 }} />
+        </Card>
       </Page>
     )
   }
@@ -156,7 +106,7 @@ class Dashboard extends PureComponent {
 
 Dashboard.propTypes = {
   dashboard: PropTypes.object,
-  loading: PropTypes.object,
+  loading: PropTypes.object
 }
 
 export default Dashboard

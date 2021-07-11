@@ -2,16 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import classnames from 'classnames'
 import { Color } from 'utils'
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from 'recharts'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import styles from './sales.less'
 
 function Sales({ data }) {
@@ -28,15 +19,12 @@ function Sales({ data }) {
                 <ul
                   className={classnames({
                     [styles.legend]: true,
-                    clearfix: true,
+                    clearfix: true
                   })}
                 >
                   {payload.map((item, key) => (
                     <li key={key}>
-                      <span
-                        className={styles.radiusdot}
-                        style={{ background: item.color }}
-                      />
+                      <span className={styles.radiusdot} style={{ background: item.color }} />
                       {item.value}
                     </li>
                   ))}
@@ -44,29 +32,18 @@ function Sales({ data }) {
               )
             }}
           />
-          <XAxis
-            dataKey="name"
-            axisLine={{ stroke: Color.borderBase, strokeWidth: 1 }}
-            tickLine={false}
-          />
+          <XAxis dataKey="name" axisLine={{ stroke: Color.borderBase, strokeWidth: 1 }} tickLine={false} />
           <YAxis axisLine={false} tickLine={false} />
-          <CartesianGrid
-            vertical={false}
-            stroke={Color.borderBase}
-            strokeDasharray="3 3"
-          />
+          <CartesianGrid vertical={false} stroke={Color.borderBase} strokeDasharray="3 3" />
           <Tooltip
             wrapperStyle={{
               border: 'none',
-              boxShadow: '4px 4px 40px rgba(0, 0, 0, 0.05)',
+              boxShadow: '4px 4px 40px rgba(0, 0, 0, 0.05)'
             }}
             content={(content) => {
               const list = content.payload.map((item, key) => (
                 <li key={key} className={styles.tipitem}>
-                  <span
-                    className={styles.radiusdot}
-                    style={{ background: item.color }}
-                  />
+                  <span className={styles.radiusdot} style={{ background: item.color }} />
                   {`${item.name}:${item.value}`}
                 </li>
               ))
@@ -109,7 +86,7 @@ function Sales({ data }) {
 }
 
 Sales.propTypes = {
-  data: PropTypes.array,
+  data: PropTypes.array
 }
 
 export default Sales

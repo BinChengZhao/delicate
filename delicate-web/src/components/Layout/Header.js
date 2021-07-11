@@ -2,12 +2,7 @@ import React, { PureComponent, Fragment } from 'react'
 import PropTypes from 'prop-types'
 import { Menu, Layout, Avatar, Popover, Badge, List } from 'antd'
 import { Ellipsis } from 'components'
-import {
-  BellOutlined,
-  RightOutlined,
-  MenuFoldOutlined,
-  MenuUnfoldOutlined,
-} from '@ant-design/icons'
+import { BellOutlined, RightOutlined, MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons'
 import { Trans } from '@lingui/macro'
 import { getLocale, setLocale } from 'utils'
 import moment from 'moment'
@@ -21,16 +16,9 @@ class Header extends PureComponent {
   handleClickMenu = (e) => {
     e.key === 'SignOut' && this.props.onSignOut()
   }
+
   render() {
-    const {
-      fixed,
-      avatar,
-      username,
-      collapsed,
-      notifications,
-      onCollapseChange,
-      onAllNotificationsRead,
-    } = this.props
+    const { fixed, avatar, username, collapsed, notifications, onCollapseChange, onAllNotificationsRead } = this.props
 
     const rightContent = [
       <Menu key="user" mode="horizontal" onClick={this.handleClickMenu}>
@@ -41,7 +29,7 @@ class Header extends PureComponent {
                 <Trans>Hi,</Trans>
               </span>
               <span>{username}</span>
-              <Avatar style={{ marginLeft: 8 }} src={avatar} />
+              {/* <Avatar style={{ marginLeft: 8 }} src={avatar} /> */}
             </Fragment>
           }
         >
@@ -49,7 +37,7 @@ class Header extends PureComponent {
             <Trans>Sign out</Trans>
           </Menu.Item>
         </SubMenu>
-      </Menu>,
+      </Menu>
     ]
 
     if (config.i18n) {
@@ -69,11 +57,7 @@ class Header extends PureComponent {
           <SubMenu title={<Avatar size="small" src={currentLanguage.flag} />}>
             {languages.map((item) => (
               <Menu.Item key={item.key}>
-                <Avatar
-                  size="small"
-                  style={{ marginRight: 8 }}
-                  src={item.flag}
-                />
+                <Avatar size="small" style={{ marginRight: 8 }} src={item.flag} />
                 {item.title}
               </Menu.Item>
             ))}
@@ -95,7 +79,7 @@ class Header extends PureComponent {
               itemLayout="horizontal"
               dataSource={notifications}
               locale={{
-                emptyText: <Trans>You have viewed all notifications.</Trans>,
+                emptyText: <Trans>You have viewed all notifications.</Trans>
               }}
               renderItem={(item) => (
                 <List.Item className={styles.notificationItem}>
@@ -112,22 +96,14 @@ class Header extends PureComponent {
               )}
             />
             {notifications.length ? (
-              <div
-                onClick={onAllNotificationsRead}
-                className={styles.clearButton}
-              >
+              <div onClick={onAllNotificationsRead} className={styles.clearButton}>
                 <Trans>Clear notifications</Trans>
               </div>
             ) : null}
           </div>
         }
       >
-        <Badge
-          count={notifications.length}
-          dot
-          offset={[-10, 10]}
-          className={styles.iconButton}
-        >
+        <Badge count={notifications.length} dot offset={[-10, 10]} className={styles.iconButton}>
           <BellOutlined className={styles.iconFont} />
         </Badge>
       </Popover>
@@ -137,14 +113,11 @@ class Header extends PureComponent {
       <Layout.Header
         className={classnames(styles.header, {
           [styles.fixed]: fixed,
-          [styles.collapsed]: collapsed,
+          [styles.collapsed]: collapsed
         })}
         id="layoutHeader"
       >
-        <div
-          className={styles.button}
-          onClick={onCollapseChange.bind(this, !collapsed)}
-        >
+        <div className={styles.button} onClick={onCollapseChange.bind(this, !collapsed)}>
           {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
         </div>
         <div className={styles.rightContainer}>{rightContent}</div>
@@ -161,7 +134,7 @@ Header.propTypes = {
   onSignOut: PropTypes.func,
   notifications: PropTypes.array,
   onCollapseChange: PropTypes.func,
-  onAllNotificationsRead: PropTypes.func,
+  onAllNotificationsRead: PropTypes.func
 }
 
 export default Header
