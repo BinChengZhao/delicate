@@ -1,5 +1,4 @@
 use super::prelude::*;
-
 // Register the actual session middleware that is used to maintain session state.
 
 // `CookieSession` is an actual session processing backend
@@ -16,10 +15,11 @@ pub(crate) fn session_middleware() -> CookieSession {
             .into_bytes(),
     )
     .domain(
-        env::var("SCHEDULER_FRONT_END_DOMAIN")
-            .expect("Without `SCHEDULER_FRONT_END_DOMAIN` set in .env"),
+        env::var("SCHEDULER_COOKIE_DOMAIN").expect("Without `SCHEDULER_COOKIE_DOMAIN` set in .env"),
     )
     .name(env::var("SCHEDULER_NAME").expect("Without `SCHEDULER_NAME` set in .env"))
+    .http_only(true)
+    .secure(false)
 }
 
 // Register authentication middleware to check login status based on `CookieSession`.
@@ -86,7 +86,7 @@ where
                 })
             }
             _ => {
-                if let Ok(Some(_)) = session.get::<String>("user_id") {
+                if let Ok(Some(_)) = session.get::<u64>("user_id") {
                     let fut = self.service.call(req);
                     Box::pin(async move {
                         let res = fut.await?;

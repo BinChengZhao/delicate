@@ -2,6 +2,7 @@ use super::prelude::*;
 
 pub(crate) fn config(cfg: &mut web::ServiceConfig) {
     cfg.service(show_executor_groups)
+        .service(show_executor_group_detail)
         .service(create_executor_group)
         .service(update_executor_group)
         .service(delete_executor_group);
@@ -62,6 +63,64 @@ async fn show_executor_groups(
     }
 
     HttpResponse::Ok().json(UnifiedResponseMessages::<PaginateData<model::ExecutorGroup>>::error())
+}
+
+#[post("/api/executor_group/detail")]
+async fn show_executor_group_detail(
+    web::Json(model::ExecutorGroupId { executor_group_id }): web::Json<model::ExecutorGroupId>,
+    pool: ShareData<db::ConnectionPool>,
+) -> HttpResponse {
+    let executor_group_detail_result =
+        pre_show_executor_group_detail(executor_group_id, pool).await;
+    if let Ok(executor_group_detail) = executor_group_detail_result {
+        return HttpResponse::Ok().json(
+            UnifiedResponseMessages::<model::ExecutorGroupDetail>::success_with_data(
+                executor_group_detail,
+            ),
+        );
+    };
+    HttpResponse::Ok().json(
+        UnifiedResponseMessages::<()>::error()
+            .customized_error_msg(executor_group_detail_result.expect_err("").to_string()),
+    )
+}
+
+async fn pre_show_executor_group_detail(
+    executor_group_id: i64,
+    pool: ShareData<db::ConnectionPool>,
+) -> Result<model::ExecutorGroupDetail, CommonError> {
+    use db::schema::{executor_group, executor_processor, executor_processor_bind};
+
+    let conn = pool.get()?;
+    let executor_group_detail: model::ExecutorGroupDetail =
+        web::block::<_, _, diesel::result::Error>(move || {
+            let executor_group_detail_inner = executor_group::table
+                .select(executor_group::all_columns)
+                .find(executor_group_id)
+                .first::<model::ExecutorGroup>(&conn)?;
+
+            let bindings = executor_processor_bind::table
+                .inner_join(executor_processor::table)
+                .filter(executor_processor_bind::group_id.eq(executor_group_id))
+                .select((
+                    executor_processor_bind::id,
+                    executor_processor_bind::name,
+                    executor_processor_bind::executor_id,
+                    executor_processor_bind::weight,
+                    executor_processor::name,
+                    executor_processor::host,
+                    executor_processor::machine_id,
+                ))
+                .load::<model::ExecutorGroupBinding>(&conn)?;
+
+            Ok(model::ExecutorGroupDetail {
+                inner: executor_group_detail_inner,
+                bindings,
+            })
+        })
+        .await?;
+
+    Ok(executor_group_detail)
 }
 
 #[post("/api/executor_group/update")]

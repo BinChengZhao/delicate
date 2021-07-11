@@ -31,11 +31,8 @@ async fn main() -> AnyResut<()> {
     let scheduler_listening_address = env::var("SCHEDULER_LISTENING_ADDRESS")
         .expect("Without `SCHEDULER_LISTENING_ADDRESS` set in .env");
 
-    let scheduler_front_end_domain: &'static str = Box::leak(
-        env::var("SCHEDULER_FRONT_END_DOMAIN")
-            .expect("Without `SCHEDULER_FRONT_END_DOMAIN` set in .env")
-            .into_boxed_str(),
-    );
+    let scheduler_front_end_domain: String = env::var("SCHEDULER_FRONT_END_DOMAIN")
+        .expect("Without `SCHEDULER_FRONT_END_DOMAIN` set in .env");
 
     let logger = Logger::with_str("info")
         .log_target(LogTarget::File)
@@ -56,6 +53,13 @@ async fn main() -> AnyResut<()> {
         ShareData::new(SchedulerMetaInfo::default());
 
     let result = HttpServer::new(move || {
+        let cors = Cors::default()
+            .allowed_origin(&scheduler_front_end_domain)
+            .allow_any_method()
+            .allow_any_header()
+            .supports_credentials()
+            .max_age(3600);
+
         App::new()
             .configure(actions::task::config)
             .configure(actions::user::config)
@@ -70,23 +74,7 @@ async fn main() -> AnyResut<()> {
             .app_data(shared_scheduler_meta_info.clone())
             .wrap(components::session::auth_middleware())
             .wrap(components::session::session_middleware())
-            .wrap_fn(move |req, srv| {
-                let fut = srv.call(req);
-                async move {
-                    let mut res = fut.await?;
-                    res.headers_mut().insert(
-                        ACCESS_CONTROL_ALLOW_ORIGIN,
-                        HeaderValue::from_static(scheduler_front_end_domain),
-                    );
-
-                    res.headers_mut().insert(
-                        ACCESS_CONTROL_ALLOW_CREDENTIALS,
-                        HeaderValue::from_static("true"),
-                    );
-
-                    Ok(res)
-                }
-            })
+            .wrap(cors)
             .wrap(MiddlewareLogger::default())
     })
     .bind(scheduler_listening_address)?

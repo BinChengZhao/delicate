@@ -27,11 +27,12 @@ pub struct UpdateExecutorProcessorBind {
 #[derive(Queryable, AsChangeset, Identifiable, Debug, Clone, Serialize, Deserialize)]
 #[table_name = "executor_processor_bind"]
 
-pub struct ExecutorBinding {
+pub struct BindingSelection {
     id: i64,
     #[serde(rename(serialize = "title"))]
     name: String,
 }
+
 
 #[derive(Insertable, AsChangeset, Debug, Serialize, Deserialize)]
 #[table_name = "executor_processor_bind"]

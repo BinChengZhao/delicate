@@ -32,10 +32,9 @@
 
 | Name           | Type                                               | Description                                                                                                                                     | Required |
 | -------------- | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| *   | int64                                              | a                                                                        | No       |
-| * | boolean                                            |   b     | No       |
-
-
+| name   | string                                              | Group name                                                                        | Yes       |
+| description   | string                                              | Group description                                                                        | Yes       |
+| tag   | string                                              | Group tag                                                                        | Yes       |
 
 
 
@@ -55,11 +54,11 @@
 
 | Name           | Type                                               | Description                                                                                                                                     | Required |
 | -------------- | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| maxBodyBytes   | int64                                              | c                                                                         | No       |
-| partialSucceed | boolean                                            | d       | No       |
-| timeout        | string                                             |e                                                                                                  | No       |
-| mergeResponse  | boolean                                            | f | No       |
-
+| name   | string                                              | Processor name                                                                        | Yes       |
+| description   | string                                              | Processor description                                                                        | Yes       |
+| tag   | string                                              | Processor tag                                                                        | Yes       |
+| host   | string                                              | Processor host ,  No spaces between strings, (example: 12.34.56.78:9080 )                                                                      | Yes       |
+| machine_id   | int                                              | Processor machine-id , Value range (0 to 1023). In order to mark custom machine serial numbers and to be able to using snowflake algorithm generate unique task-instance-id                                                                       | Yes       |
 
 
 
@@ -82,8 +81,10 @@ When there are hundreds of tasks associated with a certain `Executor Processor B
 
 | Name           | Type                                               | Description                                                                                                                                     | Required |
 | -------------- | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| *   | int64                                              | e                                                                         | No       |
-| * | boolean                                            | g      | No       |
+| group_id   | int                                              | Group id                                                                         | Yes       |
+| executor_id | int                                            | Processor id      | Yes       |
+| name | string                                            | Binding name      | Yes       |
+| weight | int                                            | Resource Occupancy Weights    | Yes       |
 
 
 
@@ -102,14 +103,22 @@ When there are hundreds of tasks associated with a certain `Executor Processor B
 
 | Name           | Type                                               | Description                                                                                                                                     | Required |
 | -------------- | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| *   | int64                                              |e                                                                     | No       |
-| * | boolean                                            | g       | No       |
+| name   | string                                              | Task name                                                                    | Yes       |
+| description | string                                            | Task sescription       | Yes       |
+| command | string                                            | Task Commands for task execution    | Yes       |
+| frequency | string                                            | Frequency for task execution        | Yes       |
+| cron_expression | string                                            | Cron Expression for task execution         | Yes       |
+| timeout | int                                            | Cron Timeout for task execution       | Yes       |
+| retry_times | int                                            | Retry times for task execution        | Yes       |
+| retry_interval | int                                            | Retry interval for task execution        | Yes       |
+| tag | string                                            | Task's tag       | Yes       |
+| binding_ids | [int]                                            | Task's bingding       | Yes       |
 
 
 
 ## TaskInstance
 
-`Task Instance` which corresponds to a set of commands given by the user that will be executed on the machine to generate task instances.
+`Task Instance` which corresponds to an instance of a running task (e.g a running process).
 
 <a href="">
     <img src="./doc/delicate_logo.png"
@@ -121,13 +130,29 @@ When there are hundreds of tasks associated with a certain `Executor Processor B
 
 | Name           | Type                                               | Description                                                                                                                                     | Required |
 | -------------- | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| *   | int64                                              |e                                                                     | No       |
-| * | boolean                                            | g       | No       |
+| id   | int                                              | Unique id generated by snowflake algorithm                                                                     | Yes       |
+| task_id | int                                            | Task's id       | Yes       |
+| name | string                                            | Task name (snapshot)       | Yes       |
+| description | string                                            | Task description (snapshot)       | Yes       |
+| command | string                                            | Task's id       | Yes       |
+| frequency | string                                            | Task's frequency (snapshot)       | Yes       |
+| cron_expression | string                                            | Task's cron_expression (snapshot)      | Yes       |
+| maximun_parallel_runnable_num | int                                            | Task 'smaximun_parallel_runnable_num (snapshot)       | Yes       |
+| tag | string                                            | Task's tag (snapshot)       | Yes       |
+| status | int                                            | Task's Status Included(Running = 1,Finished = 2,AbnormalEnding = 3,TimeoutEnding = 4,TmanualCancellation = 5,Unknown = 81)       | Yes       |
+| created_time | datetime                                            | Task Instance creation time       | Yes       |
+| updated_time | datetime                                            | Task Instance Update time        | Yes       |
+| executor_processor_id | int                                            | Executor processor id       | Yes       |
+| executor_processor_name | string                                            | Executor processor name (snapshot)      | Yes       |
+| executor_processor_host | string                                            | Executor processor host       | Yes       |
 
 
+ 
 ## User
 
-`User` which corresponds to a set of commands given by the user that will be executed on the machine to generate task instances.
+`User` which corresponds to users of the system.
+
+PS: When the system is first installed, you can set the initial user in `.env`.
 
 <a href="">
     <img src="./doc/delicate_logo.png"
@@ -139,8 +164,11 @@ When there are hundreds of tasks associated with a certain `Executor Processor B
 
 | Name           | Type                                               | Description                                                                                                                                     | Required |
 | -------------- | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| *   | int64                                              |e                                                                     | No       |
-| * | boolean                                            | g       | No       |
+| user_name   | string                                              |User account, must be unique                                                                     | Yes       |
+| nick_name | string                                            | User nickname       | Yes       |
+| mobile | string                                            | Mobie-number(unique)       | Yes       |
+| email | string                                            | Email(unique)       | Yes       |
+| certificate | string                                            | Password credentials (the station saves the password, the station does not save or save the token)       | Yes       |
 
 
 

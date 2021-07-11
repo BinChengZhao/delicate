@@ -123,7 +123,7 @@ pub struct TaskLog {
 }
 
 #[derive(
-    Insertable, Queryable, Identifiable, AsChangeset, Debug, Clone, Serialize, Deserialize,
+    Insertable, Queryable, Identifiable, AsChangeset, Debug, Default, Clone, Serialize, Deserialize,
 )]
 #[table_name = "task_log_extend"]
 pub struct TaskLogExtend {
@@ -171,6 +171,12 @@ pub struct SupplyTaskLogExtend {
     stderr: String,
 }
 
+#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
+
+pub struct RecordId {
+    pub(crate) record_id: i64,
+}
+
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct QueryParamsTaskLog {
     id: Option<i64>,
@@ -181,6 +187,8 @@ pub struct QueryParamsTaskLog {
     tag: Option<String>,
     status: Option<i16>,
     executor_processor_id: Option<i64>,
+    pub(crate) start_time: Option<i64>,
+    pub(crate) end_time: Option<i64>,
     pub(crate) per_page: i64,
     pub(crate) page: i64,
 }
@@ -228,6 +236,16 @@ impl QueryParamsTaskLog {
 
         if let Some(task_tag) = self.tag {
             statement_builder = statement_builder.filter(task_log::tag.like(task_tag));
+        }
+
+        if let Some(start_time) = self.start_time {
+            let end_time = self.end_time.unwrap_or_else(|| start_time + 86400 * 3);
+
+            let start_time = NaiveDateTime::from_timestamp(start_time, 0);
+            let end_time = NaiveDateTime::from_timestamp(end_time, 0);
+
+            statement_builder =
+                statement_builder.filter(task_log::created_time.between(start_time, end_time));
         }
 
         statement_builder.order(task_log::id.desc())

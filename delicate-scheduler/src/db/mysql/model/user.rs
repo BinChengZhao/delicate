@@ -157,12 +157,10 @@ pub(crate) struct QueryParamsUser {
     pub(crate) page: i64,
 }
 
-
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub(crate) struct UserId {
     pub(crate) user_id: u64,
 }
-
 
 pub(crate) struct UserQueryBuilder;
 impl UserQueryBuilder {

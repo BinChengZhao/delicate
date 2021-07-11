@@ -21,19 +21,11 @@ An excellent front-end solution for enterprise applications.
 
 </div>
 
-- Preview - [https://antd-admin.zuiidea.com](https://antd-admin.zuiidea.com)
-- Documentation - [https://doc.antd-admin.zuiidea.com](https://doc.antd-admin.zuiidea.com)
-- FAQ - [https://doc.antd-admin.zuiidea.com/#/faq](https://doc.antd-admin.zuiidea.com/#/faq)
-- ChangeLog - [https://doc.antd-admin.zuiidea.com/#/change-log](https://doc.antd-admin.zuiidea.com/#/change-log)
+
+- Preview - [https://delicate-rs.com](https://delicate.com)
 
 English | [简体中文](./README-zh_CN.md) 
 
-## Features
-
-- Internationalization, extracting translation fields from source code, loading language packs on demand
-- Dynamic permissions, different permissions for different menus
-- Elegant and beautiful, Ant Design system
-- Mock data, local data debugging
 
 
 ## Usage
@@ -41,8 +33,9 @@ English | [简体中文](./README-zh_CN.md)
 1. Clone project code.
 
 ```bash
-git clone https://github.com/zuiidea/antd-admin.git my-project
-cd my-project
+git clone https://github.com/BinChengZhao/delicate.git
+
+cd delicate/delicate-web
 ```
 
 2. Installation dependence.
@@ -66,8 +59,6 @@ npm run start
 4. After the startup is complete, open a browser and visit [http://localhost:7000](http://localhost:7000), If you need to change the startup port, you can configure it in the `.env` file.
 
 
-> More instructions at [documentation](https://doc.antd-admin.zuiidea.com)。
-
 
 ## Browsers support
 
@@ -79,8 +70,8 @@ Modern browsers.
 
 ## Contributing
 
-We very much welcome your contribution, you can build together with us in the following ways :smiley: 
+We very much welcome your contribution, you can build together with us in the following ways :)  
 
-- Use Ant Design Pro in your daily work.
-- Submit [GitHub issues](http://github.com/zuiidea/antd-admin/issues)s to report bugs or ask questions.
-- Propose [Pull Request](http://github.com/zuiidea/antd-admin/pulls) to improve our code.
+- Use `delicate` in your daily work.
+- Submit [GitHub issues](http://github.com/BinChengZhao/delicate/issues) to report bugs or ask questions.
+- Propose [Pull Request](http://github.com/BinChengZhao/delicate/pulls) to improve our code.

@@ -20,9 +20,7 @@ pub struct NewTaskBind {
     pub(crate) bind_id: i64,
 }
 
-#[derive(
-     Queryable, Debug, Serialize, Deserialize, Eq, PartialEq, Hash,
-)]
+#[derive(Queryable, Debug, Serialize, Deserialize, Eq, PartialEq, Hash)]
 pub struct BindProcessor {
     pub(crate) bind_id: i64,
     pub(crate) host: String,
