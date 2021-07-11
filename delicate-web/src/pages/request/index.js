@@ -52,7 +52,7 @@ class RequestPage extends React.Component {
     super(props)
     this.state = {
       method: 'GET',
-      url: '/api/v1/routes',
+      url: '/api/routes',
       keys: [1],
       result: null,
       visible: true,

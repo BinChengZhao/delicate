@@ -2,16 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import classnames from 'classnames'
 import { Color } from 'utils'
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from 'recharts'
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import styles from './completed.less'
 
 function Completed({ data }) {
@@ -28,15 +19,12 @@ function Completed({ data }) {
                 <ul
                   className={classnames({
                     [styles.legend]: true,
-                    clearfix: true,
+                    clearfix: true
                   })}
                 >
                   {payload.map((item, key) => (
                     <li key={key}>
-                      <span
-                        className={styles.radiusdot}
-                        style={{ background: item.color }}
-                      />
+                      <span className={styles.radiusdot} style={{ background: item.color }} />
                       {item.value}
                     </li>
                   ))}
@@ -44,32 +32,23 @@ function Completed({ data }) {
               )
             }}
           />
-          <XAxis
-            dataKey="name"
-            axisLine={{ stroke: Color.borderBase, strokeWidth: 1 }}
-            tickLine={false}
-          />
+          <XAxis dataKey="name" axisLine={{ stroke: Color.borderBase, strokeWidth: 1 }} tickLine={false} />
           <YAxis axisLine={false} tickLine={false} />
-          <CartesianGrid
-            vertical={false}
-            stroke={Color.borderBase}
-            strokeDasharray="3 3"
-          />
+          <CartesianGrid vertical={false} stroke={Color.borderBase} strokeDasharray="3 3" />
           <Tooltip
             wrapperStyle={{
               border: 'none',
-              boxShadow: '4px 4px 40px rgba(0, 0, 0, 0.05)',
+              boxShadow: '4px 4px 40px rgba(0, 0, 0, 0.05)'
             }}
             content={(content) => {
-              const list = content.payload.map((item, key) => (
-                <li key={key} className={styles.tipitem}>
-                  <span
-                    className={styles.radiusdot}
-                    style={{ background: item.color }}
-                  />
-                  {`${item.name}:${item.value}`}
-                </li>
-              ))
+              const list =
+                content.payload != null &&
+                content.payload.map((item, key) => (
+                  <li key={key} className={styles.tipitem}>
+                    <span className={styles.radiusdot} style={{ background: item.color }} />
+                    {`${item.name}:${item.value}`}
+                  </li>
+                ))
               return (
                 <div className={styles.tooltip}>
                   <p className={styles.tiptitle}>{content.label}</p>
@@ -103,7 +82,7 @@ function Completed({ data }) {
 }
 
 Completed.propTypes = {
-  data: PropTypes.array,
+  data: PropTypes.array
 }
 
 export default Completed

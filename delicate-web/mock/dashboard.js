@@ -1,6 +1,6 @@
 import { Mock, Constant } from './_utils'
 
-const { ApiPrefix, Color } = Constant
+const { Color } = Constant
 
 const Dashboard = Mock.mock({
   'sales|8': [
@@ -124,8 +124,4 @@ const Dashboard = Mock.mock({
   ]
 })
 
-module.exports = {
-  [`GET ${ApiPrefix}/dashboard`](req, res) {
-    res.json(Dashboard)
-  }
-}
+export default Dashboard

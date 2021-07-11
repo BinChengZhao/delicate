@@ -1,49 +1,35 @@
-import Model from 'dva-model-extend'
+import taskModel from 'dva-model-extend'
 import api from '../../services'
 import { pageModel } from '../../utils/model'
-import * as u from '../../utils/data'
-const { pathToRegexp } = require('path-to-regexp')
 
-const { queryUserList, createUser, removeUser, updateUser, removeUserList } =
-  api
+const { queryTaskList, createUser, removeUser, updateUser, removeUserList } = api
 
-export default Model(pageModel, {
+export default taskModel(pageModel, {
   namespace: 'taskList',
 
   state: {
     currentItem: {},
     modalVisible: false,
     modalType: 'create',
-    selectedRowKeys: [],
+    selectedRowKeys: []
   },
 
   subscriptions: {
     setup({ dispatch, history }) {
-      history.listen((location) => {
-        if (pathToRegexp('/taskList').exec(location.pathname)) {
-          const payload = u.isEmpty(location.query)
-            ? { page: 1, pageSize: 10 }
-            : location.query
-          dispatch({ type: 'query', payload })
-        }
-      })
-    },
+      history.listen((location) => {})
+    }
   },
 
   effects: {
     *query({ payload = {} }, { call, put }) {
-      const data = yield call(queryUserList, payload)
+      const data = yield call(queryTaskList, payload)
       if (data) {
         yield put({
-          type: 'querySuccess',
+          type: 'changeTaskList',
           payload: {
-            list: data.data,
-            pagination: {
-              current: Number(payload.page) || 1,
-              pageSize: Number(payload.pageSize) || 10,
-              total: data.total,
-            },
-          },
+            dataSource: data.data.dataSource,
+            pagination: data.data.pagination
+          }
         })
       }
     },
@@ -55,8 +41,8 @@ export default Model(pageModel, {
         yield put({
           type: 'updateState',
           payload: {
-            selectedRowKeys: selectedRowKeys.filter((_) => _ !== payload),
-          },
+            selectedRowKeys: selectedRowKeys.filter((_) => _ !== payload)
+          }
         })
       } else {
         throw data
@@ -90,7 +76,7 @@ export default Model(pageModel, {
       } else {
         throw data
       }
-    },
+    }
   },
 
   reducers: {
@@ -101,5 +87,9 @@ export default Model(pageModel, {
     hideModal(state) {
       return { ...state, modalVisible: false }
     },
-  },
+
+    changeTaskList(state, { payload }) {
+      return { ...state, ...payload }
+    }
+  }
 })

@@ -2,7 +2,7 @@ module.exports = {
   siteName: 'DELICATE',
   copyright: '灵巧的任务调度平台  ©2021 Five Brothers',
   logoPath: '/delicateLogo.png',
-  apiPrefix: '/api/v1',
+  apiPrefix: '/api',
   fixedHeader: true, // sticky primary layout header
 
   /* Layout configuration, specify which layout to use for route. */
@@ -10,8 +10,8 @@ module.exports = {
     {
       name: 'primary',
       include: [/.*/],
-      exclude: [/(\/(en|zh))*\/login/],
-    },
+      exclude: [/(\/(en|zh))*\/login/]
+    }
   ],
 
   /* I18n configuration, `languages` and `defaultLanguage` are required currently. */
@@ -21,14 +21,14 @@ module.exports = {
       {
         key: 'en',
         title: 'English',
-        flag: '/america.svg',
+        flag: '/america.svg'
       },
       {
         key: 'zh',
         title: '中文',
-        flag: '/china.svg',
-      },
+        flag: '/china.svg'
+      }
     ],
-    defaultLanguage: 'zh',
-  },
+    defaultLanguage: 'zh'
+  }
 }

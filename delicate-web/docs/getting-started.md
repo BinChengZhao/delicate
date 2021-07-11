@@ -5,7 +5,7 @@
 ## Installation
 
 ```bash
-git clone https://github.com/BinChengZhao/delicate.git my-project
+git clone https://github.com/zuiidea/antd-admin.git my-project
 cd my-project
 ```
 

@@ -8,7 +8,7 @@ const Loader = ({ spinning = false, fullScreen }) => {
     <div
       className={classNames(styles.loader, {
         [styles.hidden]: !spinning,
-        [styles.fullScreen]: fullScreen,
+        [styles.fullScreen]: fullScreen
       })}
     >
       <div className={styles.warpper}>
@@ -21,7 +21,7 @@ const Loader = ({ spinning = false, fullScreen }) => {
 
 Loader.propTypes = {
   spinning: PropTypes.bool,
-  fullScreen: PropTypes.bool,
+  fullScreen: PropTypes.bool
 }
 
 export default Loader

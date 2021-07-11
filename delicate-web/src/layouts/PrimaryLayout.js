@@ -2,16 +2,16 @@
 /* global document */
 import React, { PureComponent, Fragment } from 'react'
 import PropTypes from 'prop-types'
-import { withRouter } from 'umi'
-import { connect } from 'umi'
+import { withRouter, connect } from 'umi'
+
 import { MyLayout, GlobalFooter } from 'components'
 import { BackTop, Layout, Drawer } from 'antd'
 import { enquireScreen, unenquireScreen } from 'enquire-js'
-const { pathToRegexp } = require('path-to-regexp')
 import { config, getLocale } from 'utils'
 import Error from '../pages/404'
 import styles from './PrimaryLayout.less'
 import store from 'store'
+const { pathToRegexp } = require('path-to-regexp')
 
 const { Content } = Layout
 const { Header, Bread, Sider } = MyLayout
@@ -20,7 +20,7 @@ const { Header, Bread, Sider } = MyLayout
 @connect(({ app, loading }) => ({ app, loading }))
 class PrimaryLayout extends PureComponent {
   state = {
-    isMobile: false,
+    isMobile: false
   }
 
   componentDidMount() {
@@ -28,7 +28,7 @@ class PrimaryLayout extends PureComponent {
       const { isMobile } = this.state
       if (isMobile !== mobile) {
         this.setState({
-          isMobile: mobile,
+          isMobile: mobile
         })
       }
     })
@@ -41,7 +41,7 @@ class PrimaryLayout extends PureComponent {
   onCollapseChange = (collapsed) => {
     this.props.dispatch({
       type: 'app/handleCollapseChange',
-      payload: collapsed,
+      payload: collapsed
     })
   }
 
@@ -63,20 +63,16 @@ class PrimaryLayout extends PureComponent {
             const { name, ...other } = item
             return {
               ...other,
-              name: (item[lang] || {}).name || name,
+              name: (item[lang] || {}).name || name
             }
           })
         : routeList
 
     // Find a route that matches the pathname.
-    const currentRoute = newRouteList.find(
-      (_) => _.route && pathToRegexp(_.route).exec(location.pathname)
-    )
+    const currentRoute = newRouteList.find((_) => _.route && pathToRegexp(_.route).exec(location.pathname))
 
     // Query whether you have permission to enter this page
-    const hasPermission = currentRoute
-      ? permissions.visit.includes(currentRoute.id)
-      : false
+    const hasPermission = currentRoute ? permissions.visit.includes(currentRoute.id) : false
 
     // MenuParentId is equal to -1 is not a available menu.
     const menus = newRouteList.filter((_) => _.menuParentId !== '-1')
@@ -94,7 +90,7 @@ class PrimaryLayout extends PureComponent {
       },
       onSignOut() {
         dispatch({ type: 'app/signOut' })
-      },
+      }
     }
 
     const siderProps = {
@@ -106,9 +102,9 @@ class PrimaryLayout extends PureComponent {
       onThemeChange(theme) {
         dispatch({
           type: 'app/handleThemeChange',
-          payload: theme,
+          payload: theme
         })
-      },
+      }
     }
 
     return (
@@ -124,7 +120,7 @@ class PrimaryLayout extends PureComponent {
               width={200}
               style={{
                 padding: 0,
-                height: '100vh',
+                height: '100vh'
               }}
             >
               <Sider {...siderProps} collapsed={false} />
@@ -132,24 +128,14 @@ class PrimaryLayout extends PureComponent {
           ) : (
             <Sider {...siderProps} />
           )}
-          <div
-            className={styles.container}
-            style={{ paddingTop: config.fixedHeader ? 72 : 0 }}
-            id="primaryLayout"
-          >
+          <div className={styles.container} style={{ paddingTop: config.fixedHeader ? 72 : 0 }} id="primaryLayout">
             <Header {...headerProps} />
             <Content className={styles.content}>
               <Bread routeList={newRouteList} />
               {hasPermission ? children : <Error />}
             </Content>
-            <BackTop
-              className={styles.backTop}
-              target={() => document.querySelector('#primaryLayout')}
-            />
-            <GlobalFooter
-              className={styles.footer}
-              copyright={config.copyright}
-            />
+            <BackTop className={styles.backTop} target={() => document.querySelector('#primaryLayout')} />
+            <GlobalFooter className={styles.footer} copyright={config.copyright} />
           </div>
         </Layout>
       </Fragment>
@@ -162,7 +148,7 @@ PrimaryLayout.propTypes = {
   location: PropTypes.object,
   dispatch: PropTypes.func,
   app: PropTypes.object,
-  loading: PropTypes.object,
+  loading: PropTypes.object
 }
 
 export default PrimaryLayout

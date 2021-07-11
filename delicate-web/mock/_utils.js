@@ -9,7 +9,7 @@ export function queryArray(array, key, value) {
   if (!Array.isArray(array)) {
     return
   }
-  return array.filter(_ => _[key] === value)
+  return array.filter((_) => _[key] === value)
 }
 
 export function randomNumber(min, max) {
@@ -32,14 +32,16 @@ export function randomAvatar() {
     'photo-1487412720507-e7ab37603c6f.jpeg',
     'photo-1510227272981-87123e259b17.jpeg'
   ]
-  return `//image.zuiidea.com/${avatarList[randomNumber(0, avatarList.length - 1)]}?imageView2/1/w/200/h/200/format/webp/q/75|imageslim`
+  return `//image.zuiidea.com/${
+    avatarList[randomNumber(0, avatarList.length - 1)]
+  }?imageView2/1/w/200/h/200/format/webp/q/75|imageslim`
 }
 
 export const Constant = {
-  ApiPrefix: '/api/v1',
+  ApiPrefix: '/api',
   NotFound: {
     message: 'Not Found',
-    documentation_url: '',
+    documentation_url: ''
   },
   Color: {
     green: '#64ea91',
@@ -51,8 +53,8 @@ export const Constant = {
     borderBase: '#e5e5e5',
     borderSplit: '#f4f4f4',
     grass: '#d6fbb5',
-    sky: '#c1e0fc',
-  },
+    sky: '#c1e0fc'
+  }
 }
 
 export Mock from 'mockjs'

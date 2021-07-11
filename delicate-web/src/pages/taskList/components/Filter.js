@@ -7,43 +7,45 @@ import { Button, Col, Form, Input, Row } from 'antd'
 class Filter extends Component {
   formRef = React.createRef()
 
-  handleFields(fields) {
-    const { createTime } = fields
-    if (createTime && createTime.length) {
-      fields.createTime = [
-        moment(createTime[0]).format('YYYY-MM-DD'),
-        moment(createTime[1]).format('YYYY-MM-DD'),
-      ]
+  initFilter() {
+    return {
+      name: null,
+      description: null,
+      command: null,
+      id: null,
+      bind_id: null,
+      status: null,
+      tag: null,
+      per_page: 10,
+      page: 1
     }
-    return fields
   }
 
   handleSubmit() {
     const { onFilterChange } = this.props
     const values = this.formRef.current.getFieldsValue()
-    const fields = this.handleFields(values)
-    onFilterChange(fields)
+    for (const i in values) {
+      values[i] = values[i] === '' ? null : values[i]
+    }
+    const initFlitter = this.initFilter()
+    onFilterChange({ ...initFlitter, ...values })
   }
 
   handleReset() {
     const fields = this.formRef.current.getFieldsValue()
     for (const item in fields) {
-      if ({}.hasOwnProperty.call(fields, item)) {
-        if (fields[item] instanceof Array) {
-          fields[item] = []
-        } else {
-          fields[item] = undefined
-        }
-      }
+      if ({}.hasOwnProperty.call(fields, item)) fields[item] = undefined
     }
     this.formRef.current.setFieldsValue(fields)
     this.handleSubmit()
   }
 
+  componentDidMount() {
+    this.handleSubmit()
+  }
+
   render() {
     const { onAdd, filter } = this.props
-    const { name, address } = filter
-
     const initialCreateTime = []
     if (filter.createTime && filter.createTime[0]) {
       initialCreateTime[0] = moment(filter.createTime[0])
@@ -53,11 +55,7 @@ class Filter extends Component {
     }
 
     return (
-      <Form
-        ref={this.formRef}
-        name="control-ref"
-        initialValues={{ name, address, createTime: initialCreateTime }}
-      >
+      <Form ref={this.formRef} name="control-ref" initialValues={this.initFilter()}>
         <Row gutter={24}>
           <Col xl={{ span: 4 }} md={{ span: 8 }}>
             <Form.Item name="name">
@@ -65,13 +63,13 @@ class Filter extends Component {
             </Form.Item>
           </Col>
           <Col xl={{ span: 4 }} md={{ span: 8 }}>
-            <Form.Item name="bindId">
+            <Form.Item name="bind_id">
               <Input placeholder={t`Bind Id`} />
             </Form.Item>
           </Col>
           <Col xl={{ span: 4 }} md={{ span: 8 }}>
-            <Form.Item name="taskId">
-              <Input placeholder={t`Task Id`} />
+            <Form.Item name="status">
+              <Input placeholder={t`Status`} />
             </Form.Item>
           </Col>
           <Col xl={{ span: 4 }} md={{ span: 8 }}>
@@ -79,18 +77,10 @@ class Filter extends Component {
               <Input placeholder={t`Tag`} />
             </Form.Item>
           </Col>
-          <Button
-            type="primary"
-            htmlType="submit"
-            className="margin-right"
-            onClick={this.handleSubmit.bind(this)}
-          >
+          <Button type="primary" htmlType="submit" className="margin-right" onClick={this.handleSubmit.bind(this)}>
             <Trans>Search</Trans>
           </Button>
-          <Button
-            className="margin-right"
-            onClick={this.handleReset.bind(this)}
-          >
+          <Button className="margin-right" onClick={this.handleReset.bind(this)}>
             <Trans>Reset</Trans>
           </Button>
           <Button type="ghost" onClick={onAdd}>
@@ -105,7 +95,7 @@ class Filter extends Component {
 Filter.propTypes = {
   onAdd: PropTypes.func,
   filter: PropTypes.object,
-  onFilterChange: PropTypes.func,
+  onFilterChange: PropTypes.func
 }
 
 export default Filter
