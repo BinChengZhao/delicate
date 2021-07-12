@@ -37,9 +37,9 @@ class TaskModal extends PureComponent {
       retry_times: '180',
       retry_interval: '3',
       maximum_parallel_runnable_num: '5',
-      tag: [1, 2],
+      tag: [],
       bind_id: '',
-      status: true // true: 1 启用 ｜ false：2 未启用
+      status: true // true: 1 启用 ｜ false： 2 未启用
     }
   }
 
@@ -49,15 +49,13 @@ class TaskModal extends PureComponent {
 
   handleOk = () => {
     const { item = {}, onOk } = this.props
-
     this.formRef.current
       .validateFields()
       .then((values) => {
         const data = {
           ...values,
-          key: item.key
+          tag: values.tag.join(',')
         }
-        data.address = data.address.join(' ')
         onOk(data)
       })
       .catch((errorInfo) => {
@@ -68,9 +66,11 @@ class TaskModal extends PureComponent {
   render() {
     const { onOk, form, ...modalProps } = this.props
     const { forms } = this.state
+    const initValues = modalProps.item ? modalProps.item : forms
+    console.log(initValues)
     return (
       <Modal {...modalProps} onOk={this.handleOk}>
-        <Form ref={this.formRef} name="control-ref" layout="horizontal" initialValues={forms}>
+        <Form ref={this.formRef} name="control-ref" layout="horizontal" initialValues={initValues}>
           <FormItem name="name" label={t`Task Name`} rules={[{ required: true }]} hasFeedback {...formItemLayout}>
             <Input placeholder="查看PHP版本" />
           </FormItem>
@@ -101,7 +101,6 @@ class TaskModal extends PureComponent {
                 </Select>
               }
               placeholder="扩展字段示例：{count:3}"
-              style={{ width: '100%' }}
             />
           </FormItem>
 
@@ -118,13 +117,7 @@ class TaskModal extends PureComponent {
             />
           </FormItem>
 
-          <Form.Item
-            label="时间调度"
-            rules={[{ required: true }]}
-            style={{ marginBottom: 0 }}
-            hasFeedback
-            {...formItemLayout}
-          >
+          <Form.Item label="时间调度" style={{ marginBottom: 0 }} hasFeedback {...formItemLayout}>
             <Form.Item
               name="timeout"
               label={'超时时间'}
@@ -168,25 +161,13 @@ class TaskModal extends PureComponent {
             <InputNumber min={1} />
           </FormItem>
           <FormItem name="tag" label="任务标签" hasFeedback {...formItemLayout}>
-            <Select mode="multiple" allowClear style={{ width: '100%' }} placeholder="Please select">
-              <Option {...this.optionAttr(1)}>{'标签1'}</Option>
-              <Option {...this.optionAttr(2)}>{'标签2'}</Option>
-              <Option {...this.optionAttr(3)}>{'标签3'}</Option>
-              <Option {...this.optionAttr(4)}>{'标签4'}</Option>
-              <Option {...this.optionAttr(5)}>{'标签5'}</Option>
-              <Option {...this.optionAttr(6)}>{'标签6'}</Option>
-              <Option {...this.optionAttr(7)}>{'标签7'}</Option>
-            </Select>
+            <Select mode="tags" allowClear style={{ width: '100%' }} placeholder="支持自定义标签" />
           </FormItem>
-          <FormItem name="bind_id" rules={[{ required: true }]} label="组ID" hasFeedback {...formItemLayout}>
-            <Select placeholder={'请在【任务组管理】中维护'}>
-              <Option {...this.optionAttr(1)}>{'前端组'}</Option>
-              <Option {...this.optionAttr(2)}>{'终端组'}</Option>
-              <Option {...this.optionAttr(3)}>{'SAP端组'}</Option>
-            </Select>
+          <FormItem name="bind_id" label="组ID" hasFeedback {...formItemLayout}>
+            <Input placeholder="Please input" />
           </FormItem>
-          <FormItem name="status" label="是否启用" hasFeedback {...formItemLayout}>
-            <Switch checkedChildren="Yes" unCheckedChildren="No" defaultChecked={forms.status} />
+          <FormItem name="status" label="是否启用" valuePropName="checked" hasFeedback {...formItemLayout}>
+            <Switch checkedChildren="Yes" unCheckedChildren="No" defaultChecked />
           </FormItem>
         </Form>
       </Modal>

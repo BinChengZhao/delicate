@@ -13,6 +13,18 @@ export default {
 
   // 任务相关
   queryTaskList: 'POST /task/list',
+  taskAdvance: 'POST /task/advance',
+  taskCreate: 'POST /task/create',
+  taskUpdate: 'POST /task/update',
+  taskDelete: 'POST /task/delete',
+  taskRun: 'POST /task/run',
+  taskSuspend: 'POST /task/suspend',
+
+  // 任务日志
+  taskLogList: 'POST /task_log/list',
+  taskLogEvent: 'POST /task_logs/event_trigger',
+  taskLogDetail: 'POST /task_log/detail',
+  taskKill: 'POST /task_instance/kill',
 
   // 执行调度器
   executorList: 'POST /executor_processor/list',

@@ -1,94 +1,108 @@
 import React, { PureComponent } from 'react'
-import PropTypes from 'prop-types'
-import { connect } from 'umi'
-import { t } from '@lingui/macro'
+import { connect } from 'dva'
 import { Page } from '../../components'
-import List from './components/List'
+import PropTypes from 'prop-types'
+
 import Filter from './components/Filter'
+import List from './components/List'
 import TaskModal from './components/Modal'
 
-@connect(({ taskList, loading }) => ({ taskList, loading }))
+const NAMESPACE = 'taskModel'
+
+@connect(({ taskModel, loading }) => ({ taskModel, loading }))
 class Task extends PureComponent {
-  get modalProps() {
-    const { dispatch, taskList, loading } = this.props
-    const { currentItem, modalVisible, modalType } = taskList
+  formRef = React.createRef()
+
+  handleRefresh = (newQuery) => {
+    const { taskModel, dispatch } = this.props
+    const queryWhere = taskModel.queryWhere
+    const payload = { ...queryWhere, ...newQuery }
+    dispatch({ type: `${NAMESPACE}/query`, payload: payload })
+  }
+
+  get filterProps() {
+    const { dispatch } = this.props
 
     return {
-      item: modalType === 'create' ? {} : currentItem,
+      openModal: () => {
+        dispatch({
+          type: `${NAMESPACE}/showModal`,
+          payload: { modalType: 'create', currentItem: {} }
+        })
+      },
+      query: (payload) => {
+        dispatch({ type: `${NAMESPACE}/query`, payload: payload })
+      }
+    }
+  }
+
+  get modalProps() {
+    const { dispatch, taskModel, loading } = this.props
+    let { currentItem, modalVisible, modalType } = taskModel
+
+    let item = {}
+    let title = ''
+    switch (modalType) {
+      case 'create':
+        title = '创建执行器'
+        break
+      case 'copy':
+        title = '复制执行器'
+        item = { ...currentItem, id: null, tag: currentItem.tag.split(',') }
+        break
+      case 'update':
+        title = '编辑执行器'
+        item = item = { ...currentItem, tag: currentItem.tag.split(',') }
+        break
+    }
+    modalType = modalType === 'copy' ? 'create' : modalType
+    return {
+      item: item,
       visible: modalVisible,
       destroyOnClose: true,
       maskClosable: false,
       cancelText: '取消',
       okText: '保存',
-      confirmLoading: loading.effects[`taskList/${modalType}`],
-      title: `${modalType === 'create' ? t`Create Task` : t`Update User`}`,
+      confirmLoading: loading.effects[`${NAMESPACE}/${modalType}`],
+      title: title,
       centered: true,
       width: 800,
       onOk: (data) => {
-        dispatch({
-          type: `taskList/${modalType}`,
-          payload: data
-        }).then(() => {
-          this.handleRefresh()
-        })
+        dispatch({ type: `${NAMESPACE}/${modalType}`, payload: data })
       },
       onCancel() {
         dispatch({
-          type: 'taskList/hideModal'
+          type: `${NAMESPACE}/hideModal`
         })
       }
     }
   }
 
   get listProps() {
-    const { dispatch, taskList, loading } = this.props
-    const { dataSource, pagination } = taskList
-
+    const { dispatch, taskModel, loading } = this.props
+    const { dataSource, pagination } = taskModel
     return {
       dataSource,
-      loading: loading.effects['taskList/query'],
+      loading: loading.effects[`${NAMESPACE}/query`],
       pagination,
       onChange: (page) => {
         this.handleRefresh({
           page: page.current,
-          pageSize: page.pageSize
+          per_page: page.pageSize
         })
       },
       onDeleteItem: (id) => {
         dispatch({
-          type: 'taskList/delete',
-          payload: id
+          type: `${NAMESPACE}/delete`,
+          payload: { executor_processor_id: id }
         }).then(() => {
-          this.handleRefresh({
-            page: dataSource.length === 1 && pagination.current > 1 ? pagination.current - 1 : pagination.current
-          })
+          this.handleRefresh()
         })
       },
       onEditItem(item) {
         dispatch({
-          type: 'taskList/showModal',
-          payload: {
-            modalType: 'update',
-            currentItem: item
-          }
-        })
-      }
-    }
-  }
-
-  get filterProps() {
-    const { location, dispatch } = this.props
-    const { query } = location
-
-    return {
-      filter: { ...query },
-      onFilterChange: (value) => dispatch({ type: 'taskList/query', payload: value }),
-      onAdd() {
-        dispatch({
-          type: 'taskList/showModal',
-          payload: {
-            modalType: 'create'
-          }
+          type: `${NAMESPACE}/showModal`,
+          payload: { modalType: 'update', currentItem: item }
         })
       }
     }
@@ -106,10 +120,6 @@ class Task extends PureComponent {
 }
 
 Task.propTypes = {
-  taskList: PropTypes.object,
-  location: PropTypes.object,
-  dispatch: PropTypes.func,
-  loading: PropTypes.object
+  taskModel: PropTypes.object
 }
-
 export default Task
