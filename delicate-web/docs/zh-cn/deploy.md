@@ -106,9 +106,9 @@ web.delicate-rs.com {
 }
 
 
-delicate-rs.delicate-rs.com/public {
+web.delicate-rs.com/public {
         gzip
-        root  /home/www/delicate-rs/dist/static/public
+        root  /home/www/delicate-web/dist/static/public
 }
 
 ```
