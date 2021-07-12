@@ -39,6 +39,24 @@ jobs:
         run: |
             brew install mysql-client libpq sqlite coreutils
             echo "/usr/local/opt/mysql-client/bin" >> "$GITHUB_PATH"
+            
+      
+      
+      - name: Install mysql (Windows)
+        if: matrix.os == 'Windows'
+        shell: cmd
+        run: |
+          choco install mysql
+          "C:\tools\mysql\current\bin\mysql" -e "create database diesel_test; create database diesel_unit_test; grant all on `diesel_%`.* to 'root'@'localhost';" -uroot
+      
+      - name: Set variables for mysql (Windows)
+        if: matrix.os == 'Windows'
+        shell: bash
+        run: |
+          echo "MYSQL_DATABASE_URL=mysql://root@localhost/diesel_test" >> $GITHUB_ENV
+          echo "MYSQL_EXAMPLE_DATABASE_URL=mysql://root@localhost/diesel_example" >> $GITHUB_ENV
+          echo "MYSQL_UNIT_TEST_DATABASE_URL=mysql://root@localhost/diesel_unit_test" >> $GITHUB_ENV
+          echo "MYSQLCLIENT_LIB_DIR=C:\tools\mysql\current\lib" >> $GITHUB_ENV
 
       # vcpkg --triplet x64-windows install libmysql libpq sqlite3 openssl
       # + vcpkg/installed/vcpkg (in particular, the status file)
