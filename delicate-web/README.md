@@ -51,7 +51,29 @@ sudo yarn start
 
 4. After the startup is complete, open a browser and visit [http://localhost:7000](http://localhost:7000), If you need to change the startup port, you can configure it in the `.env` file.
 
+5. Deploy:
+Next, we can upload the static file to the server. If you use Nginx as the Web server, you can configure it in `ngnix.conf`:
+```
+server
+	{
+		listen       80;
+        # Specify an accessible domain name
+		server_name web.delicate-rs.com;
+        # The directory where the compiled files are stored
+		root  /home/www/delicate-web/dist;
 
+        # Proxy server interface to avoid cross-domain
+		location /api {
+			 proxy_pass http://localhost:7000/api;
+		}
+
+         Because the front end uses BrowserHistory, it will route backback to index.html
+		location / {
+				index  index.html;
+				try_files $uri $uri/ /index.html;
+		}
+	}
+```
 
 
 ## Browsers support

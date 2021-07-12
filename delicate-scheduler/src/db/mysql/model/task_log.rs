@@ -206,8 +206,6 @@ impl QueryParamsTaskLog {
         self,
         mut statement_builder: task_log::BoxedQuery<'static, Mysql, ST>,
     ) -> task_log::BoxedQuery<'static, Mysql, ST> {
-        statement_builder = statement_builder.filter(task_log::status.ne(2));
-        // Maybe status 2 eq task_log-deleted status.
 
         if let Some(task_id) = self.task_id {
             statement_builder = statement_builder.filter(task_log::task_id.eq(task_id));
