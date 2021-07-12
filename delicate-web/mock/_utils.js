@@ -32,7 +32,7 @@ export function randomAvatar() {
     'photo-1487412720507-e7ab37603c6f.jpeg',
     'photo-1510227272981-87123e259b17.jpeg'
   ]
-  return `//image.zuiidea.com/${
+  return `//image.delicate-rs.com/${
     avatarList[randomNumber(0, avatarList.length - 1)]
   }?imageView2/1/w/200/h/200/format/webp/q/75|imageslim`
 }

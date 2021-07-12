@@ -94,7 +94,7 @@ const Dashboard = Mock.mock({
     title: 'Graphic Designer',
     content:
       "I'm selfish, impatient and a little insecure. I make mistakes, I am out of control and at times hard to handle. But if you can't handle me at my worst, then you sure as hell don't deserve me at my best.",
-    avatar: '//cdn.antd-admin.zuiidea.com/bc442cf0cc6f7940dcc567e465048d1a8d634493198c4-sPx5BR_fw236'
+    avatar: '//cdn.web.delicate-rs.com/bc442cf0cc6f7940dcc567e465048d1a8d634493198c4-sPx5BR_fw236'
   },
   numbers: [
     {

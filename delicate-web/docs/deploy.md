@@ -15,7 +15,7 @@ npm run build
 After a few seconds, the output should look like this：
 
 ```bash
-> antd-admin@5.0.0-beta build /Users/zuiidea/web/antd-admin
+> delicate-rs@5.0.0-beta build /Users/delicate/delicate-web
 > umi build
 
 [21:13:17] webpack compiled in 43s 868ms
@@ -67,9 +67,9 @@ server
 	{
 		listen       80;
         # Specify an accessible domain name
-		server_name antd-admin.zuiidea.com;
+		server_name web.delicate-rs.com;
         # The directory where the compiled files are stored
-		root  /home/www/antd-admin/dist;
+		root  /home/www/delicate-web/dist;
 
         # Proxy server interface to avoid cross-domain
 		location /api {
@@ -84,7 +84,7 @@ server
 	}
 ```
 
-Restart the web server and access [http://antd-admin.zuiidea.com](http://antd-admin.zuiidea.com) , You will see the correct page.
+Restart the web server and access [http://web.delicate-rs.com](http://web.delicate-rs.com) , You will see the correct page.
 
 ```bash
 nginx -s reload
@@ -93,9 +93,9 @@ nginx -s reload
 Similarly, if you use Caddy as a web server, you can do this in `Caddyfile`:
 
 ```
-antd-admin.zuiidea.com {
+web.delicate-rs.com {
         gzip
-        root /home/www/antd-admin/dist
+        root /home/www/delicate-web/dist
         proxy /api http://localhost:7000
 
         rewrite {
@@ -105,9 +105,9 @@ antd-admin.zuiidea.com {
 }
 
 
-antd-admin.zuiidea.com/public {
+web.delicate-rs.com/public {
         gzip
-        root  /home/www/antd-admin/dist/static/public
+        root  /home/www/delicate-web/dist/static/public
 }
 
 ```

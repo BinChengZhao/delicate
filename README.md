@@ -78,9 +78,11 @@ $ tar zxvf delicate-v1.0.0-linux-amd64.tar.gz -C delicate && cd delicate -->
 
 9. Compile the executable with ` cargo build --release ` after passing it.
 
-10. Start delicate-scheduler: ` nohup target/release/delicate-scheduler &   ` .
+10. Start delicate-scheduler: ` nohup target/release/delicate-scheduler &   ` on the machine where the server is deployed .
 
-11. start delicate-executor: ` nohup target/release/delicate-executor & ` .
+11. start delicate-executor: ` nohup target/release/delicate-executor & ` on the machine performing the task .
+
+12. Please refer to `delicate-web/README.md` for the deployment of front-end resources.
 
 
 ## Documentation

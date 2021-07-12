@@ -15,7 +15,7 @@ npm run build
 几秒后，输出应该如下：
 
 ```bash
-> antd-admin@5.0.0-beta build /Users/zuiidea/web/antd-admin
+> delicate-rs@5.0.0-beta build /Users/delicate/delicate-web
 > umi build
 
 [21:13:17] webpack compiled in 43s 868ms
@@ -68,9 +68,9 @@ server
 	{
 		listen       80;
         # 指定可访问的域名
-		server_name antd-admin.zuiidea.com;
+		server_name web.delicate-rs.com;
         # 编译后的文件存放的目录
-		root  /home/www/antd-admin/dist;
+		root  /home/www/delicate-web/dist;
 
         # 代理服务端接口，避免跨域
 		location /api {
@@ -85,7 +85,7 @@ server
 	}
 ```
 
-重启 Web server，访问 [http://antd-admin.zuiidea.com](http://antd-admin.zuiidea.com) ，你将看到正确的页面。
+重启 Web server，访问 [http://web.delicate-rs.com](http://web.delicate-rs.com) ，你将看到正确的页面。
 
 ```bash
 nginx -s reload
@@ -94,9 +94,9 @@ nginx -s reload
 类似的，如果你使用 Caddy 作为 Web server，你可以在 `Caddyfile` 中这样配置：
 
 ```
-antd-admin.zuiidea.com {
+web.delicate-rs.com {
         gzip
-        root /home/www/antd-admin/dist
+        root /home/www/delicate-web/dist
         proxy /api http://localhost:7000
 
         rewrite {
@@ -106,9 +106,9 @@ antd-admin.zuiidea.com {
 }
 
 
-antd-admin.zuiidea.com/public {
+delicate-rs.delicate-rs.com/public {
         gzip
-        root  /home/www/antd-admin/dist/static/public
+        root  /home/www/delicate-rs/dist/static/public
 }
 
 ```
