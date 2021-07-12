@@ -132,7 +132,7 @@ class List extends PureComponent {
         fixed: 'right',
         render: (text, row) => (
           <Space split={'|'}>
-            <a type={'link'} onClick={onEditItem}>
+            <a type={'link'} onClick={() => onEditItem(row)}>
               编辑
             </a>
             <Dropdown overlay={this.menu(row)}>

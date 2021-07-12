@@ -2,19 +2,19 @@ import React, { PureComponent } from 'react'
 import { connect } from 'dva'
 import { Page } from '../../components'
 import PropTypes from 'prop-types'
-import ExecutorModal from './components/Modal'
-import ExecutorList from './components/List'
-import ExecutorFilter from './components/Filter'
+import ExecutorGroupModal from './components/Modal'
+import ExecutorGroupList from './components/List'
+import ExecutorGroupFilter from './components/Filter'
 
-const NAMESPACE = 'executorModel'
+export const NAMESPACE = 'executorGroupModel'
 
-@connect(({ executorModel, loading }) => ({ executorModel, loading }))
-class Executor extends PureComponent {
+@connect(({ executorGroupModel, loading }) => ({ executorGroupModel, loading }))
+class ExecutorGroup extends PureComponent {
   formRef = React.createRef()
 
   handleRefresh = (newQuery) => {
-    const { executorModel, dispatch } = this.props
-    const queryWhere = executorModel.queryWhere
+    const { executorGroupModel, dispatch } = this.props
+    const queryWhere = executorGroupModel.queryWhere
     const payload = { ...queryWhere, ...newQuery }
     dispatch({ type: `${NAMESPACE}/query`, payload: payload })
   }
@@ -25,7 +25,7 @@ class Executor extends PureComponent {
     return {
       openModal: () => {
         dispatch({
-          type: `${NAMESPACE}/showExecutorModal`,
+          type: `${NAMESPACE}/showGroupModal`,
           payload: { modalType: 'create', currentItem: {} }
         })
       },
@@ -36,21 +36,17 @@ class Executor extends PureComponent {
   }
 
   get modalProps() {
-    const { dispatch, executorModel, loading } = this.props
-    let { currentItem, modalVisible, modalType } = executorModel
+    const { dispatch, executorGroupModel, loading } = this.props
+    let { currentItem, modalVisible, modalType } = executorGroupModel
 
     let item = {}
     let title = ''
     switch (modalType) {
       case 'create':
-        title = '创建执行器'
-        break
-      case 'copy':
-        title = '复制执行器'
-        item = { ...currentItem, id: null, tag: currentItem.tag.split(',') }
+        title = '创建执行器组'
         break
       case 'update':
-        title = '编辑执行器'
+        title = '编辑执行器组'
         item = item = { ...currentItem, tag: currentItem.tag.split(',') }
         break
     }
@@ -71,18 +67,18 @@ class Executor extends PureComponent {
       },
       onCancel() {
         dispatch({
-          type: `${NAMESPACE}/hideExecutorModal`
+          type: `${NAMESPACE}/hideGroupModal`
         })
       }
     }
   }
 
   get listProps() {
-    const { dispatch, executorModel, loading } = this.props
-    const { dataSource, pagination } = executorModel
+    const { dispatch, executorGroupModel, loading } = this.props
+    const { dataSource, pagination } = executorGroupModel
     return {
       dataSource,
-      loading: loading.effects['executorModel/query'],
+      loading: loading.effects[`${NAMESPACE}/query`],
       pagination,
       onChange: (page) => {
         this.handleRefresh({
@@ -92,7 +88,7 @@ class Executor extends PureComponent {
       },
       onDeleteItem: (id) => {
         dispatch({
-          type: 'executorModel/delete',
+          type: `${NAMESPACE}/delete`,
           payload: { executor_processor_id: id }
         }).then(() => {
           this.handleRefresh()
@@ -100,20 +96,20 @@ class Executor extends PureComponent {
       },
       onEditItem(item) {
         dispatch({
-          type: 'executorModel/showExecutorModal',
+          type: `${NAMESPACE}/showGroupModal`,
           payload: { modalType: 'update', currentItem: item }
         })
       },
       onCopy(item) {
         console.log(item)
         dispatch({
-          type: 'executorModel/showExecutorModal',
+          type: `${NAMESPACE}/showGroupModal`,
           payload: { modalType: 'copy', currentItem: item }
         })
       },
       onActivation(id) {
         dispatch({
-          type: 'executorModel/activation',
+          type: `${NAMESPACE}/activation`,
           payload: { executor_processor_id: id }
         }).then(() => {
           this.handleRefresh()
@@ -123,18 +119,17 @@ class Executor extends PureComponent {
   }
 
   render() {
-    console.log(this.props)
     return (
       <Page inner>
-        <ExecutorFilter {...this.filterProps} />
-        <ExecutorList {...this.listProps} />
-        <ExecutorModal {...this.modalProps} />
+        <ExecutorGroupFilter {...this.filterProps} />
+        <ExecutorGroupList {...this.listProps} />
+        <ExecutorGroupModal {...this.modalProps} />
       </Page>
     )
   }
 }
 
-Executor.propTypes = {
-  executorModel: PropTypes.object
+ExecutorGroup.propTypes = {
+  executorGroupModel: PropTypes.object
 }
-export default Executor
+export default ExecutorGroup

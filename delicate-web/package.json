@@ -13,6 +13,7 @@
     "draft-js": "^0.11.7",
     "draftjs-to-html": "^0.9.0",
     "draftjs-to-markdown": "^0.6.0",
+    "dva": "^2.6.0-beta.22",
     "dva-model-extend": "^0.1.2",
     "echarts": "^5.0.0",
     "echarts-for-react": "^3.0.0",
