@@ -66,18 +66,9 @@ jobs:
           toolchain: ${{ matrix.platform.toolchain }}
           override: true
 
-      - name: Cache Example Workspace
-        if: matrix.test.name == 'Examples'
-        uses: Swatinem/rust-cache@v1
-        with:
-          working-directory: "examples"
-
-      - name: Cache Root Workspace
-        if: matrix.test.name != 'Examples'
-        uses: Swatinem/rust-cache@v1
-        with:
-          key: ${{ matrix.test.name }}
-
       - name: Run Tests
-        run: ./scripts/test.sh ${{ matrix.test.flag }}
+        run: |
+          mv ./template.env .env
+          cargo check
+          cargo clippy
         shell: bash
