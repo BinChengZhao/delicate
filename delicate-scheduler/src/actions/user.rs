@@ -130,7 +130,7 @@ async fn login_user(
     let login_result: UnifiedResponseMessages<()> =
         pre_login_user(user_login, session, pool).await.into();
 
-    return HttpResponse::Ok().json(login_result);
+    HttpResponse::Ok().json(login_result)
 }
 
 async fn pre_login_user(
@@ -183,10 +183,10 @@ async fn check_user(session: Session, pool: ShareData<db::ConnectionPool>) -> Ht
         ));
     };
 
-    return HttpResponse::Ok().json(
+    HttpResponse::Ok().json(
         UnifiedResponseMessages::<()>::error()
             .customized_error_msg(check_result.expect_err("").to_string()),
-    );
+    )
 }
 
 async fn pre_check_user(

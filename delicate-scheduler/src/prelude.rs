@@ -3,7 +3,6 @@ pub(crate) use super::db;
 pub(crate) use super::db::common::{model as common_model, state, types};
 pub(crate) use super::db::extension::*;
 pub(crate) use super::db::model;
-pub(crate) use super::{cfg_mysql_support, cfg_postgres_support};
 pub(crate) use common_model::PaginateData;
 
 pub(crate) use delicate_utils::consensus_message::security::{self, SecurityLevel};

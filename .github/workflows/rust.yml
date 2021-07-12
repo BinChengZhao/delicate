@@ -23,12 +23,8 @@ jobs:
           - { name: macOS, distro: macOS-latest, toolchain: stable }
         test:
           - { name: Debug, flag: }
-        include:
-          - platform: { name: Linux, distro: ubuntu-latest, toolchain: stable }
-            test: { name: Release, flag: "--release" }
 
     runs-on: ${{ matrix.platform.distro }}
-
 
     steps:
       - name: Checkout Sources
@@ -40,17 +36,15 @@ jobs:
             brew install mysql-client libpq sqlite coreutils
             echo "/usr/local/opt/mysql-client/bin" >> "$GITHUB_PATH"
             
-      
-      
       - name: Install mysql (Windows)
-        if: matrix.os == 'Windows'
+        if: matrix.platform.name == 'Windows'
         shell: cmd
         run: |
           choco install mysql
           "C:\tools\mysql\current\bin\mysql" -e "create database diesel_test; create database diesel_unit_test; grant all on `diesel_%`.* to 'root'@'localhost';" -uroot
       
       - name: Set variables for mysql (Windows)
-        if: matrix.os == 'Windows'
+        if: matrix.platform.name == 'Windows'
         shell: bash
         run: |
           echo "MYSQL_DATABASE_URL=mysql://root@localhost/diesel_test" >> $GITHUB_ENV
@@ -61,7 +55,7 @@ jobs:
       # vcpkg --triplet x64-windows install libmysql libpq sqlite3 openssl
       # + vcpkg/installed/vcpkg (in particular, the status file)
       - name: Install Native Dependencies (Windows)
-        if: matrix.os == 'Windows'
+        if: matrix.platform.name == 'Windows'
         run: |
           curl -fsS -o vcpkg.7z https://rocket.rs/static/vcpkg-2019-07-05.7z
           7z x vcpkg.7z -y -bb0
