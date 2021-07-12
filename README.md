@@ -1,5 +1,5 @@
 # Delicate   
-[![Build](https://github.com/BinChengZhao/delicate/workflows/rust/badge.svg)](
+[![Build](https://github.com/BinChengZhao/delicate/workflows/CI/badge.svg)](
 https://github.com/BinChengZhao/delicate/actions)
 [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](
 https://github.com/BinChengZhao/delicate)
