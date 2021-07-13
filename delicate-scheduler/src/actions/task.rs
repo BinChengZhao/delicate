@@ -12,10 +12,7 @@ pub(crate) fn config(cfg: &mut web::ServiceConfig) {
 
 #[post("/api/task/create")]
 async fn create_task(
-    web::Json(model::NewTaskBody {
-        new_task,
-        binding_ids,
-    }): web::Json<model::NewTaskBody>,
+    web::Json(model::NewTaskBody { task, binding_ids }): web::Json<model::NewTaskBody>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
     use db::schema::{task, task_bind};
@@ -24,7 +21,7 @@ async fn create_task(
         return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
             web::block::<_, _, diesel::result::Error>(move || {
                 diesel::insert_into(task::table)
-                    .values(&new_task)
+                    .values(&task)
                     .execute(&conn)?;
                 let task_id = diesel::select(db::last_insert_id).get_result::<u64>(&conn)? as i64;
 
@@ -306,6 +303,8 @@ async fn suspend_task(
     web::Json(model::TaskId { task_id }): web::Json<model::TaskId>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
+    let _span_ = span!(Level::INFO, "Suspend", task_id).entered();
+
     let result: UnifiedResponseMessages<()> =
         Into::into(pre_operate_task(pool.clone(), (task_id, "/api/task/remove", "Suspend")).await);
 
@@ -317,6 +316,8 @@ async fn advance_task(
     web::Json(model::TaskId { task_id }): web::Json<model::TaskId>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
+    let _span_ = span!(Level::INFO, "Advance", task_id).entered();
+
     let result: UnifiedResponseMessages<()> =
         Into::into(pre_operate_task(pool, (task_id, "/api/task/advance", "Advance")).await);
 
@@ -429,14 +430,45 @@ async fn pre_operate_task(
                 .ok()
         })
         .map(|(signed_task_unit, executor_host)| {
-            RequestClient::default()
+            RequestClient::builder()
+                .timeout(Duration::from_secs(15))
+                .finish()
                 .post(executor_host)
                 .send_json(&signed_task_unit)
         })
         .collect::<Vec<_>>()
         .into_iter()
         .collect();
-    request_all.await;
+
+    let response_json_all: JoinAll<_> = request_all
+        .await
+        .into_iter()
+        .map(|response| match response {
+            Ok(mut r) => Some(r.json::<UnifiedResponseMessages<()>>()),
+            Err(e) => {
+                error!("{}", e);
+                None
+            }
+        })
+        .filter(|r| r.is_some())
+        .map(|r| r.expect(""))
+        .collect::<Vec<_>>()
+        .into_iter()
+        .collect();
+
+    response_json_all
+        .await
+        .into_iter()
+        .map(|json_result| match json_result {
+            Err(e) => {
+                error!("{}", e);
+            }
+            Ok(json) if json.is_err() => {
+                error!("{}", json.get_msg());
+            }
+            _ => {}
+        })
+        .for_each(drop);
 
     Ok(())
 }

@@ -1,6 +1,7 @@
 The Delicate ** *** **  is officially available!
 
 //TODO: there is features and pictures.
+//TODO: 1.Introduction (repo address) 2.Function 3.Technology stack 4.roadmap 5.Thanks (repo address).
 
 
 What's next#

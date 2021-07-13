@@ -66,12 +66,12 @@ impl<'a> TryFrom<FrequencyModel<'a>> for Frequency<'a> {
 pub struct FrequencyObject {
     pub mode: i8,
     pub extend: FrequencyExtend,
+    pub time_zone: u8,
 }
 
 #[derive(Copy, Clone, Debug, Default, Serialize, Deserialize)]
 pub struct FrequencyExtend {
     pub count: u32,
-    pub time_zone: u8,
 }
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
 

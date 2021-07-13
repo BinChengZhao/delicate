@@ -197,6 +197,8 @@ async fn main() -> AnyResult<()> {
     // Loads environment variables.
     dotenv().ok();
 
+    // TODO: Needs tracing.
+
     let logger = Logger::with_str("info")
         .log_target(LogTarget::File)
         .buffer_and_flush()
@@ -227,6 +229,7 @@ async fn main() -> AnyResult<()> {
             .app_data(shared_delay_timer.clone())
             .app_data(shared_security_conf.clone())
             .app_data(shared_system_mirror.clone())
+            .wrap(MiddlewareLogger::default())
     })
     .bind(
         env::var("EXECUTOR_LISTENING_ADDRESS")

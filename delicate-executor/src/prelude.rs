@@ -28,6 +28,7 @@ pub(crate) use delicate_utils::uniform_data::UnifiedResponseMessages;
 
 pub(crate) use serde::{Deserialize, Serialize};
 
+pub(crate) use actix_web::middleware::Logger as MiddlewareLogger;
 pub(crate) use flexi_logger::{Age, Cleanup, Criterion, LogTarget, Logger, Naming};
 pub(crate) use log::{error, info};
 

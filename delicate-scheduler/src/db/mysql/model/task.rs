@@ -66,7 +66,7 @@ pub struct TaskId {
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct NewTaskBody {
-    pub(crate) new_task: NewTask,
+    pub(crate) task: NewTask,
     pub(crate) binding_ids: Vec<i64>,
 }
 
