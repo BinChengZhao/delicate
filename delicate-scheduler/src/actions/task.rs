@@ -260,7 +260,11 @@ pub async fn pre_update_task_sevice(
             .into_iter()
             .collect();
 
-        join(remove_tasks_future, append_tasks_future).await;
+        join(
+            handle_response::<UnifiedResponseMessages<()>>(remove_tasks_future),
+            handle_response::<UnifiedResponseMessages<()>>(append_tasks_future),
+        )
+        .await;
     }
 
     Ok(())
@@ -381,7 +385,7 @@ async fn pre_run_task(
         .into_iter()
         .collect();
 
-    request_all.await;
+    handle_response::<UnifiedResponseMessages<()>>(request_all).await;
 
     Ok(())
 }
