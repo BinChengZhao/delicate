@@ -4,6 +4,23 @@ pub trait UniformData: Debug + Clone + Serialize {}
 
 impl<T: Debug + Clone + Serialize> UniformData for T {}
 
+pub trait Trial {
+    #[inline(always)]
+    fn get_msg(&self) -> String {
+        Default::default()
+    }
+
+    #[inline(always)]
+    fn is_err(&self) -> bool {
+        false
+    }
+
+    #[inline(always)]
+    fn is_ok(&self) -> bool {
+        true
+    }
+}
+
 /// Uniform public message response format.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UnifiedResponseMessages<T: UniformData> {
@@ -54,16 +71,6 @@ impl<T: UniformData> UnifiedResponseMessages<T> {
     pub fn get_data(self) -> T {
         self.data
     }
-
-    #[inline(always)]
-    pub fn get_msg(&self) -> String {
-        self.msg.clone()
-    }
-
-    #[inline(always)]
-    pub fn is_err(&self) -> bool {
-        self.code != 0
-    }
 }
 
 impl<T: UniformData + Default> UnifiedResponseMessages<T> {
@@ -83,6 +90,23 @@ impl<T: UniformData + Default> UnifiedResponseMessages<T> {
         let msg = String::default();
         let data = T::default();
         UnifiedResponseMessages { code: 0, msg, data }
+    }
+}
+
+impl<T: UniformData> Trial for UnifiedResponseMessages<T> {
+    #[inline(always)]
+    fn get_msg(&self) -> String {
+        self.msg.clone()
+    }
+
+    #[inline(always)]
+    fn is_err(&self) -> bool {
+        self.code != 0
+    }
+
+    #[inline(always)]
+    fn is_ok(&self) -> bool {
+        self.code == 0
     }
 }
 

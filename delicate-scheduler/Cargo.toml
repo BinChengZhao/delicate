@@ -35,6 +35,7 @@ validator = { version = "^0.13", features = ["phone", "derive"] }
 cached = "^0.23.0"
 derive_more = "^0.99.14"
 actix-cors = "^0.5.4"
+awc = { version = "2.0.3", default-features = false }
 delicate-utils = { path = "../delicate-utils" }
 
 [dev-dependencies]

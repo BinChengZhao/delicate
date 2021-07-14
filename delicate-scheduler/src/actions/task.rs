@@ -415,7 +415,7 @@ async fn pre_operate_task(
     .await?
     .into_iter();
 
-    let request_all: JoinAll<_> = executor_packages
+    let request_all: JoinAll<SendClientRequest> = executor_packages
         .filter_map(|(executor_host, executor_token)| {
             let message = delicate_utils_task::TaskUnit::default()
                 .set_task_id(task_id)
@@ -436,39 +436,10 @@ async fn pre_operate_task(
                 .post(executor_host)
                 .send_json(&signed_task_unit)
         })
-        .collect::<Vec<_>>()
+        .collect::<Vec<SendClientRequest>>()
         .into_iter()
         .collect();
 
-    let response_json_all: JoinAll<_> = request_all
-        .await
-        .into_iter()
-        .map(|response| match response {
-            Ok(mut r) => Some(r.json::<UnifiedResponseMessages<()>>()),
-            Err(e) => {
-                error!("{}", e);
-                None
-            }
-        })
-        .filter(|r| r.is_some())
-        .map(|r| r.expect(""))
-        .collect::<Vec<_>>()
-        .into_iter()
-        .collect();
-
-    response_json_all
-        .await
-        .into_iter()
-        .map(|json_result| match json_result {
-            Err(e) => {
-                error!("{}", e);
-            }
-            Ok(json) if json.is_err() => {
-                error!("{}", json.get_msg());
-            }
-            _ => {}
-        })
-        .for_each(drop);
-
+    handle_response::<UnifiedResponseMessages<()>>(request_all).await;
     Ok(())
 }
