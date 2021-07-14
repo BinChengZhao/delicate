@@ -34,18 +34,12 @@ async fn main() -> AnyResut<()> {
     let scheduler_front_end_domain: String = env::var("SCHEDULER_FRONT_END_DOMAIN")
         .expect("Without `SCHEDULER_FRONT_END_DOMAIN` set in .env");
 
-    // a builder for `FmtSubscriber`.
-    let subscriber = FmtSubscriber::builder()
-        // all spans/events with a level higher than TRACE (e.g, debug, info, warn, etc.)
+    FmtSubscriber::builder()
         // will be written to stdout.
         .with_max_level(Level::INFO)
+        .with_thread_names(true)
         // completes the builder.
-        .finish();
-
-    // A simple "logger" that converts all log records into tracing Events.
-    tracing_log::LogTracer::init()?;
-    
-    tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
+        .init();
 
     let delay_timer = DelayTimerBuilder::default().enable_status_report().build();
     let shared_delay_timer = ShareData::new(delay_timer);

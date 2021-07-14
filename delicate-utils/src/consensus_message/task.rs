@@ -121,7 +121,8 @@ pub struct TaskUnit {
     pub time: u64,
 }
 
-#[derive(Clone, Default, Debug, Serialize, Deserialize)]
+#[derive(Clone, Default, Debug, Serialize, Deserialize, Display)]
+#[display(fmt = "task-unit:{} ", task_unit)]
 
 pub struct SignedTaskUnit {
     pub task_unit: TaskUnit,
