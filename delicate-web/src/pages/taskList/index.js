@@ -68,12 +68,11 @@ class Task extends PureComponent {
       centered: true,
       width: 800,
       onOk: (data) => {
+        console.log(`${NAMESPACE}/${modalType}`, data)
         dispatch({ type: `${NAMESPACE}/${modalType}`, payload: data })
       },
       onCancel() {
-        dispatch({
-          type: `${NAMESPACE}/hideModal`
-        })
+        dispatch({ type: `${NAMESPACE}/hideModal` })
       }
     }
   }

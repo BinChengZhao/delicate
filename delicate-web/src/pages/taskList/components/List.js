@@ -71,13 +71,21 @@ class List extends PureComponent {
         title: <Trans>Command</Trans>,
         dataIndex: 'command',
         width: 200,
-        key: 'command'
+        key: 'command',
+        ellipsis: true,
+        render: (text, row) => {
+          return <Tooltip title={row.command}>{text}</Tooltip>
+        }
       },
       {
         title: <Trans>Frequency</Trans>,
         dataIndex: 'frequency',
         width: 300,
-        key: 'frequency'
+        key: 'frequency',
+        ellipsis: true,
+        render: (text, row) => {
+          return <Tooltip title={row.frequency}>{text} </Tooltip>
+        }
       },
       {
         title: <Trans>Cron Expression</Trans>,
