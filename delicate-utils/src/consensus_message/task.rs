@@ -1,13 +1,13 @@
 use crate::prelude::*;
 #[derive(Queryable, Clone, Debug, Default, Serialize, Deserialize, Display)]
 #[display(
-    fmt = "task-id:{} command:{} frequency:{} cron_expression:{} timeout:{} maximun_parallel_runnable_num:{}",
+    fmt = "task-id:{} command:{} frequency:{} cron_expression:{} timeout:{} maximum_parallel_runnable_num:{}",
     id,
     command,
     frequency,
     cron_expression,
     timeout,
-    maximun_parallel_runnable_num
+    maximum_parallel_runnable_num
 )]
 
 pub struct TaskPackage {
@@ -21,8 +21,8 @@ pub struct TaskPackage {
     pub cron_expression: String,
     /// timeout.
     pub timeout: i16,
-    /// Maximum parallel runable num (optional).
-    pub maximun_parallel_runnable_num: i16,
+    /// Maximum parallel runnable num (optional).
+    pub maximum_parallel_runnable_num: i16,
 }
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize)]
@@ -179,7 +179,7 @@ impl TryFrom<TaskPackage> for Task {
             frequency,
             cron_expression,
             timeout,
-            maximun_parallel_runnable_num,
+            maximum_parallel_runnable_num,
             ..
         } = task_package;
 
@@ -196,7 +196,7 @@ impl TryFrom<TaskPackage> for Task {
             .set_task_id(id as u64)
             .set_frequency(frequency)
             .set_maximum_running_time(timeout as u64)
-            .set_maximun_parallel_runable_num(maximun_parallel_runnable_num as u64)
+            .set_maximum_parallel_runnable_num(maximum_parallel_runnable_num as u64)
             .spawn(unblock_process_task_fn(command))?;
 
         Ok(task)

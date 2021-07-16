@@ -17,7 +17,7 @@ pub struct Task {
     pub(crate) timeout: i16,
     pub(crate) retry_times: i16,
     pub(crate) retry_interval: i16,
-    pub(crate) maximun_parallel_runnable_num: i16,
+    pub(crate) maximum_parallel_runnable_num: i16,
     pub(crate) tag: String,
     pub(crate) status: i16,
     pub(crate) created_time: NaiveDateTime,
@@ -35,7 +35,7 @@ pub struct NewTask {
     pub(crate) timeout: i16,
     pub(crate) retry_times: i16,
     pub(crate) retry_interval: i16,
-    pub(crate) maximun_parallel_runnable_num: i16,
+    pub(crate) maximum_parallel_runnable_num: i16,
     pub(crate) tag: String,
 }
 
@@ -54,7 +54,7 @@ pub struct UpdateTask {
     timeout: i16,
     retry_times: i16,
     retry_interval: i16,
-    maximun_parallel_runnable_num: i16,
+    maximum_parallel_runnable_num: i16,
     tag: String,
 }
 

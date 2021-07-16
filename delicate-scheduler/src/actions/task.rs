@@ -205,7 +205,7 @@ pub async fn pre_update_task_sevice(
                 task::frequency,
                 task::cron_expression,
                 task::timeout,
-                task::maximun_parallel_runnable_num,
+                task::maximum_parallel_runnable_num,
             ),
             task::status,
         ))
@@ -357,7 +357,7 @@ async fn pre_run_task(
                         frequency,
                         cron_expression,
                         timeout,
-                        maximun_parallel_runnable_num,
+                        maximum_parallel_runnable_num,
                     ),
                     (host, token),
                 ))
