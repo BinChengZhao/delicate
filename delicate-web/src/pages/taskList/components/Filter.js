@@ -1,8 +1,7 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import moment from 'moment'
 import { t, Trans } from '@lingui/macro'
-import { Button, Col, Form, Input, Row } from 'antd'
+import { Button, Col, Form, Input, Row, Select } from 'antd'
 
 class Filter extends Component {
   formRef = React.createRef()
@@ -62,7 +61,10 @@ class Filter extends Component {
           </Col>
           <Col xl={{ span: 4 }} md={{ span: 8 }}>
             <Form.Item name="status">
-              <Input placeholder={t`Status`} />
+              <Select allowClear placeholder={'状态'}>
+                <Select.Option value={1}>启用</Select.Option>
+                <Select.Option value={2}>未启用</Select.Option>
+              </Select>
             </Form.Item>
           </Col>
           <Col xl={{ span: 4 }} md={{ span: 8 }}>

@@ -3,6 +3,7 @@ import PropTypes from 'prop-types'
 import { Form, Input, InputNumber, Modal, Select, Switch } from 'antd'
 import { t } from '@lingui/macro'
 import { InputCron } from 'react-crons'
+import * as u from '../../../utils/data'
 
 const FormItem = Form.Item
 const Option = Select.Option
@@ -27,24 +28,28 @@ class TaskModal extends PureComponent {
 
   initForms() {
     return {
-      name: '',
-      description: '',
-      command: '',
-      frequency: '{modal:2}',
-      modal: 1,
+      id: null,
+      name: 'demo',
+      description: '一条demo命令',
+      command: 'echo "hello word";',
+      frequency: { extend: "{key:'value'}", modal: 1, time_zone: 1 },
       cron_expression: '* * * * * ?',
-      timeout: '180',
-      retry_times: '180',
-      retry_interval: '3',
-      maximum_parallel_runnable_num: '5',
+      timeout: 180,
+      retry_times: 180,
+      retry_interval: 3,
+      maximum_parallel_runnable_num: 5,
       tag: [],
       bind_id: '',
       status: true // true: 1 启用 ｜ false： 2 未启用
     }
   }
 
-  optionAttr(value) {
-    return { key: value, value }
+  setParams(data) {
+    delete data.bind_id
+    return {
+      task: { ...data },
+      binding_ids: []
+    }
   }
 
   handleOk = () => {
@@ -54,9 +59,12 @@ class TaskModal extends PureComponent {
       .then((values) => {
         const data = {
           ...values,
-          tag: values.tag.join(',')
+          status: values.status ? 1 : 2,
+          tag: values.tag.join(','),
+          frequency: JSON.stringify(values.frequency),
+          cron_expression: values.cron_expression.replaceAll('?', '*') + ' *'
         }
-        onOk(data)
+        onOk(this.setParams(data))
       })
       .catch((errorInfo) => {
         console.log(errorInfo)
@@ -66,54 +74,83 @@ class TaskModal extends PureComponent {
   render() {
     const { onOk, form, ...modalProps } = this.props
     const { forms } = this.state
-    const initValues = modalProps.item ? modalProps.item : forms
-    console.log(initValues)
+    const initValues = !u.isEmpty(modalProps.item) ? modalProps.item : forms
     return (
       <Modal {...modalProps} onOk={this.handleOk}>
         <Form ref={this.formRef} name="control-ref" layout="horizontal" initialValues={initValues}>
-          <FormItem name="name" label={t`Task Name`} rules={[{ required: true }]} hasFeedback {...formItemLayout}>
-            <Input placeholder="查看PHP版本" />
+          <FormItem
+            name="name"
+            label={t`Task Name`}
+            rules={[{ required: true, message: '任务名称必须填写' }]}
+            hasFeedback
+            {...formItemLayout}
+          >
+            <Input placeholder="demo" />
           </FormItem>
           <FormItem
             name="description"
-            rules={[{ required: true }]}
+            rules={[{ required: true, message: '描述必须填写' }]}
             label={t`Description`}
             hasFeedback
             {...formItemLayout}
           >
-            <Input placeholder="这是一条【查看PHP版本号】的命令" />
-          </FormItem>
-          <FormItem name="command" label="命令行" rules={[{ required: true }]} hasFeedback {...formItemLayout}>
-            <Input placeholder="php -v" />
+            <Input placeholder="这是一条【demo】的命令" />
           </FormItem>
           <FormItem
-            name="frequency"
-            label="频率"
-            rules={[{ required: true, message: '扩展字段示例：{count:3}' }]}
+            name="command"
+            label="命令行"
+            rules={[{ required: true, message: '命令行必须填写' }]}
             hasFeedback
             {...formItemLayout}
           >
-            <Input
-              addonBefore={
-                <Select placeholder="模式" defaultValue={forms.modal}>
-                  <Option {...this.optionAttr(1)}>模式1</Option>
-                  <Option {...this.optionAttr(2)}>模式2</Option>
-                </Select>
-              }
-              placeholder="扩展字段示例：{count:3}"
-            />
+            <Input placeholder="echo 'hello word';" />
           </FormItem>
 
+          <FormItem label="频率" hasFeedback {...formItemLayout}>
+            <Input.Group compact {...formItemLayout}>
+              <Form.Item name={['frequency', 'modal']} noStyle rules={[{ required: true, message: '模式必须选择' }]}>
+                <Select placeholder="模式" style={{ width: '25%' }}>
+                  <Option key={1} value={1}>
+                    Once
+                  </Option>
+                  <Option key={2} value={2}>
+                    CountDown
+                  </Option>
+                  <Option key={3} value={3}>
+                    Repeat
+                  </Option>
+                </Select>
+              </Form.Item>
+              <Form.Item name={['frequency', 'extend']} noStyle>
+                <Input style={{ width: '50%' }} placeholder="扩展字段，严格按照k:v格式" />
+              </Form.Item>
+              <Form.Item
+                name={['frequency', 'time_zone']}
+                noStyle
+                rules={[{ required: true, message: '时区必须选择' }]}
+              >
+                <Select placeholder="时区" style={{ width: '25%' }}>
+                  <Option key={1} value={1}>
+                    Local
+                  </Option>
+                  <Option key={2} value={2}>
+                    Utc
+                  </Option>
+                </Select>
+              </Form.Item>
+            </Input.Group>
+          </FormItem>
           <FormItem
             name="cron_expression"
             label="Cron 表达式"
-            rules={[{ required: true }]}
+            rules={[{ required: true, message: '表达式不能为空' }]}
             hasFeedback
             {...formItemLayout}
           >
             <InputCron
+              lang={'zh-Hans-CN'}
               onChange={(v) => console.log(v)}
-              type={['second', 'minute', 'hour', 'day', 'month', 'week', 'year']}
+              type={['second', 'minute', 'hour', 'day', 'month', 'week']}
             />
           </FormItem>
 
@@ -121,7 +158,7 @@ class TaskModal extends PureComponent {
             <Form.Item
               name="timeout"
               label={'超时时间'}
-              rules={[{ required: true }]}
+              rules={[{ required: true, message: '未设置超时时间' }]}
               style={{ display: 'inline-block', width: 'calc(32% - 8px)' }}
             >
               <InputNumber placeholder="单位：秒" min={10} max={10000} />
@@ -129,7 +166,7 @@ class TaskModal extends PureComponent {
             <Form.Item
               name="retry_times"
               label={'重试时间'}
-              rules={[{ required: true }]}
+              rules={[{ required: true, message: '未设置重试时间' }]}
               style={{
                 display: 'inline-block',
                 width: 'calc(32% - 8px)',
@@ -141,7 +178,7 @@ class TaskModal extends PureComponent {
             <Form.Item
               name="retry_interval"
               label={'重试间隔'}
-              rules={[{ required: true }]}
+              rules={[{ required: true, message: '未设置重置间隔' }]}
               style={{
                 display: 'inline-block',
                 width: 'calc(32% - 8px)',
@@ -154,7 +191,7 @@ class TaskModal extends PureComponent {
           <FormItem
             name="maximum_parallel_runnable_num"
             label="单节点最大并行"
-            rules={[{ required: true }]}
+            rules={[{ required: true, message: '未设置最大并行' }]}
             hasFeedback
             {...formItemLayout}
           >

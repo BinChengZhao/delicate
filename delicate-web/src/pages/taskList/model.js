@@ -1,4 +1,5 @@
 import api from '../../services'
+import { message } from 'antd'
 
 const {
   queryTaskList,
@@ -73,27 +74,26 @@ export default {
       if (!data.code) {
         message.success('启动成功')
       }
-    }
-  },
+    },
 
-  *create({ payload }, { call, put }) {
-    console.log(payload)
-    // const data = yield call(taskCreate, payload)
-    // if (!data.code) {
-    //   yield put({ type: 'hideModal' })
-    // } else {
-    //   throw data
-    // }
-  },
+    *create({ payload }, { call, put }) {
+      const data = yield call(taskCreate, payload)
+      if (!data.code) {
+        yield put({ type: 'hideModal' })
+      } else {
+        throw data
+      }
+    },
 
-  *update({ payload }, { select, call, put }) {
-    const id = yield select(({ taskList }) => taskList.currentItem.id)
-    const newUser = { ...payload, id }
-    const data = yield call(taskUpdate, newUser)
-    if (!data.code) {
-      yield put({ type: 'hideModal' })
-    } else {
-      throw data
+    *update({ payload }, { select, call, put }) {
+      const id = yield select(({ taskList }) => taskList.currentItem.id)
+      const newUser = { ...payload, id }
+      const data = yield call(taskUpdate, newUser)
+      if (!data.code) {
+        yield put({ type: 'hideModal' })
+      } else {
+        throw data
+      }
     }
   },
 
