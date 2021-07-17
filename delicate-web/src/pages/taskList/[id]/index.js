@@ -6,13 +6,51 @@ import { connect } from 'umi'
 import PropTypes from 'prop-types'
 
 const { Option } = Select
+const STATUS_LIST = [
+  { key: 1, value: 1, title: '运行中' },
+  { key: 2, value: 2, title: '正常结束' },
+  { key: 3, value: 3, title: '异常结束' },
+  { key: 4, value: 4, title: '超时' },
+  { key: 5, value: 5, title: '手动取消' },
+  { key: 81, value: 81, title: '未知' }
+]
 
-@connect(({ taskList }) => ({ taskList }))
+@connect(({ taskModel, loading }) => ({ taskModel, loading }))
 class TaskLog extends PureComponent {
   formRef = React.createRef()
 
-  optionAttr(value) {
-    return { key: value, value }
+  handleRefresh = (newQuery) => {
+    const { taskModel, dispatch } = this.props
+    const queryWhere = taskModel.logQueryWhere
+    const payload = { ...queryWhere, ...newQuery }
+    dispatch({ type: `taskModel/taskLogList`, payload: payload })
+  }
+
+  handleSubmit() {
+    const { dispatch, location } = this.props
+    const values = this.formRef.current.getFieldsValue()
+    for (const i in values) {
+      values[i] = values[i] === '' ? null : values[i]
+    }
+    const initFlitter = this.initFilter()
+    const taskId = 3
+    dispatch({
+      type: `taskModel/taskLogList`,
+      payload: { ...initFlitter, ...values, task_id: taskId }
+    })
+  }
+
+  handleReset() {
+    const fields = this.formRef.current.getFieldsValue()
+    for (const item in fields) {
+      if ({}.hasOwnProperty.call(fields, item)) fields[item] = undefined
+    }
+    this.formRef.current.setFieldsValue(fields)
+    this.handleSubmit()
+  }
+
+  componentDidMount() {
+    this.handleSubmit()
   }
 
   initFilter() {
@@ -21,25 +59,26 @@ class TaskLog extends PureComponent {
       description: null,
       command: null,
       tag: null,
-      task_id: null,
-      id: null,
       status: null,
       executor_processor_id: null,
+      start_time: null,
+      end_time: null,
       per_page: 10,
       page: 1
     }
   }
 
   render() {
-    const { location } = this.props
+    const { location, taskModel, loading } = this.props
     const { state } = location
-
+    const { logSource, logPagination } = taskModel
+    console.log(logSource)
     const columns = [
       {
         title: <Trans>Sn</Trans>,
         dataIndex: 'id',
         key: 'id',
-        width: 70,
+        width: 200,
         fixed: 'left'
       },
       {
@@ -61,6 +100,33 @@ class TaskLog extends PureComponent {
         dataIndex: 'command',
         width: 200,
         key: 'command'
+      },
+      {
+        title: '状态',
+        dataIndex: 'status',
+        key: 'status',
+        render: (text) => {
+          const item = STATUS_LIST.find((i) => i.key === text)
+          return `${text}: ${item.title}`
+        }
+      },
+      {
+        title: '表达式',
+        dataIndex: 'cron_expression',
+        width: 200,
+        key: 'cron_expression'
+      },
+      {
+        title: '最大并行运行数',
+        dataIndex: 'maximum_parallel_runnable_num',
+        width: 200,
+        key: 'maximum_parallel_runnable_num'
+      },
+      {
+        title: <Trans>Frequency</Trans>,
+        dataIndex: 'frequency',
+        width: 200,
+        key: 'frequency'
       },
       {
         title: <Trans>Task Id</Trans>,
@@ -102,13 +168,10 @@ class TaskLog extends PureComponent {
             </Col>
             <Col xl={{ span: 4 }} md={{ span: 8 }}>
               <Form.Item name="status">
-                <Select placeholder={'状态'}>
-                  <Option {...this.optionAttr(1)}>{'运行中'}</Option>
-                  <Option {...this.optionAttr(2)}>{'正常结束'}</Option>
-                  <Option {...this.optionAttr(3)}>{'异常结束'}</Option>
-                  <Option {...this.optionAttr(4)}>{'超时'}</Option>
-                  <Option {...this.optionAttr(5)}>{'手动取消'}</Option>
-                  <Option {...this.optionAttr(81)}>{'未知'}</Option>
+                <Select allowClear placeholder={'状态'}>
+                  {STATUS_LIST.map((item) => {
+                    return <Option {...item}>{item.title}</Option>
+                  })}
                 </Select>
               </Form.Item>
             </Col>
@@ -117,7 +180,7 @@ class TaskLog extends PureComponent {
                 <Input placeholder="执行器处理器 ID" />
               </Form.Item>
             </Col>
-            <Button type="primary" htmlType="submit" className="margin-right">
+            <Button type="primary" htmlType="submit" className="margin-right" onClick={() => this.handleSubmit()}>
               <Trans>Search</Trans>
             </Button>
             <Button className="margin-right">
@@ -126,7 +189,24 @@ class TaskLog extends PureComponent {
           </Row>
         </Form>
 
-        <Table columns={columns} simple rowKey={(record) => record.id} />
+        <Table
+          size={'small'}
+          columns={columns}
+          dataSource={logSource}
+          scroll={{ x: 1800 }}
+          loading={loading.effects[`taskModel/taskLogList`]}
+          pagination={{
+            ...logPagination,
+            onChange: (page, pageSize) => {
+              this.handleRefresh({
+                page: page,
+                per_page: pageSize
+              })
+            }
+          }}
+          simple
+          rowKey={(record) => record.id}
+        />
       </Page>
     )
   }

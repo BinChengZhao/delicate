@@ -6,15 +6,24 @@ import { CheckCircleOutlined, DownOutlined, StopOutlined } from '@ant-design/ico
 import PropTypes from 'prop-types'
 import { Link } from 'umi'
 
-const STATUS_ENABLE = 1 // 启用
+const STATUS_ENABLE = 2 // 启用
 
 class List extends PureComponent {
   menu(row) {
+    const { onTaskRun, onTaskSuspend } = this.props
+
     return (
       <Menu>
-        <Menu.Item disabled={row.status === STATUS_ENABLE}>启用任务</Menu.Item>
-        <Menu.Item disabled={row.status !== STATUS_ENABLE}>立即执行</Menu.Item>
-        <Menu.Item>
+        <Menu.Item key={1} onClick={() => onTaskRun(row.id)} disabled={row.status === STATUS_ENABLE}>
+          启用任务
+        </Menu.Item>
+        <Menu.Item key={2} onClick={() => onTaskSuspend(row.id)} disabled={row.status !== STATUS_ENABLE}>
+          暂停任务
+        </Menu.Item>
+        <Menu.Item key={3} disabled={row.status !== STATUS_ENABLE}>
+          立即执行
+        </Menu.Item>
+        <Menu.Item key={4}>
           <Link
             to={{
               pathname: `taskList/${row.id}`,
@@ -24,8 +33,10 @@ class List extends PureComponent {
             查看日志
           </Link>
         </Menu.Item>
-        <Menu.Item>复制任务</Menu.Item>
-        <Menu.Item danger>删除任务</Menu.Item>
+        <Menu.Item key={5}>复制任务</Menu.Item>
+        <Menu.Item key={6} danger>
+          删除任务
+        </Menu.Item>
       </Menu>
     )
   }
@@ -71,13 +82,21 @@ class List extends PureComponent {
         title: <Trans>Command</Trans>,
         dataIndex: 'command',
         width: 200,
-        key: 'command'
+        key: 'command',
+        ellipsis: true,
+        render: (text, row) => {
+          return <Tooltip title={row.command}>{text}</Tooltip>
+        }
       },
       {
         title: <Trans>Frequency</Trans>,
         dataIndex: 'frequency',
         width: 300,
-        key: 'frequency'
+        key: 'frequency',
+        ellipsis: true,
+        render: (text, row) => {
+          return <Tooltip title={row.frequency}>{text} </Tooltip>
+        }
       },
       {
         title: <Trans>Cron Expression</Trans>,
@@ -132,7 +151,7 @@ class List extends PureComponent {
         fixed: 'right',
         render: (text, row) => (
           <Space split={'|'}>
-            <a type={'link'} onClick={onEditItem}>
+            <a type={'link'} onClick={() => onEditItem(row)}>
               编辑
             </a>
             <Dropdown overlay={this.menu(row)}>
@@ -165,6 +184,8 @@ class List extends PureComponent {
 List.propTypes = {
   onDeleteItem: PropTypes.func,
   onEditItem: PropTypes.func,
+  onTaskRun: PropTypes.func,
+  onTaskSuspend: PropTypes.func,
   location: PropTypes.object
 }
 

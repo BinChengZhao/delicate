@@ -1,12 +1,10 @@
-import modelExtend from 'dva-model-extend'
 import api from '../../services'
-import { model } from '../../utils/model'
 
 const { pathToRegexp } = require('path-to-regexp')
 
 const { dashboard } = api
 
-export default modelExtend(model, {
+export default {
   namespace: 'dashboard',
   state: {
     taskStatusEChart: {}
@@ -26,11 +24,15 @@ export default modelExtend(model, {
       if (!data.code) {
         yield put({
           type: 'updateState',
-          payload: {
-            taskStatusEChart: data.data
-          }
+          payload: { taskStatusEChart: data.data }
         })
       }
     }
+  },
+
+  reducers: {
+    updateState(state, { payload }) {
+      return { ...state, ...payload }
+    }
   }
-})
+}

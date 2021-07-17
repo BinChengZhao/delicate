@@ -1,38 +1,32 @@
 import React, { PureComponent } from 'react'
 import * as echarts from 'echarts'
 
-import PropTypes, { instanceOf } from 'prop-types'
+import PropTypes from 'prop-types'
 import { connect } from 'umi'
 import { Page } from 'components'
 import styles from './index.less'
 import { Card } from 'antd'
 
-@connect(({ app, dashboard, loading }) => ({
+@connect(({ dashboard, loading }) => ({
   dashboard,
   loading
 }))
 class Dashboard extends PureComponent {
-  componentDidMount() {
+  initEChart() {
     const { dashboard } = this.props
     const { taskStatusEChart } = dashboard
-    console.log(taskStatusEChart)
-    const legend = Object.keys(taskStatusEChart)
+    const legend = []
 
-    const hourContainer = []
-    for (let i = 0; i < 24; i++) {
-      hourContainer.push(i + '时')
-    }
-
+    const hourContainer = taskStatusEChart.hours_range || []
     const series = []
 
     for (const taskName in taskStatusEChart) {
-      if (taskStatusEChart.hasOwnProperty(taskName)) {
+      if (taskStatusEChart.hasOwnProperty(taskName) && taskName !== 'hours_range') {
         series.push({
           name: taskName,
           type: 'line',
           stack: '总量',
           label: {
-            show: true,
             position: 'top'
           },
           areaStyle: {},
@@ -43,6 +37,10 @@ class Dashboard extends PureComponent {
         })
       }
     }
+
+    series.filter((e) => {
+      legend.push(e.name)
+    })
 
     const chartDom = document.getElementById('main')
     const myChart = echarts.init(chartDom)
@@ -91,6 +89,13 @@ class Dashboard extends PureComponent {
     }
 
     option && myChart.setOption(option)
+  }
+
+  shouldComponentUpdate(nextProps, nextState, nextContext) {
+    const { dashboard } = nextProps
+    const { taskStatusEChart } = dashboard
+    taskStatusEChart && this.initEChart()
+    return true
   }
 
   render() {

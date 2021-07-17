@@ -1,17 +1,46 @@
-import taskModel from 'dva-model-extend'
 import api from '../../services'
-import { pageModel } from '../../utils/model'
+import { message } from 'antd'
 
-const { queryTaskList, createUser, removeUser, updateUser, removeUserList } = api
+const {
+  queryTaskList,
+  taskAdvance,
+  taskCreate,
+  taskUpdate,
+  taskDelete,
+  taskRun,
+  taskSuspend,
+  taskLogList,
+  taskLogEvent,
+  taskLogDetail,
+  taskKill
+} = api
 
-export default taskModel(pageModel, {
-  namespace: 'taskList',
+export default {
+  namespace: 'taskModel',
 
   state: {
+    dataSource: [],
+    pagination: {
+      showSizeChanger: true,
+      showQuickJumper: true,
+      current: 1,
+      total: 0,
+      pageSize: 10
+    },
+    logSource: [],
+    logPagination: {
+      showSizeChanger: true,
+      showQuickJumper: true,
+      current: 1,
+      total: 0,
+      pageSize: 10
+    },
     currentItem: {},
+    currentLog: {},
     modalVisible: false,
     modalType: 'create',
-    selectedRowKeys: []
+    queryWhere: {},
+    logQueryWhere: {}
   },
 
   subscriptions: {
@@ -23,55 +52,73 @@ export default taskModel(pageModel, {
   effects: {
     *query({ payload = {} }, { call, put }) {
       const data = yield call(queryTaskList, payload)
-      if (data) {
+      if (!data.code) {
         yield put({
-          type: 'changeTaskList',
+          type: 'updateState',
           payload: {
             dataSource: data.data.dataSource,
-            pagination: data.data.pagination
+            pagination: data.data.pagination,
+            queryWhere: payload
+          }
+        })
+      }
+    },
+
+    *taskLogList({ payload = {} }, { call, put }) {
+      const data = yield call(taskLogList, payload)
+      if (!data.code) {
+        yield put({
+          type: 'updateState',
+          payload: {
+            logSource: data.data.dataSource,
+            logPagination: data.data.pagination,
+            logQueryWhere: payload
           }
         })
       }
     },
 
     *delete({ payload }, { call, put, select }) {
-      const data = yield call(removeUser, { id: payload })
-      const { selectedRowKeys } = yield select((_) => _.user)
-      if (data.success) {
-        yield put({
-          type: 'updateState',
-          payload: {
-            selectedRowKeys: selectedRowKeys.filter((_) => _ !== payload)
-          }
-        })
-      } else {
-        throw data
+      console.log(payload)
+      // const data = yield call(taskDelete, payload)
+      // if (!data.code) {
+      //   message.success('删除成功')
+      // }
+    },
+
+    *onTaskAdvance({ payload }, { call, put }) {
+      const data = yield call(taskAdvance, payload)
+      if (!data.code) {
+        message.success('执行成功')
       }
     },
 
-    *multiDelete({ payload }, { call, put }) {
-      const data = yield call(removeUserList, payload)
-      if (data.success) {
-        yield put({ type: 'updateState', payload: { selectedRowKeys: [] } })
-      } else {
-        throw data
+    *onTaskRun({ payload }, { call, put }) {
+      const data = yield call(taskRun, payload)
+      if (!data.code) {
+        message.success('启动成功')
+      }
+    },
+
+    *onTaskSuspend({ payload }, { call, put }) {
+      const data = yield call(taskSuspend, payload)
+      if (!data.code) {
+        message.warning('任务已暂停')
       }
     },
 
     *create({ payload }, { call, put }) {
-      const data = yield call(createUser, payload)
-      if (data.success) {
+      const data = yield call(taskCreate, payload)
+      if (!data.code) {
         yield put({ type: 'hideModal' })
       } else {
         throw data
       }
     },
 
-    *update({ payload }, { select, call, put }) {
-      const id = yield select(({ taskList }) => taskList.currentItem.id)
-      const newUser = { ...payload, id }
-      const data = yield call(updateUser, newUser)
-      if (data.success) {
+    *update({ payload }, { call, put }) {
+      const data = yield call(taskUpdate, payload)
+      if (!data.code) {
         yield put({ type: 'hideModal' })
       } else {
         throw data
@@ -83,13 +130,11 @@ export default taskModel(pageModel, {
     showModal(state, { payload }) {
       return { ...state, ...payload, modalVisible: true }
     },
-
     hideModal(state) {
       return { ...state, modalVisible: false }
     },
-
-    changeTaskList(state, { payload }) {
+    updateState(state, { payload }) {
       return { ...state, ...payload }
     }
   }
-})
+}
