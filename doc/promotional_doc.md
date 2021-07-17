@@ -1,26 +1,57 @@
-The Delicate ** *** **  is officially available!
+[delicate](https://github.com/BinChengZhao/delicate) A lightweight and distributed task scheduling platform written in rust.
 
 //TODO: there is features and pictures.
 //TODO: 1.Introduction (repo address) 2.Function 3.Technology stack 4.roadmap 5.Thanks (repo address).
 
+<a href="">
+    <img src="https://github.com/BinChengZhao/delicate/blob/main/doc/delicate_logo.png"
+         alt="delicate logo" title="delicate" height="125" width="125"  align="right"/>
+</a>
 
-What's next#
-At the beginning of this year, we announced our 2021 roadmap for Delicate. So far we implemented and released all the features that were announced to be available in February. So we will continue to follow this roadmap with the following objectives for next month:
+## Features
+- **Friendly UI:** [Front-end] Convenient management of tasks & executors, monitoring their status and supporting manual maintenance etc.
 
-Add the support of contact modification in Delicate. This will allow you to easily simulate, e.g., conveyor belts and one-way platforms.
-Add the support for dominance in Delicate. This will make some object (typically the player modeled as a dynamic body) immune to forces applied by a selection of other objects.
-These two features should actually be fairly quick to implement considering we already made some modifications to prepare for this future work. Therefore, we have a few more objective for next month:
+- **Flexible Operations:** Flexible task operations, support for limiting the maximum number of parallelism in a single node, time zone settings corresponding to cron expressions, scheduling modes (single, fixed number, constantly repeating), the ability to manually trigger tasks at any time, manually terminate task instances, and view task logs online.
 
-Improve the user-guides of Delicate and make a user-guide for Delicate.
+- **High Availability:**  Delicate supports unlimited horizontal expansion. It's easy to achieve high availability and performance by deploying as many Delicate servers and executors.
 
+- **High Performance:** Lightweight and essential features speed up the performance, The basic resource overhead for `delicate` is roughly (less than 0.1% cpu usage, with about 10m of memory.)
+
+- **Observability:**  There are many meaningful statistics periodically in a readable way.
+
+- **Upgrade:**  Dynamic upgrade of the system (upgrade is done by obtaining the latest source code and performing database migration.
+
+
+![architecture](https://github.com/BinChengZhao/delicate/blob/main/doc/architecture.svg)
+
+## Technology-stack
+
+Backend: Rust  
+main-dependencies: (actix-web & diesel & delay-timer & serde & tracing)
+
+Front-end: React.js
+
+Ui: Ant Design
+
+Database: mysql , postgres (plan support)
+
+
+[Quick-start](https://github.com/BinChengZhao/delicate/blob/main/doc/quick_start.md)
+
+
+
+## What's next#
+At the this year, we announced our 2021 roadmap for Delicate. So we will continue to follow this roadmap.
+
+[Roadmap](https://github.com/BinChengZhao/delicate/blob/main/doc/Roadmap.md)
+
+## Thanks
 
 Thank you!
-The whole team working on Delicate has had a ton of support , from our wonderful technical reviewers to the early readers and folks who suggested changes and new topics throughout development. Thank you to everyone who has looked over early drafts or early access editions and helped us make this edition the very best it could be.
 
-
-We would like to thank the whole community and code contributors. In particular, thanks to the code contributors from the past two months1:
-"TODO:*****"
+We would like to thank the whole community and code contributors. In particular, thanks to the code contributors from the past two months:
+[Walker-os](https://github.com/Walker-os)
 
 
 Thanks to users reporting spelling mistakes on the documentation. This is always appreciated.
-Thanks to users joining us on our "TODO:*****" provide feedbacks, discuss features, and get assistance!
+Thanks to users joining us provide feedbacks, discuss features, and get assistance!
