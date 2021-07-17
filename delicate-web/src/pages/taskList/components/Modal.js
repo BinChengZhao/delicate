@@ -40,7 +40,7 @@ class TaskModal extends PureComponent {
       maximum_parallel_runnable_num: 5,
       tag: [],
       bind_id: '',
-      status: true // true: 1 启用 ｜ false： 2 未启用
+      status: 2 // true: 2 启用 ｜ false： 1 未启用
     }
   }
 
@@ -59,7 +59,7 @@ class TaskModal extends PureComponent {
       .then((values) => {
         const data = {
           ...values,
-          status: values.status ? 1 : 2,
+          ...item,
           tag: values.tag.join(','),
           frequency: JSON.stringify(values.frequency),
           cron_expression: values.cron_expression.replaceAll('?', '*') + ' *'
@@ -202,9 +202,6 @@ class TaskModal extends PureComponent {
           </FormItem>
           <FormItem name="bind_id" label="组ID" hasFeedback {...formItemLayout}>
             <Input placeholder="Please input" />
-          </FormItem>
-          <FormItem name="status" label="是否启用" valuePropName="checked" hasFeedback {...formItemLayout}>
-            <Switch checkedChildren="Yes" unCheckedChildren="No" defaultChecked />
           </FormItem>
         </Form>
       </Modal>

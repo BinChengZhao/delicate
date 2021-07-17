@@ -2,6 +2,7 @@ import React, { PureComponent } from 'react'
 import { connect } from 'dva'
 import { Page } from '../../components'
 import PropTypes from 'prop-types'
+import _ from 'lodash'
 
 import Filter from './components/Filter'
 import List from './components/List'
@@ -44,15 +45,14 @@ class Task extends PureComponent {
     let title = ''
     switch (modalType) {
       case 'create':
-        title = '创建执行器'
+        title = '创建任务'
         break
       case 'copy':
-        title = '复制执行器'
-        item = { ...currentItem, id: null, tag: currentItem.tag.split(',') }
+        title = '复制任务'
         break
       case 'update':
         title = '编辑执行器'
-        item = item = { ...currentItem, tag: currentItem.tag.split(',') }
+        item = currentItem
         break
     }
     modalType = modalType === 'copy' ? 'create' : modalType
@@ -67,13 +67,8 @@ class Task extends PureComponent {
       title: title,
       centered: true,
       width: 800,
-      onOk: (data) => {
-        console.log(`${NAMESPACE}/${modalType}`, data)
-        dispatch({ type: `${NAMESPACE}/${modalType}`, payload: data })
-      },
-      onCancel() {
-        dispatch({ type: `${NAMESPACE}/hideModal` })
-      }
+      onOk: (data) => dispatch({ type: `${NAMESPACE}/${modalType}`, payload: data }).then(() => this.handleRefresh()),
+      onCancel: () => dispatch({ type: `${NAMESPACE}/hideModal` })
     }
   }
 
@@ -94,15 +89,28 @@ class Task extends PureComponent {
         dispatch({
           type: `${NAMESPACE}/delete`,
           payload: { executor_processor_id: id }
-        }).then(() => {
-          this.handleRefresh()
-        })
+        }).then(() => this.handleRefresh())
       },
-      onEditItem(item) {
+      onEditItem: (item) => {
+        const frequency = JSON.parse(item.frequency)
+        const status = item.status ? 2 : 1
+        const tag = _.isEmpty(item.tag) ? [] : item.tag.split(',')
         dispatch({
           type: `${NAMESPACE}/showModal`,
-          payload: { modalType: 'update', currentItem: item }
+          payload: { modalType: 'update', currentItem: { ...item, frequency, status, tag } }
         })
+      },
+      onTaskRun: (id) => {
+        dispatch({
+          type: `${NAMESPACE}/onTaskRun`,
+          payload: { task_id: id }
+        }).then(() => this.handleRefresh())
+      },
+      onTaskSuspend: (id) => {
+        dispatch({
+          type: `${NAMESPACE}/onTaskSuspend`,
+          payload: { task_id: id }
+        }).then(() => this.handleRefresh())
       }
     }
   }

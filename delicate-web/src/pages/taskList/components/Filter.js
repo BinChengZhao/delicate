@@ -62,8 +62,8 @@ class Filter extends Component {
           <Col xl={{ span: 4 }} md={{ span: 8 }}>
             <Form.Item name="status">
               <Select allowClear placeholder={'状态'}>
-                <Select.Option value={1}>启用</Select.Option>
-                <Select.Option value={2}>未启用</Select.Option>
+                <Select.Option value={2}>启用</Select.Option>
+                <Select.Option value={1}>未启用</Select.Option>
               </Select>
             </Form.Item>
           </Col>
