@@ -1,6 +1,7 @@
 use crate::prelude::*;
 
-#[derive(Copy, Clone, Default, Debug, Serialize, Deserialize)]
+#[derive(Copy, Clone, Default, Debug, Serialize, Deserialize, Display)]
+#[display(fmt = "task-id:{} record-id:{} time:{}", task_id, record_id, time)]
 
 pub struct CancelTaskRecord {
     pub task_id: i64,
@@ -8,7 +9,8 @@ pub struct CancelTaskRecord {
     pub time: u64,
 }
 
-#[derive(Clone, Default, Debug, Serialize, Deserialize)]
+#[derive(Clone, Default, Debug, Serialize, Deserialize, Display)]
+#[display(fmt = "cancel-task-record:{} ", cancel_task_record)]
 
 pub struct SignedCancelTaskRecord {
     cancel_task_record: CancelTaskRecord,

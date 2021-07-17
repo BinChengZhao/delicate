@@ -137,7 +137,7 @@ When there are hundreds of tasks associated with a certain `Executor Processor B
 | command | string                                            | Task's id       | Yes       |
 | frequency | string                                            | Task's frequency (snapshot)       | Yes       |
 | cron_expression | string                                            | Task's cron_expression (snapshot)      | Yes       |
-| maximun_parallel_runnable_num | int                                            | Task 'smaximun_parallel_runnable_num (snapshot)       | Yes       |
+| maximum_parallel_runnable_num | int                                            | Task 'smaximum_parallel_runnable_num (snapshot)       | Yes       |
 | tag | string                                            | Task's tag (snapshot)       | Yes       |
 | status | int                                            | Task's Status Included(Running = 1,Finished = 2,AbnormalEnding = 3,TimeoutEnding = 4,TmanualCancellation = 5,Unknown = 81)       | Yes       |
 | created_time | datetime                                            | Task Instance creation time       | Yes       |

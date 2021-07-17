@@ -34,15 +34,12 @@ async fn main() -> AnyResut<()> {
     let scheduler_front_end_domain: String = env::var("SCHEDULER_FRONT_END_DOMAIN")
         .expect("Without `SCHEDULER_FRONT_END_DOMAIN` set in .env");
 
-    let logger = Logger::with_str("info")
-        .log_target(LogTarget::File)
-        .buffer_and_flush()
-        .rotate(
-            Criterion::Age(Age::Day),
-            Naming::Timestamps,
-            Cleanup::KeepLogFiles(10),
-        )
-        .start()?;
+    FmtSubscriber::builder()
+        // will be written to stdout.
+        .with_max_level(Level::INFO)
+        .with_thread_names(true)
+        // completes the builder.
+        .init();
 
     let delay_timer = DelayTimerBuilder::default().enable_status_report().build();
     let shared_delay_timer = ShareData::new(delay_timer);
@@ -81,7 +78,5 @@ async fn main() -> AnyResut<()> {
     .run()
     .await;
 
-    // Finish processing the buffer log first, then process the result.
-    logger.shutdown();
     Ok(result?)
 }

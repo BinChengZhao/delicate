@@ -97,7 +97,7 @@ async fn pre_update_executor_processor_bind(
                         task::frequency,
                         task::cron_expression,
                         task::timeout,
-                        task::maximun_parallel_runnable_num,
+                        task::maximum_parallel_runnable_num,
                     ),
                     (executor_processor::host, executor_processor::token),
                 ))

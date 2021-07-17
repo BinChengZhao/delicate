@@ -74,6 +74,8 @@ pub async fn pre_remove_task(
     shared_delay_timer: SharedDelayTimer,
     executor_conf: SharedExecutorSecurityConf,
 ) -> Result<(), CommonError> {
+    info!("pre_remove_task: {}", &signed_task_unit);
+
     let guard = executor_conf.get_bind_scheduler_token_ref().await;
     let token = guard.as_ref().map(|s| s.deref());
     let task_unit = signed_task_unit.get_task_unit_after_verify(token)?;
@@ -98,6 +100,7 @@ pub async fn pre_advance_task(
     shared_delay_timer: SharedDelayTimer,
     executor_conf: SharedExecutorSecurityConf,
 ) -> Result<(), CommonError> {
+    info!("pre_advance_task: {}", &signed_task_unit);
     let guard = executor_conf.get_bind_scheduler_token_ref().await;
     let token = guard.as_ref().map(|s| s.deref());
     let task_unit = signed_task_unit.get_task_unit_after_verify(token)?;
@@ -122,6 +125,8 @@ pub async fn pre_cancel_task(
     shared_delay_timer: SharedDelayTimer,
     executor_conf: SharedExecutorSecurityConf,
 ) -> Result<(), CommonError> {
+    info!("pre_cancel_task: {}", &signed_cancel_task_record);
+
     let guard = executor_conf.get_bind_scheduler_token_ref().await;
     let token = guard.as_ref().map(|s| s.deref());
     let cancel_task_record =
@@ -197,15 +202,12 @@ async fn main() -> AnyResult<()> {
     // Loads environment variables.
     dotenv().ok();
 
-    let logger = Logger::with_str("info")
-        .log_target(LogTarget::File)
-        .buffer_and_flush()
-        .rotate(
-            Criterion::Age(Age::Day),
-            Naming::Timestamps,
-            Cleanup::KeepLogFiles(10),
-        )
-        .start()?;
+    FmtSubscriber::builder()
+        // will be written to stdout.
+        .with_max_level(Level::INFO)
+        .with_thread_names(true)
+        // completes the builder.
+        .init();
 
     let shared_security_conf: SharedExecutorSecurityConf =
         ShareData::new(ExecutorSecurityConf::default());
@@ -227,6 +229,7 @@ async fn main() -> AnyResult<()> {
             .app_data(shared_delay_timer.clone())
             .app_data(shared_security_conf.clone())
             .app_data(shared_system_mirror.clone())
+            .wrap(MiddlewareLogger::default())
     })
     .bind(
         env::var("EXECUTOR_LISTENING_ADDRESS")
@@ -234,8 +237,6 @@ async fn main() -> AnyResult<()> {
     )?
     .run()
     .await?;
-
-    logger.shutdown();
 
     Ok(())
 }

@@ -12,10 +12,7 @@ pub(crate) fn config(cfg: &mut web::ServiceConfig) {
 
 #[post("/api/task/create")]
 async fn create_task(
-    web::Json(model::NewTaskBody {
-        new_task,
-        binding_ids,
-    }): web::Json<model::NewTaskBody>,
+    web::Json(model::NewTaskBody { task, binding_ids }): web::Json<model::NewTaskBody>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
     use db::schema::{task, task_bind};
@@ -24,7 +21,7 @@ async fn create_task(
         return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
             web::block::<_, _, diesel::result::Error>(move || {
                 diesel::insert_into(task::table)
-                    .values(&new_task)
+                    .values(&task)
                     .execute(&conn)?;
                 let task_id = diesel::select(db::last_insert_id).get_result::<u64>(&conn)? as i64;
 
@@ -208,7 +205,7 @@ pub async fn pre_update_task_sevice(
                 task::frequency,
                 task::cron_expression,
                 task::timeout,
-                task::maximun_parallel_runnable_num,
+                task::maximum_parallel_runnable_num,
             ),
             task::status,
         ))
@@ -263,7 +260,11 @@ pub async fn pre_update_task_sevice(
             .into_iter()
             .collect();
 
-        join(remove_tasks_future, append_tasks_future).await;
+        join(
+            handle_response::<UnifiedResponseMessages<()>>(remove_tasks_future),
+            handle_response::<UnifiedResponseMessages<()>>(append_tasks_future),
+        )
+        .await;
     }
 
     Ok(())
@@ -306,6 +307,8 @@ async fn suspend_task(
     web::Json(model::TaskId { task_id }): web::Json<model::TaskId>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
+    let _span_ = span!(Level::INFO, "Suspend", task_id).entered();
+
     let result: UnifiedResponseMessages<()> =
         Into::into(pre_operate_task(pool.clone(), (task_id, "/api/task/remove", "Suspend")).await);
 
@@ -317,6 +320,8 @@ async fn advance_task(
     web::Json(model::TaskId { task_id }): web::Json<model::TaskId>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
+    let _span_ = span!(Level::INFO, "Advance", task_id).entered();
+
     let result: UnifiedResponseMessages<()> =
         Into::into(pre_operate_task(pool, (task_id, "/api/task/advance", "Advance")).await);
 
@@ -352,7 +357,7 @@ async fn pre_run_task(
                         frequency,
                         cron_expression,
                         timeout,
-                        maximun_parallel_runnable_num,
+                        maximum_parallel_runnable_num,
                     ),
                     (host, token),
                 ))
@@ -380,7 +385,7 @@ async fn pre_run_task(
         .into_iter()
         .collect();
 
-    request_all.await;
+    handle_response::<UnifiedResponseMessages<()>>(request_all).await;
 
     Ok(())
 }
@@ -414,7 +419,7 @@ async fn pre_operate_task(
     .await?
     .into_iter();
 
-    let request_all: JoinAll<_> = executor_packages
+    let request_all: JoinAll<SendClientRequest> = executor_packages
         .filter_map(|(executor_host, executor_token)| {
             let message = delicate_utils_task::TaskUnit::default()
                 .set_task_id(task_id)
@@ -429,14 +434,16 @@ async fn pre_operate_task(
                 .ok()
         })
         .map(|(signed_task_unit, executor_host)| {
-            RequestClient::default()
+            RequestClient::builder()
+                .timeout(Duration::from_secs(15))
+                .finish()
                 .post(executor_host)
                 .send_json(&signed_task_unit)
         })
-        .collect::<Vec<_>>()
+        .collect::<Vec<SendClientRequest>>()
         .into_iter()
         .collect();
-    request_all.await;
 
+    handle_response::<UnifiedResponseMessages<()>>(request_all).await;
     Ok(())
 }

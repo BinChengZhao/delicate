@@ -17,7 +17,7 @@ pub struct Task {
     pub(crate) timeout: i16,
     pub(crate) retry_times: i16,
     pub(crate) retry_interval: i16,
-    pub(crate) maximun_parallel_runnable_num: i16,
+    pub(crate) maximum_parallel_runnable_num: i16,
     pub(crate) tag: String,
     pub(crate) status: i16,
     pub(crate) created_time: NaiveDateTime,
@@ -35,7 +35,7 @@ pub struct NewTask {
     pub(crate) timeout: i16,
     pub(crate) retry_times: i16,
     pub(crate) retry_interval: i16,
-    pub(crate) maximun_parallel_runnable_num: i16,
+    pub(crate) maximum_parallel_runnable_num: i16,
     pub(crate) tag: String,
 }
 
@@ -54,7 +54,7 @@ pub struct UpdateTask {
     timeout: i16,
     retry_times: i16,
     retry_interval: i16,
-    maximun_parallel_runnable_num: i16,
+    maximum_parallel_runnable_num: i16,
     tag: String,
 }
 
@@ -66,7 +66,7 @@ pub struct TaskId {
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct NewTaskBody {
-    pub(crate) new_task: NewTask,
+    pub(crate) task: NewTask,
     pub(crate) binding_ids: Vec<i64>,
 }
 
@@ -130,8 +130,6 @@ impl QueryParamsTask {
         self,
         mut statement_builder: task::BoxedQuery<'static, Mysql, ST>,
     ) -> task::BoxedQuery<'static, Mysql, ST> {
-        statement_builder = statement_builder.filter(task::status.ne(2));
-        // Maybe status 2 eq task-deleted status.
 
         if let Some(task_id) = self.id {
             statement_builder = statement_builder.filter(task::id.eq(task_id));

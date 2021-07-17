@@ -112,7 +112,7 @@ pub struct TaskLog {
     command: String,
     frequency: String,
     cron_expression: String,
-    maximun_parallel_runnable_num: i16,
+    maximum_parallel_runnable_num: i16,
     tag: String,
     status: i16,
     created_time: NaiveDateTime,
@@ -145,7 +145,7 @@ pub struct NewTaskLog {
     pub(crate) command: String,
     pub(crate) frequency: String,
     pub(crate) cron_expression: String,
-    pub(crate) maximun_parallel_runnable_num: i16,
+    pub(crate) maximum_parallel_runnable_num: i16,
     pub(crate) tag: String,
     status: i16,
     executor_processor_id: i64,
@@ -206,8 +206,6 @@ impl QueryParamsTaskLog {
         self,
         mut statement_builder: task_log::BoxedQuery<'static, Mysql, ST>,
     ) -> task_log::BoxedQuery<'static, Mysql, ST> {
-        statement_builder = statement_builder.filter(task_log::status.ne(2));
-        // Maybe status 2 eq task_log-deleted status.
 
         if let Some(task_id) = self.task_id {
             statement_builder = statement_builder.filter(task_log::task_id.eq(task_id));

@@ -1,4 +1,9 @@
-# English | [简体中文](./README_zhCN.md)
+# Delicate   
+[![Build](https://github.com/BinChengZhao/delicate/workflows/CI/badge.svg)](
+https://github.com/BinChengZhao/delicate/actions)
+[![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](
+https://github.com/BinChengZhao/delicate)
+## English | [简体中文](./README_zhCN.md)
 
 - [delicate](#delicate)
   - [What is delicate](#what-is-delicate)
