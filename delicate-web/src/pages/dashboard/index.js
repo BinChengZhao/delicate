@@ -15,23 +15,18 @@ class Dashboard extends PureComponent {
   initEChart() {
     const { dashboard } = this.props
     const { taskStatusEChart } = dashboard
-    const legend = Object.keys(taskStatusEChart)
+    const legend = []
 
-    const hourContainer = []
-    for (let i = 0; i < 24; i++) {
-      hourContainer.push(i + '时')
-    }
-
+    const hourContainer = taskStatusEChart.hours_range || []
     const series = []
 
     for (const taskName in taskStatusEChart) {
-      if (taskStatusEChart.hasOwnProperty(taskName)) {
+      if (taskStatusEChart.hasOwnProperty(taskName) && taskName !== 'hours_range') {
         series.push({
           name: taskName,
           type: 'line',
           stack: '总量',
           label: {
-            show: true,
             position: 'top'
           },
           areaStyle: {},
@@ -42,6 +37,10 @@ class Dashboard extends PureComponent {
         })
       }
     }
+
+    series.filter((e) => {
+      legend.push(e.name)
+    })
 
     const chartDom = document.getElementById('main')
     const myChart = echarts.init(chartDom)

@@ -27,10 +27,20 @@ export default {
       total: 0,
       pageSize: 10
     },
+    logSource: [],
+    logPagination: {
+      showSizeChanger: true,
+      showQuickJumper: true,
+      current: 1,
+      total: 0,
+      pageSize: 10
+    },
     currentItem: {},
+    currentLog: {},
     modalVisible: false,
     modalType: 'create',
-    queryWhere: {}
+    queryWhere: {},
+    logQueryWhere: {}
   },
 
   subscriptions: {
@@ -49,6 +59,20 @@ export default {
             dataSource: data.data.dataSource,
             pagination: data.data.pagination,
             queryWhere: payload
+          }
+        })
+      }
+    },
+
+    *taskLogList({ payload = {} }, { call, put }) {
+      const data = yield call(taskLogList, payload)
+      if (!data.code) {
+        yield put({
+          type: 'updateState',
+          payload: {
+            logSource: data.data.dataSource,
+            logPagination: data.data.pagination,
+            logQueryWhere: payload
           }
         })
       }
@@ -76,6 +100,13 @@ export default {
       }
     },
 
+    *onTaskSuspend({ payload }, { call, put }) {
+      const data = yield call(taskSuspend, payload)
+      if (!data.code) {
+        message.warning('任务已暂停')
+      }
+    },
+
     *create({ payload }, { call, put }) {
       const data = yield call(taskCreate, payload)
       if (!data.code) {
@@ -85,10 +116,8 @@ export default {
       }
     },
 
-    *update({ payload }, { select, call, put }) {
-      const id = yield select(({ taskList }) => taskList.currentItem.id)
-      const newUser = { ...payload, id }
-      const data = yield call(taskUpdate, newUser)
+    *update({ payload }, { call, put }) {
+      const data = yield call(taskUpdate, payload)
       if (!data.code) {
         yield put({ type: 'hideModal' })
       } else {
