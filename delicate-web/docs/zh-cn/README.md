@@ -1,29 +1,27 @@
 <p align="center">
   <a href="http://github.com/BinChengZhao/delicate">
-    <img alt="delicate-rs" height="64" src="../_media/logo.svg">
+    <img alt="delicate-rs" height="64" src="../_media/logo.png">
   </a>
 </p>
 
-<h1 align="center">AntD Admin</h1>
+<h1 align="center"> Delicate </h1>
 
 <div align="center">
 
-一套优秀的中后台前端解决方案
+一个轻量的分布式的任务调度平台通过 rust & js 编写.
 
-[![antd](https://img.shields.io/badge/antd-^3.10.0-blue.svg?style=flat-square)](https://github.com/ant-design/ant-design)
-[![umi](https://img.shields.io/badge/umi-^2.2.1-orange.svg?style=flat-square)](https://github.com/umijs/umi)
+`delicate` 的前端项目是基于 "antd-admin "开发的，非常感谢各位。
+
+
 [![GitHub issues](https://img.shields.io/github/issues/BinChengZhao/delicate.svg?style=flat-square)](https://github.com/BinChengZhao/delicate/issues)
-[![MIT](https://img.shields.io/dub/l/vibe-d.svg?style=flat-square)](http://opensource.org/licenses/MIT)
-![Travis (.org)](https://img.shields.io/travis/BinChengZhao/delicate.svg)
+[![Build](https://github.com/BinChengZhao/delicate/workflows/CI/badge.svg)](
+https://github.com/BinChengZhao/delicate/actions)
+[![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](
+https://github.com/BinChengZhao/delicate)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://github.com/BinChengZhao/delicate/pulls)
-[![Gitter](https://img.shields.io/gitter/room/delicate-rs/delicate-rs.svg)](https://gitter.im/delicate-rs/delicate-rs)
 
 </div>
 
-- 在线演示 - [https://web.delicate-rs.com](https://delicate-rs.delicate-rs.com)
-- 使用文档 - [https://doc.delicate-rs.delicate-rs.com/#/zh-cn/](https://doc.delicate-rs.delicate-rs.com/#/zh-cn/)
-- 常见问题 - [https://doc.delicate-rs.delicate-rs.com/#/zh-cn/faq](https://doc.delicate-rs.delicate-rs.com/#/zh-cn/faq)
-- 更新日志 - [https://doc.delicate-rs.delicate-rs.com/#/zh-cn/change-log](https://doc.delicate-rs.delicate-rs.com/#/zh-cn/change-log)
 
 ## 特性
 
@@ -35,7 +33,7 @@
 
 ## 使用
 
-1. 下载项目代码。
+1. 下载项目代码。
 
 ```bash
 git clone https://github.com/BinChengZhao/delicate.git my-project
@@ -45,26 +43,22 @@ cd my-project
 2. 进入目录安装依赖，国内用户推荐使用 [cnpm](https://cnpmjs.org) 进行加速。
 
 ```bash
-yarn install
-```
-
-或者
-
-```bash
-npm install
+sudo npm install --global yarn
+sudo yarn global add umi
+sudo yarn install
+sudo yarn build
 ```
 
 3. 启动本地服务器。
 
 ```bash
-npm run start
+sudo yarn start
 ```
 
 4. 启动完成后打开浏览器访问 [http://localhost:7000](http://localhost:7000)，如果需要更改启动端口，可在 `.env` 文件中配置。
 
 
-> 更多信息请参考 [使用文档](https://doc.delicate-rs.delicate-rs.com/#/zh-cn/)。
-
+> 更多信息请参考 。
 
 ## 支持环境
 
