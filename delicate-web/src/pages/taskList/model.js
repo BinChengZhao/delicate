@@ -1,5 +1,6 @@
 import api from '../../services'
 import { message } from 'antd'
+import { history } from 'umi'
 
 const {
   queryTaskList,
@@ -45,10 +46,13 @@ export default {
 
   subscriptions: {
     setup({ dispatch, history }) {
-      history.listen((location) => {})
+      history.listen((location) => {
+        if (location.state === undefined && location.pathname !== '/taskList') {
+          history.push({ pathname: '/taskList' })
+        }
+      })
     }
   },
-
   effects: {
     *query({ payload = {} }, { call, put }) {
       const data = yield call(queryTaskList, payload)
@@ -78,18 +82,21 @@ export default {
       }
     },
 
+    *taskLogDetail({ payload }, { call, put }) {
+      return yield call(taskLogDetail, payload)
+    },
+
     *delete({ payload }, { call, put, select }) {
-      console.log(payload)
-      // const data = yield call(taskDelete, payload)
-      // if (!data.code) {
-      //   message.success('删除成功')
-      // }
+      const data = yield call(taskDelete, payload)
+      if (!data.code) {
+        message.success('删除成功')
+      }
     },
 
     *onTaskAdvance({ payload }, { call, put }) {
       const data = yield call(taskAdvance, payload)
       if (!data.code) {
-        message.success('执行成功')
+        message.success('手动执行操作成功')
       }
     },
 
@@ -111,8 +118,6 @@ export default {
       const data = yield call(taskCreate, payload)
       if (!data.code) {
         yield put({ type: 'hideModal' })
-      } else {
-        throw data
       }
     },
 
@@ -120,8 +125,6 @@ export default {
       const data = yield call(taskUpdate, payload)
       if (!data.code) {
         yield put({ type: 'hideModal' })
-      } else {
-        throw data
       }
     }
   },
@@ -132,6 +135,12 @@ export default {
     },
     hideModal(state) {
       return { ...state, modalVisible: false }
+    },
+    showLogModal(state, { payload }) {
+      return { ...state, ...payload, logModalVisible: true }
+    },
+    hideLogModal(state) {
+      return { ...state, logModalVisible: false }
     },
     updateState(state, { payload }) {
       return { ...state, ...payload }

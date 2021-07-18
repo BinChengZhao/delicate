@@ -1,5 +1,5 @@
-const { pathToRegexp } = require('path-to-regexp')
 import api from 'api'
+const { pathToRegexp } = require('path-to-regexp')
 
 const { queryUser } = api
 
@@ -7,7 +7,7 @@ export default {
   namespace: 'userDetail',
 
   state: {
-    data: {},
+    data: {}
   },
 
   subscriptions: {
@@ -18,7 +18,7 @@ export default {
           dispatch({ type: 'query', payload: { id: match[1] } })
         }
       })
-    },
+    }
   },
 
   effects: {
@@ -29,13 +29,11 @@ export default {
         yield put({
           type: 'querySuccess',
           payload: {
-            data: other,
-          },
+            data: other
+          }
         })
-      } else {
-        throw data
       }
-    },
+    }
   },
 
   reducers: {
@@ -43,8 +41,8 @@ export default {
       const { data } = payload
       return {
         ...state,
-        data,
+        data
       }
-    },
-  },
+    }
+  }
 }

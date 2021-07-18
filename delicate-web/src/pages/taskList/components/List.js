@@ -1,5 +1,5 @@
 import React, { PureComponent } from 'react'
-import { Menu, Table, Tooltip, Space, Dropdown } from 'antd'
+import { Menu, Table, Tooltip, Space, Dropdown, Popconfirm, message } from 'antd'
 import { t, Trans } from '@lingui/macro'
 import styles from './List.less'
 import { CheckCircleOutlined, DownOutlined, StopOutlined } from '@ant-design/icons'
@@ -9,8 +9,17 @@ import { Link } from 'umi'
 const STATUS_ENABLE = 2 // 启用
 
 class List extends PureComponent {
+  confirm(id) {
+    const { onDeleteItem } = this.props
+    onDeleteItem(id)
+  }
+
+  cancel() {
+    message.info('取消删除')
+  }
+
   menu(row) {
-    const { onTaskRun, onTaskSuspend } = this.props
+    const { onTaskRun, onTaskSuspend, onTaskAdvance } = this.props
 
     return (
       <Menu>
@@ -20,23 +29,23 @@ class List extends PureComponent {
         <Menu.Item key={2} onClick={() => onTaskSuspend(row.id)} disabled={row.status !== STATUS_ENABLE}>
           暂停任务
         </Menu.Item>
-        <Menu.Item key={3} disabled={row.status !== STATUS_ENABLE}>
+        <Menu.Item key={3} onClick={() => onTaskAdvance(row.id)} disabled={row.status !== STATUS_ENABLE}>
           立即执行
         </Menu.Item>
         <Menu.Item key={4}>
-          <Link
-            to={{
-              pathname: `taskList/${row.id}`,
-              state: row
-            }}
-          >
-            查看日志
-          </Link>
+          <Link to={{ pathname: `taskList/${row.id}`, state: row }}>查看日志</Link>
         </Menu.Item>
-        <Menu.Item key={5}>复制任务</Menu.Item>
-        <Menu.Item key={6} danger>
-          删除任务
-        </Menu.Item>
+        <Popconfirm
+          title={`去定要删除任务【${row.name}】吗？`}
+          onConfirm={() => this.confirm(row.id)}
+          onCancel={() => this.cancel()}
+          okText="Yes"
+          cancelText="No"
+        >
+          <Menu.Item key={6} danger>
+            删除任务
+          </Menu.Item>
+        </Popconfirm>
       </Menu>
     )
   }
@@ -186,6 +195,7 @@ List.propTypes = {
   onEditItem: PropTypes.func,
   onTaskRun: PropTypes.func,
   onTaskSuspend: PropTypes.func,
+  onTaskAdvance: PropTypes.func,
   location: PropTypes.object
 }
 

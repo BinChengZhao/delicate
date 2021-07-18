@@ -29,8 +29,6 @@ export default {
         } else {
           history.push('/dashboard')
         }
-      } else {
-        throw data
       }
     }
   }

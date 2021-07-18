@@ -48,8 +48,6 @@ export default {
       const data = yield call(groupCreate, payload)
       if (!data.code) {
         yield put({ type: 'hideGroupModal' })
-      } else {
-        throw data
       }
     },
 
@@ -57,8 +55,6 @@ export default {
       const data = yield call(groupUpdate, payload)
       if (!data.code) {
         yield put({ type: 'hideGroupModal' })
-      } else {
-        throw data
       }
     },
 
