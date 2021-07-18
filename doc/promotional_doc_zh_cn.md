@@ -1,9 +1,9 @@
 ## [delicate](https://github.com/BinChengZhao/delicate) 一个轻量的分布式的任务调度平台通过rust编写.
 
 
-// FIXME:Do not use nicetuan's cdn, security colleagues respond quickly, their own on Tencent cloud or aws open one .
+
 <a href="">
-    <img src="https://imgcdn.*.net/"
+    <img src="https://delicate-rs-1301941387.cos.ap-beijing.myqcloud.com/delicate-rs/delicate_logo.png"
          alt="delicate logo" title="delicate" height="125" width="125"  align="right"/>
 </a>
 
@@ -25,9 +25,7 @@
 
 
 
-
-// FIXME:Do not use nicetuan's cdn, security colleagues respond quickly, their own on Tencent cloud or aws open one .
-![architecture](https://imgcdn.*.net/)
+![architecture](https://delicate-rs-1301941387.cos.ap-beijing.myqcloud.com/delicate-rs/delicate-architecture.svg)
 
 
 
