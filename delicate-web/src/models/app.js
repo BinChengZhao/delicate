@@ -136,8 +136,6 @@ export default {
         store.set('user', {})
         store.set('isInit', false)
         yield put({ type: 'query' })
-      } else {
-        throw data
       }
     }
   },

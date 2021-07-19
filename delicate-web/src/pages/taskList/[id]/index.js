@@ -1,6 +1,6 @@
 import React, { PureComponent } from 'react'
 import { Page } from '../../../components'
-import { Button, Col, Descriptions, Form, Input, Row, Select, Table, Tooltip } from 'antd'
+import { Button, Col, Descriptions, Form, Input, Modal, Row, Select, Table, Tooltip } from 'antd'
 import { t, Trans } from '@lingui/macro'
 import { connect } from 'umi'
 import PropTypes from 'prop-types'
@@ -17,6 +17,14 @@ const STATUS_LIST = [
 
 @connect(({ taskModel, loading }) => ({ taskModel, loading }))
 class TaskLog extends PureComponent {
+  constructor(props) {
+    super(props)
+    this.state = {
+      visible: false,
+      logDetail: this.initLogDetail()
+    }
+  }
+
   formRef = React.createRef()
 
   handleRefresh = (newQuery) => {
@@ -33,7 +41,7 @@ class TaskLog extends PureComponent {
       values[i] = values[i] === '' ? null : values[i]
     }
     const initFlitter = this.initFilter()
-    const taskId = 3
+    const taskId = location.state.id || null
     dispatch({
       type: `taskModel/taskLogList`,
       payload: { ...initFlitter, ...values, task_id: taskId }
@@ -49,12 +57,31 @@ class TaskLog extends PureComponent {
     this.handleSubmit()
   }
 
+  taskLogDetail(recordId) {
+    const { dispatch } = this.props
+    dispatch({ type: 'taskModel/taskLogDetail', payload: { record_id: parseInt(recordId) } }).then((ret) => {
+      if (ret.code === 0) {
+        this.setState({ logDetail: ret.data }, () => this.toggleVisible())
+      }
+    })
+  }
+
+  toggleVisible() {
+    const { visible } = this.state
+    this.setState({ visible: !visible })
+  }
+
+  cancelModal() {
+    this.setState({ logDetail: this.initLogDetail() }, () => this.toggleVisible())
+  }
+
   componentDidMount() {
     this.handleSubmit()
   }
 
   initFilter() {
     return {
+      id: null,
       name: null,
       description: null,
       command: null,
@@ -68,11 +95,16 @@ class TaskLog extends PureComponent {
     }
   }
 
+  initLogDetail() {
+    return { id: '', task_id: '', stdout: '', stderr: '' }
+  }
+
   render() {
     const { location, taskModel, loading } = this.props
     const { state } = location
     const { logSource, logPagination } = taskModel
-    console.log(logSource)
+    const { visible, logDetail } = this.state
+
     const columns = [
       {
         title: <Trans>Sn</Trans>,
@@ -148,6 +180,18 @@ class TaskLog extends PureComponent {
         title: '节点执行ID',
         dataIndex: 'record_id',
         key: 'record_id'
+      },
+      {
+        title: '操作',
+        fixed: 'right',
+        key: 'operating',
+        render: (text, row) => {
+          return (
+            <Button type={'link'} onClick={() => this.taskLogDetail(row.id)}>
+              查看详情
+            </Button>
+          )
+        }
       }
     ]
 
@@ -161,11 +205,6 @@ class TaskLog extends PureComponent {
 
         <Form ref={this.formRef} name="control-ref" initialValues={this.initFilter()}>
           <Row gutter={24}>
-            <Col xl={{ span: 4 }} md={{ span: 8 }}>
-              <Form.Item name="tag">
-                <Input placeholder={t`Tag`} />
-              </Form.Item>
-            </Col>
             <Col xl={{ span: 4 }} md={{ span: 8 }}>
               <Form.Item name="status">
                 <Select allowClear placeholder={'状态'}>
@@ -207,6 +246,22 @@ class TaskLog extends PureComponent {
           simple
           rowKey={(record) => record.id}
         />
+        <Modal visible={visible} title={'日志详情'} onCancel={() => this.cancelModal()} width={800} footer={null}>
+          <p>
+            <b>任务ID</b>:{logDetail.task_id}
+          </p>
+          <p>
+            <b>日志ID</b>:{logDetail.id}
+          </p>
+          <br />
+          <p>
+            <b>日志详情</b>:{logDetail.stdout}
+          </p>
+          <hr />
+          <p>
+            <b>日志错误</b>:{logDetail.stderr}
+          </p>
+        </Modal>
       </Page>
     )
   }

@@ -1,7 +1,7 @@
 import modelExtend from 'dva-model-extend'
 import api from 'api'
-const { pathToRegexp } = require('path-to-regexp')
 import { pageModel } from 'utils/model'
+const { pathToRegexp } = require('path-to-regexp')
 
 const { queryPostList } = api
 
@@ -16,12 +16,12 @@ export default modelExtend(pageModel, {
             type: 'query',
             payload: {
               status: 2,
-              ...location.query,
-            },
+              ...location.query
+            }
           })
         }
       })
-    },
+    }
   },
 
   effects: {
@@ -35,13 +35,11 @@ export default modelExtend(pageModel, {
             pagination: {
               current: Number(payload.page) || 1,
               pageSize: Number(payload.pageSize) || 10,
-              total: data.total,
-            },
-          },
+              total: data.total
+            }
+          }
         })
-      } else {
-        throw data
       }
-    },
-  },
+    }
+  }
 })

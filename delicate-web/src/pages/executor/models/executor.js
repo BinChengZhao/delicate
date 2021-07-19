@@ -48,8 +48,6 @@ export default {
       const data = yield call(executorCreate, payload)
       if (data.code === 0) {
         yield put({ type: 'hideExecutorModal' })
-      } else {
-        throw data
       }
     },
 
@@ -57,8 +55,6 @@ export default {
       const data = yield call(executorUpdate, payload)
       if (data.code === 0) {
         yield put({ type: 'hideExecutorModal' })
-      } else {
-        throw data
       }
     },
 

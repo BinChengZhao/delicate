@@ -88,7 +88,7 @@ class Task extends PureComponent {
       onDeleteItem: (id) => {
         dispatch({
           type: `${NAMESPACE}/delete`,
-          payload: { executor_processor_id: id }
+          payload: { task_id: id }
         }).then(() => this.handleRefresh())
       },
       onEditItem: (item) => {
@@ -109,6 +109,12 @@ class Task extends PureComponent {
       onTaskSuspend: (id) => {
         dispatch({
           type: `${NAMESPACE}/onTaskSuspend`,
+          payload: { task_id: id }
+        }).then(() => this.handleRefresh())
+      },
+      onTaskAdvance: (id) => {
+        dispatch({
+          type: `${NAMESPACE}/onTaskAdvance`,
           payload: { task_id: id }
         }).then(() => this.handleRefresh())
       }
