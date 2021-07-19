@@ -1,29 +1,23 @@
 <p align="center">
   <a href="http://github.com/BinChengZhao/delicate">
-    <img alt="delicate-rs" height="64" src="./_media/logo.svg">
+    <img alt="delicate-rs" height="64" src="./_media/logo.png">
   </a>
 </p>
 
-<h1 align="center">AntD Admin</h1>
+<h1 align="center">Delicate</h1>
 
 <div align="center">
 
-An excellent front-end solution for enterprise applications.
+`delicate` A lightweight and distributed task scheduling platform written in rust.
 
-[![antd](https://img.shields.io/badge/antd-^3.10.0-blue.svg?style=flat-square)](https://github.com/ant-design/ant-design)
-[![umi](https://img.shields.io/badge/umi-^2.2.1-orange.svg?style=flat-square)](https://github.com/umijs/umi)
 [![GitHub issues](https://img.shields.io/github/issues/BinChengZhao/delicate.svg?style=flat-square)](https://github.com/BinChengZhao/delicate/issues)
-[![MIT](https://img.shields.io/dub/l/vibe-d.svg?style=flat-square)](http://opensource.org/licenses/MIT)
-![Travis (.org)](https://img.shields.io/travis/BinChengZhao/delicate.svg)
+[![Build](https://github.com/BinChengZhao/delicate/workflows/CI/badge.svg)](
+https://github.com/BinChengZhao/delicate/actions)
+[![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](
+https://github.com/BinChengZhao/delicate)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://github.com/BinChengZhao/delicate/pulls)
-[![Gitter](https://img.shields.io/gitter/room/delicate-rs/delicate-rs.svg)](https://gitter.im/delicate-rs/delicate-rs)
 
 </div>
-
-- Preview - [https://delicate-rs.delicate-rs.com](https://web.delicate-rs.com)
-- Documentation - [https://doc.delicate-rs.com](https://doc.delicate-rs.com)
-- FAQ - [https://doc.delicate-rs.com/#/faq](https://doc.delicate-rs.com/#/faq)
-- ChangeLog - [https://doc.delicate-rs.com/#/change-log](https://doc.delicate-rs.com/#/change-log)
 
 ## Features
 
@@ -45,25 +39,22 @@ cd my-project
 2. Installation dependence.
 
 ```bash
-yarn install
-```
-
-Or
-
-```bash
-npm install
+sudo npm install --global yarn
+sudo yarn global add umi
+sudo yarn install
+sudo yarn build
 ```
 
 3. Start local server.
 
 ```bash
-npm run start
+sudo yarn start
 ```
 
 4. After the startup is complete, open a browser and visit [http://localhost:7000](http://localhost:7000), If you need to change the startup port, you can configure it in the `.env` file.
 
 
-> More instructions at [documentation](https://doc.delicate-rs.com)。
+> More instructions at 。
 
 
 ## Browsers support

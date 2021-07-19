@@ -158,13 +158,15 @@ fn batch_insert_task_logs(
                 .collect();
 
         new_task_logs.iter_mut().for_each(|t| {
-            if let Some(task) = tasks.get(&t.id) {
+            if let Some(task) = tasks.get(&t.task_id) {
                 t.name.clone_from(&task.name);
                 t.description.clone_from(&task.description);
                 t.command.clone_from(&task.command);
                 t.frequency.clone_from(&task.frequency);
                 t.cron_expression.clone_from(&task.cron_expression);
                 t.tag.clone_from(&task.tag);
+                t.maximum_parallel_runnable_num
+                    .clone_from(&task.maximum_parallel_runnable_num);
             }
         });
 

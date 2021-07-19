@@ -9,9 +9,9 @@
 
 <div align="center">
 
-`delicate` A lightweight and distributed task scheduling platform written in rust & react.
+`delicate` A lightweight and distributed task scheduling platform written in rust & js.
 
-The front-end project of `delicate` is based on `delicate-rs/antd-admin` development, thank you very much guys.
+The front-end project of `delicate` is based on `antd-admin` development, thank you very much guys.
 
 [![MIT](https://img.shields.io/dub/l/vibe-d.svg?style=flat-square)](http://opensource.org/licenses/MIT)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://github.com/BinChengZhao/delicate/pulls)
@@ -20,7 +20,7 @@ The front-end project of `delicate` is based on `delicate-rs/antd-admin` develop
 
 - Preview - [https://delicate-rs.com](https://delicate.com)
 
-English | [简体中文](./README-zh_CN.md) 
+English | [简体中文](./docs/zh-cn/README.md) 
 
 
 
