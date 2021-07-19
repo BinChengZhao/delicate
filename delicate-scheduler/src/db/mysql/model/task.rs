@@ -1,6 +1,6 @@
 use super::prelude::*;
 use super::schema::task;
-use diesel::sql_types::{Bigint, VarChar, SmallInt};
+use diesel::sql_types::{Bigint, SmallInt, VarChar};
 
 #[derive(
     Queryable, Insertable, Clone, Identifiable, AsChangeset, Debug, Serialize, Deserialize,
@@ -87,7 +87,6 @@ pub struct SupplyTask {
     pub(crate) cron_expression: String,
     pub(crate) tag: String,
     pub(crate) maximum_parallel_runnable_num: i16,
-
 }
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
@@ -103,7 +102,16 @@ pub(crate) struct QueryParamsTask {
     pub(crate) page: i64,
 }
 
-type SupplyTaskType = (Bigint, VarChar, VarChar, VarChar, VarChar, VarChar, VarChar, SmallInt);
+type SupplyTaskType = (
+    Bigint,
+    VarChar,
+    VarChar,
+    VarChar,
+    VarChar,
+    VarChar,
+    VarChar,
+    SmallInt,
+);
 pub(crate) struct TaskQueryBuilder;
 impl TaskQueryBuilder {
     pub(crate) fn query_all_columns() -> task::BoxedQuery<'static, Mysql> {
@@ -119,7 +127,7 @@ impl TaskQueryBuilder {
             task::frequency,
             task::cron_expression,
             task::tag,
-            task::maximum_parallel_runnable_num
+            task::maximum_parallel_runnable_num,
         ))
     }
 
@@ -133,7 +141,6 @@ impl QueryParamsTask {
         self,
         mut statement_builder: task::BoxedQuery<'static, Mysql, ST>,
     ) -> task::BoxedQuery<'static, Mysql, ST> {
-
         if let Some(task_id) = self.id {
             statement_builder = statement_builder.filter(task::id.eq(task_id));
         }

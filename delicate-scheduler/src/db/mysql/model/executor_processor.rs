@@ -66,7 +66,6 @@ pub struct ExecutorSelection {
     name: String,
 }
 
-
 pub(crate) struct ExecutorProcessorQueryBuilder;
 impl ExecutorProcessorQueryBuilder {
     pub(crate) fn query_all_columns() -> executor_processor::BoxedQuery<'static, Mysql> {

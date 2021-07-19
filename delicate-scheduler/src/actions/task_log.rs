@@ -74,7 +74,7 @@ async fn show_task_logs(
 ) -> HttpResponse {
     if let Ok(conn) = pool.get() {
         return HttpResponse::Ok().json(Into::<
-            UnifiedResponseMessages<PaginateData<model::TaskLog>>,
+            UnifiedResponseMessages<PaginateData<model::FrontEndTaskLog>>,
         >::into(
             web::block::<_, _, diesel::result::Error>(move || {
                 let query_builder = model::TaskLogQueryBuilder::query_all_columns();
@@ -92,8 +92,10 @@ async fn show_task_logs(
                     .query_filter(count_builder)
                     .get_result::<i64>(&conn)?;
 
-                Ok(PaginateData::<model::TaskLog>::default()
-                    .set_data_source(task_logs)
+                let front_end_task_logs: Vec<model::FrontEndTaskLog> =
+                    task_logs.into_iter().map(|t| t.into()).collect();
+                Ok(PaginateData::<model::FrontEndTaskLog>::default()
+                    .set_data_source(front_end_task_logs)
                     .set_page_size(per_page)
                     .set_total(count))
             })
@@ -101,7 +103,9 @@ async fn show_task_logs(
         ));
     }
 
-    HttpResponse::Ok().json(UnifiedResponseMessages::<PaginateData<model::TaskLog>>::error())
+    HttpResponse::Ok().json(UnifiedResponseMessages::<
+        PaginateData<model::FrontEndTaskLog>,
+    >::error())
 }
 
 #[post("/api/task_log/detail")]
@@ -116,7 +120,7 @@ async fn show_task_log_detail(
             Into::<UnifiedResponseMessages<model::TaskLogExtend>>::into(
                 web::block::<_, _, diesel::result::Error>(move || {
                     let task_log_extend = task_log_extend::table
-                        .find(query_params.record_id)
+                        .find(query_params.record_id.0)
                         .first::<model::TaskLogExtend>(&conn)?;
 
                     Ok(task_log_extend)
@@ -220,12 +224,12 @@ async fn kill_one_task_instance(
     let conn = pool.get()?;
     let host = web::block::<_, String, diesel::result::Error>(move || {
         let host = task_log::table
-            .find(&record_id)
+            .find(&record_id.0)
             .filter(task_log::status.eq(state::task_log::State::Running as i16))
             .select(task_log::executor_processor_host)
             .first::<String>(&conn)?;
 
-        diesel::update(task_log::table.find(&record_id))
+        diesel::update(task_log::table.find(&record_id.0))
             .filter(task_log::status.eq(state::task_log::State::Running as i16))
             .set(task_log::status.eq(state::task_log::State::TmanualCancellation as i16))
             .execute(&conn)?;
@@ -238,7 +242,7 @@ async fn kill_one_task_instance(
 
     let record = delicate_utils_task_log::CancelTaskRecord::default()
         .set_task_id(task_id)
-        .set_record_id(record_id)
+        .set_record_id(record_id.0)
         .set_time(get_timestamp())
         .sign(token.as_deref())?;
 

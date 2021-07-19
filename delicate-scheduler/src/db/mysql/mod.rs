@@ -43,6 +43,7 @@ struct Customizer;
 // diesel The default is UTC time, here we need to configure it to CST time.
 impl CustomizeConnection<MysqlConnection, diesel::r2d2::Error> for Customizer {
     fn on_acquire(&self, conn: &mut MysqlConnection) -> Result<(), diesel::r2d2::Error> {
+        // TODO: according .env set time_zone，if without then set SYSTEM。
         conn.execute("SET time_zone = SYSTEM;")
             .map_err(diesel::r2d2::Error::QueryError)?;
 

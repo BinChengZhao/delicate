@@ -33,7 +33,6 @@ pub struct BindingSelection {
     name: String,
 }
 
-
 #[derive(Insertable, AsChangeset, Debug, Serialize, Deserialize)]
 #[table_name = "executor_processor_bind"]
 pub struct NewExecutorProcessorBind {

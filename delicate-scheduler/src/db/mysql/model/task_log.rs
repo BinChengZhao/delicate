@@ -122,6 +122,69 @@ pub struct TaskLog {
     executor_processor_host: String,
 }
 
+// The front-end int64 is not convenient to be compatible, and the server side helps to handle it.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FrontEndTaskLog {
+    id: FrontEndRecordId,
+    task_id: i64,
+    name: String,
+    description: String,
+    command: String,
+    frequency: String,
+    cron_expression: String,
+    maximum_parallel_runnable_num: i16,
+    tag: String,
+    status: i16,
+    created_time: NaiveDateTime,
+    updated_time: NaiveDateTime,
+    executor_processor_id: i64,
+    executor_processor_name: String,
+    executor_processor_host: String,
+}
+
+impl From<TaskLog> for FrontEndTaskLog {
+    #[inline(always)]
+    fn from(log: TaskLog) -> Self {
+        let TaskLog {
+            id,
+            task_id,
+            name,
+            description,
+            command,
+            frequency,
+            cron_expression,
+            maximum_parallel_runnable_num,
+            tag,
+            status,
+            created_time,
+            updated_time,
+            executor_processor_id,
+            executor_processor_name,
+            executor_processor_host,
+        } = log;
+
+        let id = FrontEndRecordId(id);
+
+        FrontEndTaskLog {
+            id,
+            task_id,
+            name,
+            description,
+            command,
+            frequency,
+            cron_expression,
+            maximum_parallel_runnable_num,
+            tag,
+            status,
+            created_time,
+            updated_time,
+            executor_processor_id,
+            executor_processor_name,
+            executor_processor_host,
+        }
+    }
+}
+
 #[derive(
     Insertable, Queryable, Identifiable, AsChangeset, Debug, Default, Clone, Serialize, Deserialize,
 )]
@@ -171,15 +234,36 @@ pub struct SupplyTaskLogExtend {
     stderr: String,
 }
 
+// The front-end int64 is not convenient to be compatible, and the server side helps to handle it.
+#[derive(Copy, Clone, Default, Debug, Serialize, Deserialize)]
+#[serde(try_from = "String")]
+#[serde(into = "String")]
+pub struct FrontEndRecordId(pub i64);
+
+impl TryFrom<String> for FrontEndRecordId {
+    type Error = <i64 as FromStr>::Err;
+
+    fn try_from(value: String) -> Result<FrontEndRecordId, Self::Error> {
+        i64::from_str(&value).map(FrontEndRecordId)
+    }
+}
+
+
+impl From<FrontEndRecordId> for String {
+    fn from(id: FrontEndRecordId) -> Self {
+        id.0.to_string()
+    }
+}
+
 #[derive(Copy, Clone, Debug, Serialize, Deserialize)]
 
 pub struct RecordId {
-    pub(crate) record_id: i64,
+    pub(crate) record_id: FrontEndRecordId,
 }
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct QueryParamsTaskLog {
-    id: Option<i64>,
+    id: Option<FrontEndRecordId>,
     task_id: Option<i64>,
     name: Option<String>,
     description: Option<String>,
@@ -197,7 +281,7 @@ pub struct QueryParamsTaskLog {
 
 pub struct TaskRecord {
     pub(crate) task_id: i64,
-    pub(crate) record_id: i64,
+    pub(crate) record_id: FrontEndRecordId,
     pub(crate) executor_processor_id: i64,
 }
 
@@ -206,13 +290,12 @@ impl QueryParamsTaskLog {
         self,
         mut statement_builder: task_log::BoxedQuery<'static, Mysql, ST>,
     ) -> task_log::BoxedQuery<'static, Mysql, ST> {
-
         if let Some(task_id) = self.task_id {
             statement_builder = statement_builder.filter(task_log::task_id.eq(task_id));
         }
 
         if let Some(id) = self.id {
-            statement_builder = statement_builder.filter(task_log::id.eq(id));
+            statement_builder = statement_builder.filter(task_log::id.eq(id.0));
         }
 
         if let Some(status) = self.status {
