@@ -50,7 +50,7 @@ The rest of the overall indicators await bench.
 The basic common usage of delicate is to quickly set up for the backend servers and executors. We split it into multiple simple steps to illustrate the delicate concepts and operations.
 
 The source code installation requires:
- * rustc [rustup](https://www.rust-lang.org/tools/install) 
+ * [rustc](https://www.rust-lang.org/tools/install) (minimum-supported version of `rustc` is **1.49**.) 
  * libmysqlclient-dev & libpq-dev & libssl-dev
 
 ### Setting up delicate
