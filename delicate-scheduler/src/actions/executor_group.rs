@@ -45,6 +45,7 @@ async fn show_executor_groups(
                     .clone()
                     .query_filter(query_builder)
                     .paginate(query_params.page)
+                    .set_per_page(query_params.per_page)
                     .load::<model::ExecutorGroup>(&conn)?;
 
                 let per_page = query_params.per_page;

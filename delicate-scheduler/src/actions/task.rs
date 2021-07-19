@@ -56,6 +56,7 @@ async fn show_tasks(
                         .clone()
                         .query_filter(query_builder)
                         .paginate(query_params.page)
+                        .set_per_page(query_params.per_page)
                         .load::<model::Task>(&conn)?;
 
                     let per_page = query_params.per_page;

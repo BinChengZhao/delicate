@@ -83,6 +83,7 @@ async fn show_task_logs(
                     .clone()
                     .query_filter(query_builder)
                     .paginate(query_params.page)
+                    .set_per_page(query_params.per_page)
                     .load::<model::TaskLog>(&conn)?;
 
                 let per_page = query_params.per_page;

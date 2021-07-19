@@ -44,6 +44,7 @@ async fn show_executor_processor_binds(
                     .clone()
                     .query_filter(query_builder)
                     .paginate(query_params.page)
+                    .set_per_page(query_params.per_page)
                     .load::<model::ExecutorProcessorBind>(&conn)?;
 
                 let per_page = query_params.per_page;
