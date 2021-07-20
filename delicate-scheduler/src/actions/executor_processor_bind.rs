@@ -9,7 +9,7 @@ pub(crate) fn config(cfg: &mut web::ServiceConfig) {
 
 #[post("/api/executor_processor_bind/create")]
 async fn create_executor_processor_bind(
-    web::Json(executor_processor_bind): web::Json<model::NewExecutorProcessorBind>,
+    web::Json(executor_processor_binds): web::Json<model::NewExecutorProcessorBinds>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
     use db::schema::executor_processor_bind;
@@ -17,8 +17,18 @@ async fn create_executor_processor_bind(
     if let Ok(conn) = pool.get() {
         return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
             web::block(move || {
+                let new_binds: Vec<model::NewExecutorProcessorBind> = executor_processor_binds
+                    .executor_ids
+                    .iter()
+                    .map(|executor_id| model::NewExecutorProcessorBind {
+                        name: executor_processor_binds.name.clone(),
+                        group_id: executor_processor_binds.group_id,
+                        executor_id: *executor_id,
+                        weight: executor_processor_binds.weight,
+                    })
+                    .collect();
                 diesel::insert_into(executor_processor_bind::table)
-                    .values(&executor_processor_bind)
+                    .values(&new_binds[..])
                     .execute(&conn)
             })
             .await,

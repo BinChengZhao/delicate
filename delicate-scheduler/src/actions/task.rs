@@ -46,36 +46,59 @@ async fn show_tasks(
     web::Json(query_params): web::Json<model::QueryParamsTask>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
+    use db::schema::task_bind;
+
     if let Ok(conn) = pool.get() {
-        return HttpResponse::Ok().json(
-            Into::<UnifiedResponseMessages<PaginateData<model::Task>>>::into(
-                web::block::<_, _, diesel::result::Error>(move || {
-                    let query_builder = model::TaskQueryBuilder::query_all_columns();
+        return HttpResponse::Ok().json(Into::<
+            UnifiedResponseMessages<PaginateData<model::FrontEndTask>>,
+        >::into(
+            web::block::<_, _, diesel::result::Error>(move || {
+                let query_builder = model::TaskQueryBuilder::query_all_columns();
 
-                    let tasks = query_params
-                        .clone()
-                        .query_filter(query_builder)
-                        .paginate(query_params.page)
-                        .set_per_page(query_params.per_page)
-                        .load::<model::Task>(&conn)?;
+                let mut tasks: HashMap<i64, model::FrontEndTask> = query_params
+                    .clone()
+                    .query_filter(query_builder)
+                    .paginate(query_params.page)
+                    .set_per_page(query_params.per_page)
+                    .load::<model::Task>(&conn)?
+                    .into_iter()
+                    .map(|t| (t.id, t.into()))
+                    .collect();
 
-                    let per_page = query_params.per_page;
-                    let count_builder = model::TaskQueryBuilder::query_count();
-                    let count = query_params
-                        .query_filter(count_builder)
-                        .get_result::<i64>(&conn)?;
+                let tasks_ids: Vec<i64> = tasks.iter().map(|(id, _)| *id).collect();
 
-                    Ok(PaginateData::<model::Task>::default()
-                        .set_data_source(tasks)
-                        .set_page_size(per_page)
-                        .set_total(count))
-                })
-                .await,
-            ),
-        );
+                let tasks_bind_pairs = task_bind::table
+                    .select((task_bind::task_id, task_bind::bind_id))
+                    .filter(task_bind::task_id.eq_any(&tasks_ids[..]))
+                    .load::<(i64, i64)>(&conn)?;
+
+                tasks_bind_pairs.into_iter().for_each(|(task_id, bind_id)| {
+                    if let Some(task) = tasks.get_mut(&task_id) {
+                        task.binding_ids.push(bind_id);
+                    }
+                });
+
+                let per_page = query_params.per_page;
+                let count_builder = model::TaskQueryBuilder::query_count();
+                let count = query_params
+                    .query_filter(count_builder)
+                    .get_result::<i64>(&conn)?;
+
+                Ok(PaginateData::<model::FrontEndTask>::default()
+                    .set_data_source(
+                        tasks
+                            .into_iter()
+                            .map(|(_, t)| t)
+                            .collect::<Vec<model::FrontEndTask>>(),
+                    )
+                    .set_page_size(per_page)
+                    .set_total(count))
+            })
+            .await,
+        ));
     }
 
-    HttpResponse::Ok().json(UnifiedResponseMessages::<PaginateData<model::Task>>::error())
+    HttpResponse::Ok().json(UnifiedResponseMessages::<PaginateData<model::FrontEndTask>>::error())
 }
 
 #[post("/api/task/update")]
@@ -108,7 +131,7 @@ pub async fn pre_update_task_row(
 ) -> Result<(Vec<model::BindProcessor>, Vec<model::BindProcessor>), CommonError> {
     use db::schema::{executor_processor, executor_processor_bind, task_bind};
     use model::BindProcessor;
-    use std::collections::{HashMap, HashSet};
+    use std::collections::HashSet;
 
     let task_binds_pair = web::block::<_, _, diesel::result::Error>(move || {
         conn.transaction(|| {

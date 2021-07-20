@@ -65,7 +65,7 @@ $ wget https://github.com/BinChengZhao/delicate/releases/download/v1.0.0/delicat
 $ tar zxvf delicate-v1.0.0-linux-amd64.tar.gz -C delicate && cd delicate -->
 
 
-1. install the rust suite: ` curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh `
+1. install the rust suite: ` curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh ` or ` curl --tlsv1.2 -sSf https://sh.rustup.rs | sh `  .
 
 2. initialize cargo in the current shell, ` source $HOME/.cargo/env ` .  
 

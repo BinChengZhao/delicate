@@ -24,6 +24,66 @@ pub struct Task {
     pub(crate) deleted_time: Option<NaiveDateTime>,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct FrontEndTask {
+    pub(crate) id: i64,
+    pub(crate) name: String,
+    pub(crate) description: String,
+    pub(crate) command: String,
+    pub(crate) frequency: String,
+    pub(crate) cron_expression: String,
+    pub(crate) timeout: i16,
+    pub(crate) retry_times: i16,
+    pub(crate) retry_interval: i16,
+    pub(crate) maximum_parallel_runnable_num: i16,
+    pub(crate) tag: String,
+    pub(crate) status: i16,
+    pub(crate) created_time: NaiveDateTime,
+    pub(crate) deleted_time: Option<NaiveDateTime>,
+    pub(crate) binding_ids: Vec<i64>,
+}
+
+impl From<Task> for FrontEndTask {
+    fn from(task: Task) -> Self {
+        let Task {
+            id,
+            name,
+            description,
+            command,
+            frequency,
+            cron_expression,
+            timeout,
+            retry_times,
+            retry_interval,
+            maximum_parallel_runnable_num,
+            tag,
+            status,
+            created_time,
+            deleted_time,
+        } = task;
+
+        let binding_ids: Vec<i64> = Vec::new();
+
+        FrontEndTask {
+            id,
+            name,
+            description,
+            command,
+            frequency,
+            cron_expression,
+            timeout,
+            retry_times,
+            retry_interval,
+            maximum_parallel_runnable_num,
+            tag,
+            status,
+            created_time,
+            deleted_time,
+            binding_ids,
+        }
+    }
+}
+
 #[derive(Insertable, Debug, Default, Serialize, Deserialize)]
 #[table_name = "task"]
 pub struct NewTask {

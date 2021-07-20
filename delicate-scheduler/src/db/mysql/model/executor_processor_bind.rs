@@ -33,13 +33,21 @@ pub struct BindingSelection {
     name: String,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct NewExecutorProcessorBinds {
+    pub(crate) name: String,
+    pub(crate) group_id: i64,
+    pub(crate) executor_ids: Vec<i64>,
+    pub(crate) weight: i16,
+}
+
 #[derive(Insertable, AsChangeset, Debug, Serialize, Deserialize)]
 #[table_name = "executor_processor_bind"]
 pub struct NewExecutorProcessorBind {
-    name: String,
-    group_id: i64,
-    executor_id: i64,
-    weight: i16,
+    pub(crate) name: String,
+    pub(crate) group_id: i64,
+    pub(crate) executor_id: i64,
+    pub(crate) weight: i16,
 }
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]

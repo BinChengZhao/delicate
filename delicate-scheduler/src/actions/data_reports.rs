@@ -88,7 +88,6 @@ pub(crate) fn pre_show_one_day_tasks_state(
     end_states_count: Vec<model::TaskState>,
 ) -> model::DailyState {
     use state::task_log::State;
-    use std::collections::HashMap;
 
     let mut daily_states = model::DailyState::default();
 
