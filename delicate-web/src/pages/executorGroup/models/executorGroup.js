@@ -60,7 +60,7 @@ export default {
 
     *delete({ payload }, { call, put }) {
       const data = yield call(groupDelete, payload)
-      if (data.code === 0) {
+      if (!data.code) {
         message.success('删除成功')
       }
     }

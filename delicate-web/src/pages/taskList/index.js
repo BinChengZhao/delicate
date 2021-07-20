@@ -68,7 +68,8 @@ class Task extends PureComponent {
       centered: true,
       width: 800,
       onOk: (data) => dispatch({ type: `${NAMESPACE}/${modalType}`, payload: data }).then(() => this.handleRefresh()),
-      onCancel: () => dispatch({ type: `${NAMESPACE}/hideModal` })
+      onCancel: () => dispatch({ type: `${NAMESPACE}/hideModal` }),
+      getBindList: () => dispatch({ type: `${NAMESPACE}/taskBindList`, payload: {} })
     }
   }
 

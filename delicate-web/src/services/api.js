@@ -19,10 +19,10 @@ export default {
   taskDelete: 'POST /task/delete',
   taskRun: 'POST /task/run',
   taskSuspend: 'POST /task/suspend',
+  taskBindList: '/binding/list',
 
   // 任务日志
   taskLogList: 'POST /task_log/list',
-  taskLogEvent: 'POST /task_logs/event_trigger',
   taskLogDetail: 'POST /task_log/detail',
   taskKill: 'POST /task_instance/kill',
 
@@ -37,5 +37,11 @@ export default {
   groupList: 'POST /executor_group/list',
   groupCreate: 'POST /executor_group/create',
   groupUpdate: 'POST /executor_group/update',
-  groupDelete: 'POST /executor_group/delete'
+  groupDelete: 'POST /executor_group/delete',
+
+  // 用户相关
+  queryUserList: 'POST /user/list',
+  createUser: 'POST /user/create',
+  updateUser: 'POST /user/update',
+  deleteUser: 'POST /user/delete'
 }

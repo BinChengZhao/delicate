@@ -1,10 +1,8 @@
 import React, { PureComponent } from 'react'
 import PropTypes from 'prop-types'
-import { Table, Modal, Avatar } from 'antd'
+import { Modal, Table } from 'antd'
 import { DropOption } from 'components'
-import { t } from '@lingui/macro'
-import { Trans } from '@lingui/macro'
-import { Link } from 'umi'
+import { t, Trans } from '@lingui/macro'
 import styles from './List.less'
 
 const { confirm } = Modal
@@ -20,7 +18,7 @@ class List extends PureComponent {
         title: t`Are you sure delete this record?`,
         onOk() {
           onDeleteItem(record.id)
-        },
+        }
       })
     }
   }
@@ -30,56 +28,29 @@ class List extends PureComponent {
 
     const columns = [
       {
-        title: <Trans>Avatar</Trans>,
-        dataIndex: 'avatar',
-        key: 'avatar',
-        width: '7%',
-        fixed: 'left',
-        render: (text) => <Avatar style={{ marginLeft: 8 }} src={text} />,
-      },
-      {
-        title: <Trans>Name</Trans>,
-        dataIndex: 'name',
-        key: 'name',
-        render: (text, record) => <Link to={`user/${record.id}`}>{text}</Link>,
+        title: '用户名',
+        dataIndex: 'user_name',
+        key: 'user_name'
       },
       {
         title: <Trans>NickName</Trans>,
-        dataIndex: 'nickName',
-        key: 'nickName',
+        dataIndex: 'nick_name',
+        key: 'nick_name'
       },
       {
-        title: <Trans>Age</Trans>,
-        dataIndex: 'age',
-        width: '6%',
-        key: 'age',
-      },
-      {
-        title: <Trans>Gender</Trans>,
-        dataIndex: 'isMale',
-        key: 'isMale',
-        width: '7%',
-        render: (text) => <span>{text ? 'Male' : 'Female'}</span>,
-      },
-      {
-        title: <Trans>Phone</Trans>,
-        dataIndex: 'phone',
-        key: 'phone',
+        title: '手机号',
+        dataIndex: 'mobile',
+        key: 'mobile'
       },
       {
         title: <Trans>Email</Trans>,
         dataIndex: 'email',
-        key: 'email',
-      },
-      {
-        title: <Trans>Address</Trans>,
-        dataIndex: 'address',
-        key: 'address',
+        key: 'email'
       },
       {
         title: <Trans>CreateTime</Trans>,
-        dataIndex: 'createTime',
-        key: 'createTime',
+        dataIndex: 'created_time',
+        key: 'createTime'
       },
       {
         title: <Trans>Operation</Trans>,
@@ -92,24 +63,19 @@ class List extends PureComponent {
               onMenuClick={(e) => this.handleMenuClick(record, e)}
               menuOptions={[
                 { key: '1', name: t`Update` },
-                { key: '2', name: t`Delete` },
+                { key: '2', name: t`Delete` }
               ]}
             />
           )
-        },
-      },
+        }
+      }
     ]
 
     return (
       <Table
         {...tableProps}
-        pagination={{
-          ...tableProps.pagination,
-          showTotal: (total) => t`Total ${total} Items`,
-        }}
+        pagination={{ ...tableProps.pagination }}
         className={styles.table}
-        bordered
-        scroll={{ x: 1200 }}
         columns={columns}
         simple
         rowKey={(record) => record.id}
@@ -121,7 +87,7 @@ class List extends PureComponent {
 List.propTypes = {
   onDeleteItem: PropTypes.func,
   onEditItem: PropTypes.func,
-  location: PropTypes.object,
+  location: PropTypes.object
 }
 
 export default List
