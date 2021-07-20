@@ -54,7 +54,7 @@ class ExecutorGroupList extends PureComponent {
                 编辑
               </a>
               <Popconfirm
-                title={`去定要删除执行执行组【${row.name}】吗？`}
+                title={`确定要删除执行执行组【${row.name}】吗？`}
                 onConfirm={() => this.confirm(row.id)}
                 onCancel={() => this.cancel()}
                 okText="Yes"

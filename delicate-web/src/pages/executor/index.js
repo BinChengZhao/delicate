@@ -123,7 +123,6 @@ class Executor extends PureComponent {
   }
 
   render() {
-    console.log(this.props)
     return (
       <Page inner>
         <ExecutorFilter {...this.filterProps} />
