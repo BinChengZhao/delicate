@@ -22,7 +22,8 @@ class TaskModal extends PureComponent {
   constructor(props) {
     super(props)
     this.state = {
-      forms: this.initForms()
+      forms: this.initForms(),
+      bindList: []
     }
   }
 
@@ -39,17 +40,15 @@ class TaskModal extends PureComponent {
       retry_interval: 3,
       maximum_parallel_runnable_num: 5,
       tag: [],
-      bind_id: '',
+      bind_id: [],
       status: 2 // true: 2 启用 ｜ false： 1 未启用
     }
   }
 
   setParams(data) {
+    const params = { task: { ...data }, binding_ids: data.bind_id }
     delete data.bind_id
-    return {
-      task: { ...data },
-      binding_ids: []
-    }
+    return params
   }
 
   handleOk = () => {
@@ -71,9 +70,14 @@ class TaskModal extends PureComponent {
       })
   }
 
+  bindList() {
+    const { getBindList } = this.props
+    getBindList().then((bindList) => this.setState({ bindList }))
+  }
+
   render() {
     const { onOk, form, ...modalProps } = this.props
-    const { forms } = this.state
+    const { forms, bindList } = this.state
     const initValues = !u.isEmpty(modalProps.item) ? modalProps.item : forms
     return (
       <Modal {...modalProps} onOk={this.handleOk}>
@@ -147,11 +151,7 @@ class TaskModal extends PureComponent {
             hasFeedback
             {...formItemLayout}
           >
-            <InputCron
-              lang={'zh-Hans-CN'}
-              onChange={(v) => console.log(v)}
-              type={['second', 'minute', 'hour', 'day', 'month', 'week']}
-            />
+            <InputCron lang={'zh-Hans-CN'} type={['second', 'minute', 'hour', 'day', 'month', 'week']} />
           </FormItem>
 
           <Form.Item label="时间调度" style={{ marginBottom: 0 }} hasFeedback {...formItemLayout}>
@@ -201,7 +201,15 @@ class TaskModal extends PureComponent {
             <Select mode="tags" allowClear style={{ width: '100%' }} placeholder="支持自定义标签" />
           </FormItem>
           <FormItem name="bind_id" label="组ID" hasFeedback {...formItemLayout}>
-            <Input placeholder="Please input" />
+            <Select mode={'multiple'} placeholder="请选择执行组ID" onFocus={() => this.bindList()}>
+              {bindList.map((point, i) => {
+                return (
+                  <Select.Option key={parseInt(point.id)} value={parseInt(point.id)}>
+                    {point.title}
+                  </Select.Option>
+                )
+              })}
+            </Select>
           </FormItem>
         </Form>
       </Modal>
@@ -212,7 +220,8 @@ class TaskModal extends PureComponent {
 TaskModal.propTypes = {
   type: PropTypes.string,
   item: PropTypes.object,
-  onOk: PropTypes.func
+  onOk: PropTypes.func,
+  getBindList: PropTypes.func
 }
 
 export default TaskModal

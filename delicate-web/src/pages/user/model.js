@@ -1,91 +1,63 @@
-import modelExtend from 'dva-model-extend'
 import api from 'api'
-import { pageModel } from 'utils/model'
-import * as u from '../../utils/data'
-const { pathToRegexp } = require('path-to-regexp')
+import { message } from 'antd'
 
-const { queryUserList, createUser, removeUser, updateUser, removeUserList } = api
+const { queryUserList, createUser, updateUser, deleteUser } = api
 
-export default modelExtend(pageModel, {
+export default {
   namespace: 'user',
 
   state: {
     currentItem: {},
+    dataSource: [],
+    pagination: {
+      showSizeChanger: true,
+      showQuickJumper: true,
+      current: 1,
+      total: 0,
+      pageSize: 10
+    },
     modalVisible: false,
     modalType: 'create',
-    selectedRowKeys: []
+    queryWhere: {}
   },
 
   subscriptions: {
     setup({ dispatch, history }) {
-      history.listen((location) => {
-        if (pathToRegexp('/user').exec(location.pathname)) {
-          const payload = u.isEmpty(location.query) ? { page: 1, pageSize: 10 } : location.query
-          dispatch({ type: 'query', payload })
-        }
-      })
+      history.listen((location) => {})
     }
   },
 
   effects: {
     *query({ payload = {} }, { call, put }) {
       const data = yield call(queryUserList, payload)
-      if (data) {
+      if (!data.code) {
         yield put({
-          type: 'querySuccess',
+          type: 'updateState',
           payload: {
-            list: data.data,
-            pagination: {
-              current: Number(payload.page) || 1,
-              pageSize: Number(payload.pageSize) || 10,
-              total: data.total
-            }
+            dataSource: data.data.dataSource,
+            pagination: data.data.pagination,
+            queryWhere: payload
           }
         })
       }
     },
 
     *delete({ payload }, { call, put, select }) {
-      const data = yield call(removeUser, { id: payload })
-      const { selectedRowKeys } = yield select((_) => _.user)
-      if (data.success) {
-        yield put({
-          type: 'updateState',
-          payload: {
-            selectedRowKeys: selectedRowKeys.filter((_) => _ !== payload)
-          }
-        })
-      } else {
-        throw data
-      }
-    },
-
-    *multiDelete({ payload }, { call, put }) {
-      const data = yield call(removeUserList, payload)
-      if (data.success) {
-        yield put({ type: 'updateState', payload: { selectedRowKeys: [] } })
-      } else {
-        throw data
-      }
+      const data = yield call(deleteUser, payload)
+      if (!data.code) message.success('删除成功')
     },
 
     *create({ payload }, { call, put }) {
       const data = yield call(createUser, payload)
-      if (data.success) {
+      if (!data.code) {
         yield put({ type: 'hideModal' })
-      } else {
-        throw data
       }
     },
 
     *update({ payload }, { select, call, put }) {
-      const id = yield select(({ user }) => user.currentItem.id)
-      const newUser = { ...payload, id }
-      const data = yield call(updateUser, newUser)
-      if (data.success) {
+      const data = yield call(updateUser, payload)
+      if (!data.code) {
         yield put({ type: 'hideModal' })
-      } else {
-        throw data
       }
     }
   },
@@ -97,6 +69,10 @@ export default modelExtend(pageModel, {
 
     hideModal(state) {
       return { ...state, modalVisible: false }
+    },
+
+    updateState(state, { payload }) {
+      return { ...state, ...payload }
     }
   }
-})
+}

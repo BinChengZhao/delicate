@@ -11,7 +11,7 @@ class List extends PureComponent {
       {
         title: t`Image`,
         dataIndex: 'image',
-        render: (text) => <Avatar shape="square" src={text} />,
+        render: (text) => <Avatar shape="square" src={text} />
       },
       {
         title: t`Title`,
@@ -20,45 +20,42 @@ class List extends PureComponent {
           <Ellipsis tooltip length={30}>
             {text}
           </Ellipsis>
-        ),
+        )
       },
       {
         title: t`Author`,
-        dataIndex: 'author',
+        dataIndex: 'author'
       },
       {
         title: t`Categories`,
-        dataIndex: 'categories',
+        dataIndex: 'categories'
       },
       {
         title: t`Tags`,
-        dataIndex: 'tags',
+        dataIndex: 'tags'
       },
       {
         title: t`Visibility`,
-        dataIndex: 'visibility',
+        dataIndex: 'visibility'
       },
       {
         title: t`Comments`,
-        dataIndex: 'comments',
+        dataIndex: 'comments'
       },
       {
         title: t`Views`,
-        dataIndex: 'views',
+        dataIndex: 'views'
       },
       {
         title: t`Publish Date`,
-        dataIndex: 'date',
-      },
+        dataIndex: 'date'
+      }
     ]
 
     return (
       <Table
         {...tableProps}
-        pagination={{
-          ...tableProps.pagination,
-          showTotal: (total) => t`Total ${total} Items`,
-        }}
+        pagination={{ ...tableProps.pagination }}
         bordered
         scroll={{ x: 1200 }}
         className={styles.table}

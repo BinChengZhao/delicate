@@ -48,27 +48,25 @@ const database = [
     name: 'Execution Group',
     zh: { name: '执行组' },
     route: '/executorGroup'
+  },
+  {
+    id: '4',
+    breadcrumbParentId: '1',
+    name: 'user',
+    zh: { name: '用户管理' },
+    icon: 'user',
+    route: '/user'
+  },
+  {
+    id: '41',
+    menuParentId: '-1',
+    breadcrumbParentId: '4',
+    name: 'User Detail',
+    zh: {
+      name: '用户详情'
+    },
+    route: '/user/:id'
   }
-  // {
-  //   id: '7',
-  //   breadcrumbParentId: '1',
-  //   name: 'Posts',
-  //   zh: {
-  //     name: '用户管理'
-  //   },
-  //   icon: 'shopping-cart',
-  //   route: '/post'
-  // },
-  // {
-  //   id: '22',
-  //   menuParentId: '-1',
-  //   breadcrumbParentId: '2',
-  //   name: 'User Detail',
-  //   zh: {
-  //     name: '用户详情'
-  //   },
-  //   route: '/user/:id'
-  // },
   // {
   //   id: '6',
   //   breadcrumbParentId: '1',

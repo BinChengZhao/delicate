@@ -73,10 +73,7 @@ class ExecutorGroupList extends PureComponent {
     return (
       <Table
         {...tableProps}
-        pagination={{
-          ...tableProps.pagination,
-          showTotal: (total) => t`Total ${total} Items`
-        }}
+        pagination={{ ...tableProps.pagination }}
         className={styles.table}
         columns={columns}
         simple

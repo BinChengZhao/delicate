@@ -46,28 +46,28 @@ export default {
 
     *create({ payload }, { call, put }) {
       const data = yield call(executorCreate, payload)
-      if (data.code === 0) {
+      if (!data.code) {
         yield put({ type: 'hideExecutorModal' })
       }
     },
 
     *update({ payload }, { select, call, put }) {
       const data = yield call(executorUpdate, payload)
-      if (data.code === 0) {
+      if (!data.code) {
         yield put({ type: 'hideExecutorModal' })
       }
     },
 
     *delete({ payload }, { call, put }) {
       const data = yield call(executorDelete, payload)
-      if (data.code === 0) {
+      if (!data.code) {
         message.success('删除成功')
       }
     },
 
     *activation({ payload }, { call, put }) {
       const data = yield call(executorActivate, payload)
-      if (data.code === 0) {
+      if (!data.code) {
         message.success('激活成功')
       }
     }

@@ -1,6 +1,5 @@
 import api from '../../services'
 import { message } from 'antd'
-import { history } from 'umi'
 
 const {
   queryTaskList,
@@ -11,9 +10,9 @@ const {
   taskRun,
   taskSuspend,
   taskLogList,
-  taskLogEvent,
   taskLogDetail,
-  taskKill
+  taskKill,
+  taskBindList
 } = api
 
 export default {
@@ -54,6 +53,7 @@ export default {
     }
   },
   effects: {
+    // 查询任务列表
     *query({ payload = {} }, { call, put }) {
       const data = yield call(queryTaskList, payload)
       if (!data.code) {
@@ -67,7 +67,22 @@ export default {
         })
       }
     },
-
+    // 创建任务
+    *create({ payload }, { call, put }) {
+      const data = yield call(taskCreate, payload)
+      if (!data.code) yield put({ type: 'hideModal' })
+    },
+    // 修改任务
+    *update({ payload }, { call, put }) {
+      const data = yield call(taskUpdate, payload)
+      if (!data.code) yield put({ type: 'hideModal' })
+    },
+    // 删除任务
+    *delete({ payload }, { call, put, select }) {
+      const data = yield call(taskDelete, payload)
+      if (!data.code) message.success('删除成功')
+    },
+    // 查询任务日志列表
     *taskLogList({ payload = {} }, { call, put }) {
       const data = yield call(taskLogList, payload)
       if (!data.code) {
@@ -81,60 +96,34 @@ export default {
         })
       }
     },
-
+    // 任务日志详情
     *taskLogDetail({ payload }, { call, put }) {
       return yield call(taskLogDetail, payload)
     },
-
-    *delete({ payload }, { call, put, select }) {
-      const data = yield call(taskDelete, payload)
-      if (!data.code) {
-        message.success('删除成功')
-      }
-    },
-
+    // 立即执行任务
     *onTaskAdvance({ payload }, { call, put }) {
       const data = yield call(taskAdvance, payload)
-      if (!data.code) {
-        message.success('手动执行操作成功')
-      }
+      if (!data.code) message.success('手动执行操作成功')
     },
-
+    // 启用任务
     *onTaskRun({ payload }, { call, put }) {
       const data = yield call(taskRun, payload)
-      if (!data.code) {
-        message.success('启动成功')
-      }
+      if (!data.code) message.success('启动成功')
     },
-
+    // 停用任务
     *onTaskSuspend({ payload }, { call, put }) {
       const data = yield call(taskSuspend, payload)
-      if (!data.code) {
-        message.warning('任务已暂停')
-      }
+      if (!data.code) message.warning('任务已暂停')
     },
-
+    // 杀死任务
     *onTaskKill({ payload }, { call, put }) {
       const data = yield call(taskKill, payload)
-      if (!data.code) {
-        message.warning('任务强行结束！')
-      }
+      if (!data.code) message.warning('任务强行结束！')
       return data
     },
-
-    *create({ payload }, { call, put }) {
-      const data = yield call(taskCreate, payload)
-      if (!data.code) {
-        yield put({ type: 'hideModal' })
-
-      }
-    },
-
-    *update({ payload }, { call, put }) {
-      const data = yield call(taskUpdate, payload)
-      if (!data.code) {
-        yield put({ type: 'hideModal' })
-      }
+    *taskBindList({ payload }, { call, put }) {
+      const data = yield call(taskBindList)
+      return !data.code ? data.data : []
     }
   },
 
