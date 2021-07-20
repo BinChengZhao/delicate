@@ -77,7 +77,7 @@ export default {
     *query({ payload }, { call, put, select }) {
       // store isInit to prevent query trigger by refresh
       const data = yield call(checkUser)
-      if (data.data) {
+      if (!data.code) {
         // todo 查询路由
         const list = database
         const permissions = {}
