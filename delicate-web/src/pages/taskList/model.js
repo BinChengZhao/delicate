@@ -47,9 +47,9 @@ export default {
   subscriptions: {
     setup({ dispatch, history }) {
       history.listen((location) => {
-        if (location.state === undefined && location.pathname !== '/taskList') {
-          history.push({ pathname: '/taskList' })
-        }
+        const pattern = /^\/taskList\/\d$/
+        const str = location.pathname
+        if (pattern.test(str) && location.state === undefined) history.push({ pathname: '/taskList' })
       })
     }
   },
@@ -112,6 +112,14 @@ export default {
       if (!data.code) {
         message.warning('任务已暂停')
       }
+    },
+
+    *onTaskKill({ payload }, { call, put }) {
+      const data = yield call(taskKill, payload)
+      if (!data.code) {
+        message.warning('任务强行结束！')
+      }
+      return data
     },
 
     *create({ payload }, { call, put }) {

@@ -36,7 +36,7 @@ class List extends PureComponent {
           <Link to={{ pathname: `taskList/${row.id}`, state: row }}>查看日志</Link>
         </Menu.Item>
         <Popconfirm
-          title={`去定要删除任务【${row.name}】吗？`}
+          title={`确定要删除任务【${row.name}】吗？`}
           onConfirm={() => this.confirm(row.id)}
           onCancel={() => this.cancel()}
           okText="Yes"

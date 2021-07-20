@@ -6,17 +6,21 @@ import { connect } from 'umi'
 import { Page } from 'components'
 import styles from './index.less'
 import { Card } from 'antd'
-
+import * as u from '../../utils/data'
 @connect(({ dashboard, loading }) => ({
   dashboard,
   loading
 }))
 class Dashboard extends PureComponent {
-  initEChart() {
-    const { dashboard } = this.props
-    const { taskStatusEChart } = dashboard
-    const legend = []
+  componentDidMount() {
+    const { dispatch } = this.props
+    dispatch({ type: 'dashboard/query' }).then((ret) => {
+      if (!ret.code) this.initEChart(ret.data)
+    })
+  }
 
+  initEChart(taskStatusEChart) {
+    const legend = []
     const hourContainer = taskStatusEChart.hours_range || []
     const series = []
 
@@ -38,14 +42,14 @@ class Dashboard extends PureComponent {
       }
     }
 
+    // eslint-disable-next-line array-callback-return
     series.filter((e) => {
       legend.push(e.name)
     })
 
     const chartDom = document.getElementById('main')
     const myChart = echarts.init(chartDom)
-    let option
-    option = {
+    const option = {
       title: {
         text: '任务状态聚合(最近24小时)'
       },
@@ -87,15 +91,7 @@ class Dashboard extends PureComponent {
       ],
       series: series
     }
-
-    option && myChart.setOption(option)
-  }
-
-  shouldComponentUpdate(nextProps, nextState, nextContext) {
-    const { dashboard } = nextProps
-    const { taskStatusEChart } = dashboard
-    taskStatusEChart && this.initEChart()
-    return true
+    myChart.setOption(option)
   }
 
   render() {

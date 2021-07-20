@@ -11,22 +11,18 @@ export default {
   },
   subscriptions: {
     setup({ dispatch, history }) {
-      history.listen(({ pathname }) => {
-        if (pathToRegexp('/dashboard').exec(pathname) || pathToRegexp('/').exec(pathname)) {
-          dispatch({ type: 'query' })
-        }
-      })
+      history.listen(({ pathname }) => {})
     }
   },
   effects: {
     *query({ payload }, { call, put }) {
-      const data = yield call(dashboard)
-      if (!data.code) {
-        yield put({
-          type: 'updateState',
-          payload: { taskStatusEChart: data.data }
-        })
-      }
+      return yield call(dashboard)
+      // if (!data.code) {
+      //   yield put({
+      //     type: 'updateState',
+      //     payload: { taskStatusEChart: data.data }
+      //   })
+      // }
     }
   },
 
