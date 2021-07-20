@@ -11,9 +11,10 @@ async fn show_one_day_tasks_state(pool: ShareData<db::ConnectionPool>) -> HttpRe
 
     if let Ok(conn) = pool.get() {
         let daily_state_result = web::block::<_, _, diesel::result::Error>(move || {
-            let now = NaiveDateTime::from_timestamp(get_timestamp() as i64, 0);
+            let datetime: DateTime<Local> = SystemTime::now().into();
+            let now = datetime.naive_local();
             let raw_past_day = now - ChronoDuration::days(1);
-            let start_hour = raw_past_day.hour() + 1;
+            let start_hour = datetime.hour() + 1;
 
             let past_day = raw_past_day
                 .with_hour(start_hour)

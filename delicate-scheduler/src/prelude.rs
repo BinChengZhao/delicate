@@ -23,6 +23,7 @@ pub(crate) use std::pin::Pin;
 pub(crate) use std::str::FromStr;
 pub(crate) use std::task::{Context, Poll};
 pub(crate) use std::time::Duration;
+pub(crate) use std::time::SystemTime;
 pub(crate) use std::vec::IntoIter;
 
 pub(crate) use futures::future::{join, ok, JoinAll, Ready};
@@ -31,7 +32,7 @@ pub(crate) use futures::Future;
 pub(crate) use cached::proc_macro::cached;
 pub(crate) use cached::TimedSizedCache;
 
-pub(crate) use chrono::{Duration as ChronoDuration, NaiveDateTime, Timelike};
+pub(crate) use chrono::{DateTime, Duration as ChronoDuration, Local, NaiveDateTime, Timelike};
 
 pub(crate) use diesel::mysql::Mysql;
 pub(crate) use diesel::prelude::*;
