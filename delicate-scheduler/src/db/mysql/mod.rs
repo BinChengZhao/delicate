@@ -40,12 +40,19 @@ pub(crate) fn get_connection_pool() -> Pool<ConnectionManager<MysqlConnection>> 
 #[derive(Debug, Default, Clone, Copy, Serialize, Deserialize)]
 struct Customizer;
 
-// diesel The default is UTC time, here we need to configure it to CST time.
+// diesel The default is UTC time, here we need to configure it to customized time.
 impl CustomizeConnection<MysqlConnection, diesel::r2d2::Error> for Customizer {
     fn on_acquire(&self, conn: &mut MysqlConnection) -> Result<(), diesel::r2d2::Error> {
-        // TODO: according .env set time_zone，if without then set SYSTEM。
-        conn.execute("SET time_zone = SYSTEM;")
-            .map_err(diesel::r2d2::Error::QueryError)?;
+        let customized_time_zone = env::var("CUSTOMIZE_TIME_ZONE");
+
+        if let Ok(time_zone) = customized_time_zone {
+            let mut query = String::from("SET time_zone = ");
+            query.push_str(&time_zone);
+            query.push(';');
+
+            conn.execute(&query)
+                .map_err(diesel::r2d2::Error::QueryError)?;
+        }
 
         Ok(())
     }

@@ -12,10 +12,17 @@ async fn show_one_day_tasks_state(pool: ShareData<db::ConnectionPool>) -> HttpRe
     if let Ok(conn) = pool.get() {
         let daily_state_result = web::block::<_, _, diesel::result::Error>(move || {
             let now = NaiveDateTime::from_timestamp(get_timestamp() as i64, 0);
-            let past_day = now - ChronoDuration::days(1);
-            let hours_range: Vec<u32> =
-                ((past_day.hour() + 1)..).take(24).map(|n| n % 24).collect();
+            let raw_past_day = now - ChronoDuration::days(1);
+            let start_hour = raw_past_day.hour() + 1;
 
+            let past_day = raw_past_day
+                .with_hour(start_hour)
+                .map(|t| t.with_minute(0).map(|t| t.with_second(0)))
+                .flatten()
+                .flatten()
+                .unwrap_or(raw_past_day);
+
+            let hours_range: Vec<u32> = (start_hour..).take(24).map(|n| n % 24).collect();
 
             // the number of tasks started in a given hour ( By created_time ), the
             // the number of tasks that ended normally at a certain time

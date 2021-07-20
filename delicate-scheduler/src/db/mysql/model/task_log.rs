@@ -248,7 +248,6 @@ impl TryFrom<String> for FrontEndRecordId {
     }
 }
 
-
 impl From<FrontEndRecordId> for String {
     fn from(id: FrontEndRecordId) -> Self {
         id.0.to_string()
