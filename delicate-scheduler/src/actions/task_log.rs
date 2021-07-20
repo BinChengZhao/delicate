@@ -149,7 +149,6 @@ fn batch_insert_task_logs(
     mut new_task_logs: Vec<model::NewTaskLog>,
 ) -> QueryResult<usize> {
     use db::schema::{task, task_log};
-    use std::collections::HashMap;
 
     if !new_task_logs.is_empty() {
         let task_ids: Vec<i64> = new_task_logs.iter().map(|e| e.task_id).collect();

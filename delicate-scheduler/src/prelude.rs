@@ -16,6 +16,7 @@ pub(crate) use delicate_utils::error::CommonError;
 pub(crate) use delicate_utils::prelude::*;
 pub(crate) use delicate_utils::uniform_data::*;
 
+pub(crate) use std::collections::HashMap;
 pub(crate) use std::convert::TryFrom;
 pub(crate) use std::env;
 pub(crate) use std::fmt::Debug;
