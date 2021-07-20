@@ -25,9 +25,9 @@ pub struct ExecutorGroupBinding {
 }
 
 #[derive(Queryable, Debug, Clone, Serialize, Deserialize)]
-pub struct ExecutorGroupDetail{
+pub struct ExecutorGroupDetail {
     pub(crate) inner: ExecutorGroup,
-    pub(crate) bindings: Vec<ExecutorGroupBinding>
+    pub(crate) bindings: Vec<ExecutorGroupBinding>,
 }
 
 #[derive(Queryable, Identifiable, AsChangeset, Debug, Clone, Serialize, Deserialize)]

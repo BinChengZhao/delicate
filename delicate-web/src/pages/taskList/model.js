@@ -126,6 +126,7 @@ export default {
       const data = yield call(taskCreate, payload)
       if (!data.code) {
         yield put({ type: 'hideModal' })
+
       }
     },
 

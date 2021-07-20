@@ -178,7 +178,6 @@ impl QueryParamsUser {
         self,
         mut statement_builder: user::BoxedQuery<'static, Mysql, ST>,
     ) -> user::BoxedQuery<'static, Mysql, ST> {
-
         if let Some(user_id) = self.id {
             statement_builder = statement_builder.filter(user::id.eq(user_id));
         }

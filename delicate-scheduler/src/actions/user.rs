@@ -62,6 +62,7 @@ async fn show_users(
                         .clone()
                         .query_filter(query_builder)
                         .paginate(query_params.page)
+                        .set_per_page(query_params.per_page)
                         .load::<model::User>(&conn)?;
 
                     let per_page = query_params.per_page;
@@ -216,7 +217,7 @@ async fn pre_check_user(
 #[post("/api/user/logout")]
 async fn logout_user(session: Session) -> HttpResponse {
     HttpResponse::Ok().json({
-        session.purge();
+        session.clear();
         UnifiedResponseMessages::<()>::success()
     })
 }
