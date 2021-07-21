@@ -38,3 +38,7 @@
 #### 报表：
 
 - [x] （优先级-中）页面图表达反了（后端检查）。`后端已修复`
+
+#### CI/CD:
+- [ ] （优先级-低） delicate/delicate-web/src/utils/envConfig.js, 对应后端服务地址的取值字段默认是 development , 学习一下如何才能取 production 。
+- [ ] （优先级-低） 前后端 template.env 聚合成一个。
