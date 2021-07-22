@@ -9,10 +9,10 @@ const FormItem = Form.Item
 const Option = Select.Option
 const formItemLayout = {
   labelCol: {
-    span: 6
+    span: 4
   },
   wrapperCol: {
-    span: 14
+    span: 18
   }
 }
 
@@ -23,31 +23,33 @@ class TaskModal extends PureComponent {
     super(props)
     this.state = {
       forms: this.initForms(),
-      bindList: []
+      bindList: [],
+      modeVale: 1
     }
   }
 
   initForms() {
     return {
       id: null,
-      name: 'demo',
-      description: '一条demo命令',
-      command: 'echo "hello word";',
-      frequency: { extend: "{key:'value'}", modal: 1, time_zone: 1 },
+      name: '',
+      description: '',
+      command: '";',
+      frequency: { extend: { count: 1 }, mode: 1, time_zone: 1 },
       cron_expression: '* * * * * ?',
-      timeout: 180,
-      retry_times: 180,
-      retry_interval: 3,
-      maximum_parallel_runnable_num: 5,
+      timeout: 300,
+      retry_times: 1,
+      retry_interval: 10,
+      maximum_parallel_runnable_num: 2,
       tag: [],
-      bind_id: [],
+      binding_ids: [],
       status: 2 // true: 2 启用 ｜ false： 1 未启用
     }
   }
 
   setParams(data) {
-    const params = { task: { ...data }, binding_ids: data.bind_id }
-    delete data.bind_id
+    const params = { task: data, binding_ids: data.binding_ids }
+    delete data.binding_ids
+    console.log(params)
     return params
   }
 
@@ -57,13 +59,14 @@ class TaskModal extends PureComponent {
       .validateFields()
       .then((values) => {
         const data = {
-          ...values,
           ...item,
+          ...values,
           tag: values.tag.join(','),
           frequency: JSON.stringify(values.frequency),
           cron_expression: values.cron_expression.replaceAll('?', '*') + ' *'
         }
-        onOk(this.setParams(data))
+        const params = this.setParams(data)
+        onOk(params)
       })
       .catch((errorInfo) => {
         console.log(errorInfo)
@@ -73,6 +76,11 @@ class TaskModal extends PureComponent {
   bindList() {
     const { getBindList } = this.props
     getBindList().then((bindList) => this.setState({ bindList }))
+  }
+
+  componentDidMount() {
+    // 页面渲染完毕后立即获取bindList
+    this.bindList()
   }
 
   render() {
@@ -112,7 +120,7 @@ class TaskModal extends PureComponent {
 
           <FormItem label="频率" hasFeedback {...formItemLayout}>
             <Input.Group compact {...formItemLayout}>
-              <Form.Item name={['frequency', 'modal']} noStyle rules={[{ required: true, message: '模式必须选择' }]}>
+              <Form.Item name={['frequency', 'mode']} noStyle rules={[{ required: true, message: '模式必须选择' }]}>
                 <Select placeholder="模式" style={{ width: '25%' }}>
                   <Option key={1} value={1}>
                     Once
@@ -125,8 +133,8 @@ class TaskModal extends PureComponent {
                   </Option>
                 </Select>
               </Form.Item>
-              <Form.Item name={['frequency', 'extend']} noStyle>
-                <Input style={{ width: '50%' }} placeholder="扩展字段，严格按照k:v格式" />
+              <Form.Item name={['frequency', 'extend', 'count']} noStyle>
+                <Input style={{ width: '50%' }} placeholder="运行次数,CountDown模式下有效" />
               </Form.Item>
               <Form.Item
                 name={['frequency', 'time_zone']}
@@ -165,15 +173,15 @@ class TaskModal extends PureComponent {
             </Form.Item>
             <Form.Item
               name="retry_times"
-              label={'重试时间'}
-              rules={[{ required: true, message: '未设置重试时间' }]}
+              label={'重试次数'}
+              rules={[{ required: true, message: '未设置重试次数' }]}
               style={{
                 display: 'inline-block',
                 width: 'calc(32% - 8px)',
                 margin: '0 8px'
               }}
             >
-              <InputNumber placeholder="单位：秒" min={10} max={10000} />
+              <InputNumber placeholder="单位：次" min={1} max={100} />
             </Form.Item>
             <Form.Item
               name="retry_interval"
@@ -185,7 +193,7 @@ class TaskModal extends PureComponent {
                 margin: '0 8px'
               }}
             >
-              <InputNumber placeholder="单位：秒" min={1} max={10} />
+              <InputNumber placeholder="单位：秒" min={10} max={10000} />
             </Form.Item>
           </Form.Item>
           <FormItem
@@ -195,12 +203,12 @@ class TaskModal extends PureComponent {
             hasFeedback
             {...formItemLayout}
           >
-            <InputNumber min={1} />
+            <InputNumber min={1} max={10000} />
           </FormItem>
           <FormItem name="tag" label="任务标签" hasFeedback {...formItemLayout}>
             <Select mode="tags" allowClear style={{ width: '100%' }} placeholder="支持自定义标签" />
           </FormItem>
-          <FormItem name="bind_id" label="组ID" hasFeedback {...formItemLayout}>
+          <FormItem name="binding_ids" label="组ID" hasFeedback {...formItemLayout}>
             <Select mode={'multiple'} placeholder="请选择执行组ID" onFocus={() => this.bindList()}>
               {bindList.map((point, i) => {
                 return (

@@ -38,6 +38,11 @@ export default {
   groupCreate: 'POST /executor_group/create',
   groupUpdate: 'POST /executor_group/update',
   groupDelete: 'POST /executor_group/delete',
+  groupBindList: '/executor/list',
+  groupBindExecutor: 'POST /executor_processor_bind/create',
+  groupUpdateExecutor: 'POST /executor_processor_bind/update',
+  groupUsedExecutor: 'POST /executor_group/detail',
+  groupDeleteExecutor: 'POST /executor_processor_bind/delete',
 
   // 用户相关
   queryUserList: 'POST /user/list',

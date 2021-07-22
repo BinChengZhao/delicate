@@ -3,6 +3,7 @@ import { Button, message, Popconfirm, Space, Table, Tooltip } from 'antd'
 import React, { PureComponent } from 'react'
 import styles from '../../taskList/components/List.less'
 import PropTypes from 'prop-types'
+import { Link } from 'umi'
 
 class ExecutorGroupList extends PureComponent {
   confirm(id) {
@@ -64,6 +65,7 @@ class ExecutorGroupList extends PureComponent {
                   删除
                 </a>
               </Popconfirm>
+              <Link to={{ pathname: `executorGroup/${row.id}` }}>组详情</Link>
             </Space>
           )
         }

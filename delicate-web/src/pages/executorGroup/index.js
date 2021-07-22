@@ -47,11 +47,12 @@ class ExecutorGroup extends PureComponent {
         break
       case 'update':
         title = '编辑执行器组'
-        item = item = { ...currentItem, tag: currentItem.tag.split(',') }
+        item = item = { ...currentItem, tag: currentItem.tag.split(',').filter((e) => e !== '') }
         break
     }
     modalType = modalType === 'copy' ? 'create' : modalType
     return {
+      modalType: modalType,
       item: item,
       visible: modalVisible,
       destroyOnClose: true,
@@ -62,14 +63,11 @@ class ExecutorGroup extends PureComponent {
       title: title,
       centered: true,
       width: 800,
-      onOk: (data) => {
-        dispatch({ type: `${NAMESPACE}/${modalType}`, payload: data }).then(() => this.handleRefresh())
-      },
-      onCancel() {
-        dispatch({
-          type: `${NAMESPACE}/hideGroupModal`
-        })
-      }
+      onOk: (data) => dispatch({ type: `${NAMESPACE}/${modalType}`, payload: data }).then(() => this.handleRefresh()),
+      onCancel: () => dispatch({ type: `${NAMESPACE}/hideGroupModal` }),
+      getGroupBindList: () => dispatch({ type: `${NAMESPACE}/groupBindList` }),
+      onGroupBindExecutor: (data) => dispatch({ type: `${NAMESPACE}/onGroupBindExecutor`, payload: data }),
+      groupUsedExecutor: (data) => dispatch({ type: `${NAMESPACE}/groupUsedExecutor`, payload: data })
     }
   }
 
