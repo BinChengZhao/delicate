@@ -87,7 +87,7 @@ class ExecutorGroup extends PureComponent {
       onDeleteItem: (id) => {
         dispatch({
           type: `${NAMESPACE}/delete`,
-          payload: { executor_processor_id: id }
+          payload: { executor_group_id: id }
         }).then(() => {
           this.handleRefresh()
         })
@@ -103,14 +103,6 @@ class ExecutorGroup extends PureComponent {
         dispatch({
           type: `${NAMESPACE}/showGroupModal`,
           payload: { modalType: 'copy', currentItem: item }
-        })
-      },
-      onActivation(id) {
-        dispatch({
-          type: `${NAMESPACE}/activation`,
-          payload: { executor_processor_id: id }
-        }).then(() => {
-          this.handleRefresh()
         })
       }
     }

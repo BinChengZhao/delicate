@@ -16,9 +16,7 @@ class ExecutorGroupList extends PureComponent {
   }
 
   render() {
-    const { onEditItem, onDeleteItem, onActivation, onCopy, ...tableProps } = this.props
-
-    const MENU_ITEM_MAP = []
+    const { onEditItem, onDeleteItem, onCopy, ...tableProps } = this.props
 
     const columns = [
       {
@@ -54,6 +52,7 @@ class ExecutorGroupList extends PureComponent {
               <a type={'link'} onClick={() => onEditItem(row)}>
                 编辑
               </a>
+              <Link to={{ pathname: `executorGroup/${row.id}` }}>组详情</Link>
               <Popconfirm
                 title={`确定要删除执行执行组【${row.name}】吗？`}
                 onConfirm={() => this.confirm(row.id)}
@@ -65,7 +64,6 @@ class ExecutorGroupList extends PureComponent {
                   删除
                 </a>
               </Popconfirm>
-              <Link to={{ pathname: `executorGroup/${row.id}` }}>组详情</Link>
             </Space>
           )
         }
@@ -88,8 +86,7 @@ class ExecutorGroupList extends PureComponent {
 ExecutorGroupList.propTypes = {
   onEditItem: PropTypes.func,
   onDeleteItem: PropTypes.func,
-  onCopy: PropTypes.func,
-  onActivation: PropTypes.func
+  onCopy: PropTypes.func
 }
 
 export default ExecutorGroupList
