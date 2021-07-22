@@ -16,9 +16,7 @@ class ExecutorGroupList extends PureComponent {
   }
 
   render() {
-    const { onEditItem, onDeleteItem, onActivation, onCopy, ...tableProps } = this.props
-
-    const MENU_ITEM_MAP = []
+    const { onEditItem, onDeleteItem, onCopy, ...tableProps } = this.props
 
     const columns = [
       {
@@ -88,8 +86,7 @@ class ExecutorGroupList extends PureComponent {
 ExecutorGroupList.propTypes = {
   onEditItem: PropTypes.func,
   onDeleteItem: PropTypes.func,
-  onCopy: PropTypes.func,
-  onActivation: PropTypes.func
+  onCopy: PropTypes.func
 }
 
 export default ExecutorGroupList

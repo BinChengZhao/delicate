@@ -48,18 +48,6 @@ class ExecutorGroupModal extends PureComponent {
       .then((values) => {
         const data = { ...values, id: item.id }
         data.tag = data.tag.join(',')
-        const bindParams = {
-          group_id: data.id,
-          executor_ids: data.executor_ids,
-          name: data.name + '绑定执行器',
-          weight: 0
-        }
-
-        if (modalType === 'create') {
-          // 绑定
-          onGroupBindExecutor(bindParams)
-        }
-        // 添加组
         onOk(data)
       })
       .catch((errorInfo) => {
@@ -90,25 +78,11 @@ class ExecutorGroupModal extends PureComponent {
           <FormItem name="tag" label="任务标签" hasFeedback {...formItemLayout}>
             <Select mode="tags" allowClear style={{ width: '100%' }} placeholder="支持自定义标签" />
           </FormItem>
-          {modalType === 'create' ? (
-            <FormItem name="executor_ids" label="绑定执行器" hasFeedback {...formItemLayout}>
-              <Select mode={'multiple'} placeholder="请选择执行器ID" onFocus={() => this.getGroupBindList()}>
-                {bindList.map((point, i) => {
-                  return (
-                    <Select.Option key={parseInt(point.id)} value={parseInt(point.id)}>
-                      {point.title}
-                    </Select.Option>
-                  )
-                })}
-              </Select>
-            </FormItem>
-          ) : null}
         </Form>
       </Modal>
     )
   }
 }
-
 ExecutorGroupModal.propTypes = {
   type: PropTypes.string,
   onOk: PropTypes.func,
