@@ -49,7 +49,7 @@ sudo yarn build
 sudo yarn start
 ```
 
-4. After the startup is complete, open a browser and visit [http://localhost:7000](http://localhost:7000), If you need to change the startup port, you can configure it in the `.env` file.
+4. After the startup is complete, open a browser and visit [http://localhost:7000](http://localhost:7000), If you need to change the startup port, you can configure it in the `.env` file, And you can set the backend request address in `delicate-delicate-web/src/utils/envConfig.js`.
 
 5. Deploy:
 Next, we can upload the static file to the server. If you use Nginx as the Web server, you can configure it in `ngnix.conf`:
@@ -62,10 +62,12 @@ server
         # The directory where the compiled files are stored
 		root  /home/www/delicate-web/dist;
 
-        # Proxy server interface to avoid cross-domain
-		location /api {
-			 proxy_pass http://localhost:7000/api;
-		}
+        # Proxy server .
+		location / {
+            proxy_set_header   X-Forwarded-For $remote_addr;
+            proxy_set_header   Host $http_host;
+            proxy_pass         http://127.0.0.1:7000;
+        }
 
          Because the front end uses BrowserHistory, it will route backback to index.html
 		location / {

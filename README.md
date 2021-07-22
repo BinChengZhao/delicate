@@ -65,7 +65,7 @@ $ wget https://github.com/BinChengZhao/delicate/releases/download/v1.0.0/delicat
 $ tar zxvf delicate-v1.0.0-linux-amd64.tar.gz -C delicate && cd delicate -->
 
 
-1. install the rust suite: ` curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh ` or ` curl --tlsv1.2 -sSf https://sh.rustup.rs | sh `  .
+1. install the rust suite: ` curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh ` or ` curl --tlsv1.2 -sSf https://sh.rustup.rs | sh ` or `curl https://sh.rustup.rs -sSf | sh`  .  （It is possible to encounter a curl error and need to retry several times, These problems are usually due to the fact that the curl version is too low, or the network is unstable.）
 
 2. initialize cargo in the current shell, ` source $HOME/.cargo/env ` .  
 
@@ -83,11 +83,13 @@ $ tar zxvf delicate-v1.0.0-linux-amd64.tar.gz -C delicate && cd delicate -->
 
 9. Compile the executable with ` cargo build --release ` after passing it.
 
-10. Start delicate-scheduler: ` nohup target/release/delicate-scheduler &   ` on the machine where the server is deployed .
+10. Start delicate-scheduler: ` nohup target/release/delicate-scheduler >> scheduler.log 2>&1 &` on the machine where the server is deployed .
 
-11. start delicate-executor: ` nohup target/release/delicate-executor & ` on the machine performing the task .
+11. start delicate-executor: ` nohup target/release/delicate-executor >> executor.log 2>&1 & ` on the machine performing the task .
 
 12. Please refer to `delicate-web/README.md` for the deployment of front-end resources.
+
+13. `delicate-scheduler` & `delicate-web` need to be under the same domain (such as `api.delicate.com` & `web.delicate.com`), so as to avoid cross-domain issues, Both `delicate-scheduler` & `delicate-web` can be deployed in clustered versions, accessible via reverse proxy.
 
 
 ## Documentation
