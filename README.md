@@ -89,6 +89,8 @@ $ tar zxvf delicate-v1.0.0-linux-amd64.tar.gz -C delicate && cd delicate -->
 
 12. Please refer to `delicate-web/README.md` for the deployment of front-end resources.
 
+13. `delicate-scheduler` & `delicate-web` need to be under the same domain (such as `api.delicate.com` & `web.delicate.com`), so as to avoid cross-domain issues, Both `delicate-scheduler` & `delicate-web` can be deployed in clustered versions, accessible via reverse proxy.
+
 
 ## Documentation
 
