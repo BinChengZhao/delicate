@@ -1,7 +1,17 @@
 import api from 'api'
 import { message } from 'antd'
 
-const { groupList, groupCreate, groupUpdate, groupDelete } = api
+const {
+  groupList,
+  groupCreate,
+  groupUpdate,
+  groupDelete,
+  groupBindList,
+  groupBindExecutor,
+  groupUsedExecutor,
+  groupDeleteExecutor,
+  groupUpdateExecutor
+} = api
 
 export default {
   namespace: 'executorGroupModel',
@@ -46,23 +56,41 @@ export default {
 
     *create({ payload }, { call, put }) {
       const data = yield call(groupCreate, payload)
-      if (!data.code) {
-        yield put({ type: 'hideGroupModal' })
-      }
+      if (!data.code) yield put({ type: 'hideGroupModal' })
     },
 
     *update({ payload }, { select, call, put }) {
       const data = yield call(groupUpdate, payload)
-      if (!data.code) {
-        yield put({ type: 'hideGroupModal' })
-      }
+      if (!data.code) yield put({ type: 'hideGroupModal' })
     },
 
     *delete({ payload }, { call, put }) {
       const data = yield call(groupDelete, payload)
-      if (!data.code) {
-        message.success('删除成功')
-      }
+      if (!data.code) message.success('删除成功')
+    },
+
+    *groupUsedExecutor({ payload }, { call, put }) {
+      const data = yield call(groupUsedExecutor, payload)
+      return !data.code ? data.data : { inner: { name: '', description: '' }, bindings: [] }
+    },
+    *groupBindList({ payload }, { call, put }) {
+      const data = yield call(groupBindList)
+      return !data.code ? data.data : []
+    },
+
+    *onGroupBindExecutor({ payload }, { call, put }) {
+      const data = yield call(groupBindExecutor, payload)
+      if (data.code) message.success('执行器绑定异常')
+    },
+
+    *onGroupUpdateExecutor({ payload }, { call, put }) {
+      const data = yield call(groupUpdateExecutor, payload)
+      if (data.code) message.success('执行器绑定异常')
+    },
+
+    *groupDeleteExecutor({ payload }, { call, put }) {
+      const data = yield call(groupDeleteExecutor, payload)
+      if (!data.code) message.warning('解绑成功')
     }
   },
 

@@ -21,9 +21,7 @@ const database = [
     menuParentId: '-1',
     breadcrumbParentId: '2',
     name: 'Task Log',
-    zh: {
-      name: '任务日志'
-    },
+    zh: { name: '任务日志' },
     route: '/taskList/:id'
   },
   {
@@ -48,6 +46,14 @@ const database = [
     name: 'Execution Group',
     zh: { name: '执行组' },
     route: '/executorGroup'
+  },
+  {
+    id: '321',
+    menuParentId: '-1',
+    breadcrumbParentId: '32',
+    name: 'Execution Group',
+    zh: { name: '组详情' },
+    route: '/executorGroup/:id'
   },
   {
     id: '4',

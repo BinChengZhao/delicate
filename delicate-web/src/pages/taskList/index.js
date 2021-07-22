@@ -12,8 +12,6 @@ const NAMESPACE = 'taskModel'
 
 @connect(({ taskModel, loading }) => ({ taskModel, loading }))
 class Task extends PureComponent {
-  formRef = React.createRef()
-
   handleRefresh = (newQuery) => {
     const { taskModel, dispatch } = this.props
     const queryWhere = taskModel.queryWhere
