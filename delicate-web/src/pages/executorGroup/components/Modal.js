@@ -41,7 +41,7 @@ class ExecutorGroupModal extends PureComponent {
   }
 
   handleOk = () => {
-    const { item = {}, modalType, onOk, onGroupBindExecutor } = this.props
+    const { item = {}, onOk } = this.props
 
     this.formRef.current
       .validateFields()
@@ -57,13 +57,13 @@ class ExecutorGroupModal extends PureComponent {
 
   render() {
     const { onOk, form, modalType, ...modalProps } = this.props
-    const { forms, bindList } = this.state
+    const { forms } = this.state
     const initValues = modalProps.item ? modalProps.item : forms
     return (
       <Modal {...modalProps} onOk={this.handleOk}>
         <Form ref={this.formRef} name="control-ref" layout="horizontal" initialValues={initValues}>
-          <FormItem name="name" label="执行器名称" rules={[{ required: true }]} hasFeedback {...formItemLayout}>
-            <Input placeholder="执行器名称" />
+          <FormItem name="name" label="执行组名称" rules={[{ required: true }]} hasFeedback {...formItemLayout}>
+            <Input placeholder="定义执行组名称" />
           </FormItem>
           <FormItem
             name="description"
@@ -72,7 +72,7 @@ class ExecutorGroupModal extends PureComponent {
             hasFeedback
             {...formItemLayout}
           >
-            <Input placeholder="这个执行器的描述" />
+            <Input placeholder="这个执行组的描述" />
           </FormItem>
 
           <FormItem name="tag" label="任务标签" hasFeedback {...formItemLayout}>
