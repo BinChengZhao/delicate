@@ -1,7 +1,6 @@
 ## [delicate](https://github.com/BinChengZhao/delicate) 一个轻量的分布式的任务调度平台通过rust编写.
 
 
-
 <a href="">
     <img src="https://delicate-rs-1301941387.cos.ap-beijing.myqcloud.com/delicate-rs/delicate_logo.png"
          alt="delicate logo" title="delicate" height="125" width="125"  align="right"/>
@@ -10,18 +9,18 @@
 //TODO: there is features and pictures.
 //TODO: 1.Introduction (repo address) 2.Function 3.Technology stack 4.roadmap 5.Thanks (repo address).
 
-## Features
-- **Friendly UI:** [Front-end] Convenient management of tasks & executors, monitoring their status and supporting manual maintenance etc.
+## 特性
+- **友好的用户界面：** [前端]方便地管理任务和执行者，监控其状态，支持手动维护等。
 
-- **Flexible Operations:** Flexible task operations, support for limiting the maximum number of parallelism in a single node, time zone settings corresponding to cron expressions, scheduling modes (single, fixed number, constantly repeating), the ability to manually trigger tasks at any time, manually terminate task instances, and view task logs online.
+- **灵活的操作：** 灵活的任务操作，支持限制单个节点的最大并行数，与cron表达式相对应的时区设置，调度模式（单一、固定数量、不断重复），能够在任何时候手动触发任务，手动终止任务实例，在线查看任务日志。
 
-- **High Availability:**  Delicate supports unlimited horizontal expansion. It's easy to achieve high availability and performance by deploying as many Delicate servers and executors.
+- **高可用性：** Delicate支持横向扩展。通过部署尽可能多的Delicate服务器和执行器，很容易实现高可用性和性能。
 
-- **High Performance:** Lightweight and essential features speed up the performance, The basic resource overhead for `delicate` is roughly (less than 0.1% cpu usage, with about 10m of memory.)
+- **高性能：** 轻量级和基本功能加快了性能，`delicate'的基本资源开销大约是（小于0.1%的cpu使用率，10m的内存.)
 
-- **Observability:**  There are many meaningful statistics periodically in a readable way.
+- **可观察性:**有许多有意义的统计数据定期以图表的方式展现。
 
-- **Upgrade:**  Dynamic upgrade of the system (upgrade is done by obtaining the latest source code and performing database migration.
+- **升级：**系统的动态升级（升级是通过获得最新的源代码和进行数据库迁移.)
 
 
 
@@ -29,34 +28,34 @@
 
 
 
-## Technology-stack
+## 技术栈
 
-Backend: Rust  
-main-dependencies: (actix-web & diesel & delay-timer & serde & tracing)
+后端( scheduler & executor ): Rust  
+主要的依赖: (actix-web & diesel & delay-timer & serde & tracing)
 
-Front-end: antd-admin (JS)
+前端: antd-admin (React)
 
 Ui: Ant Design
 
-Database: mysql , postgres (plan support)
+数据库: mysql , postgres (计划支持)
 
 
 
 [Quick-start](https://github.com/BinChengZhao/delicate/blob/main/doc/promotional_doc_zh_cn.md)
 
 
-## What's next#
-At the this year, we announced our 2021 roadmap for Delicate. So we will continue to follow this roadmap.
+## 下一步是什么
+在今年的计划中，我们宣布了2021年Delicate的路线图。因此，我们将继续遵循这个路线图.
 
 [Roadmap](https://github.com/BinChengZhao/delicate/blob/main/doc/Roadmap.md)
 
-## Thanks
+## 感谢
 
-Thank you!
+谢谢你
 
-We would like to thank the whole community and code contributors. In particular, thanks to the code contributors from the past two months:
+我们要感谢整个社区和代码贡献者。特别是，感谢过去两个月的代码贡献者:
 [Walker-os](https://github.com/Walker-os)
 
 
-Thanks to users reporting spelling mistakes on the documentation. This is always appreciated.
-Thanks to users joining us provide feedbacks, discuss features, and get assistance!
+感谢用户报告文档中的拼写错误, 这非常感谢大家。
+感谢用户加入我们，提供反馈，讨论功能，并获得帮助!

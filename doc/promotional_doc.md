@@ -29,7 +29,7 @@
 Backend: Rust  
 main-dependencies: (actix-web & diesel & delay-timer & serde & tracing)
 
-Front-end: antd-admin (JS)
+Front-end: antd-admin (React)
 
 Ui: Ant Design
 
