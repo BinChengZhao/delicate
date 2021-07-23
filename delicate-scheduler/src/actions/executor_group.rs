@@ -16,11 +16,12 @@ async fn create_executor_group(
     use db::schema::executor_group;
 
     if let Ok(conn) = pool.get() {
-        return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
+        return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<u64>>::into(
             web::block(move || {
                 diesel::insert_into(executor_group::table)
                     .values(&executor_group)
-                    .execute(&conn)
+                    .execute(&conn)?;
+                diesel::select(db::last_insert_id).get_result::<u64>(&conn)
             })
             .await,
         ));
@@ -152,6 +153,7 @@ async fn delete_executor_group(
     if let Ok(conn) = pool.get() {
         return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
             web::block(move || {
+                // Cannot link to delete internal bindings, otherwise it will cause data misalignment.
                 diesel::delete(executor_group.find(executor_group_id)).execute(&conn)
             })
             .await,
