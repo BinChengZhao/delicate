@@ -10,7 +10,7 @@
 //TODO: 1.Introduction (repo address) 2.Function 3.Technology stack 4.roadmap 5.Thanks (repo address).
 
 ## 特性
-- **友好的用户界面：** [前端]方便地管理任务和执行者，监控其状态，支持手动维护等。
+- **友好的用户界面：** [前端]方便地管理任务和执行器，监控其状态，支持手动维护运行中的任务等。
 
 - **灵活的操作：** 灵活的任务操作，支持限制单个节点的最大并行数，与cron表达式相对应的时区设置，调度模式（单一、固定数量、不断重复），能够在任何时候手动触发任务，手动终止任务实例，在线查看任务日志。
 
@@ -25,7 +25,6 @@
 
 
 ![architecture](https://delicate-rs-1301941387.cos.ap-beijing.myqcloud.com/delicate-rs/delicate-architecture.svg)
-
 
 
 ## 技术栈

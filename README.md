@@ -41,7 +41,7 @@ The architecture of delicate:
 ![architecture](./doc/architecture.svg)
 
 ## Benchmark
-Task take about 10,080 ns - 15,089 ns per scheduling (varies by OS/hardware).
+Task take about 6,424 ns (+/- 52) per scheduling on CentOS Linux release 7.6.1810 (Core)  (varies by OS/hardware).
 
 The rest of the overall indicators await bench.
 
@@ -113,7 +113,7 @@ See [reference](./doc/reference.md) and [developer guide](./doc/developer-guide.
 See [delicate Roadmap](./doc/Roadmap.md) for details.
 
 ## Thanks
-Sincere thanks to my friend `Walker-os` who helped me solve a lot of front-end resource problems and speed up the release of delicate and `liping Wang` help me beautify the logo.
+Sincere thanks to my friend `Walker-os` who helped me solve a lot of front-end resource problems and speed up the release of delicate and `Liping Wang` help me beautify the logo.
 
 # Stargazers over time
 
