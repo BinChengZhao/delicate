@@ -18,7 +18,6 @@ The front-end project of `delicate` is based on `antd-admin` development, thank 
 
 </div>
 
-- Preview - [https://delicate-rs.com](https://delicate.com)
 
 English | [简体中文](./docs/zh-cn/README.md) 
 
@@ -43,39 +42,37 @@ sudo yarn install
 sudo yarn build
 ```
 
-3. Start local server.
-
-```bash
-sudo yarn start
-```
-
-4. After the startup is complete, open a browser and visit [http://localhost:7000](http://localhost:7000), If you need to change the startup port, you can configure it in the `.env` file, And you can set the backend request address in `delicate-web/src/utils/envConfig.js`.
-
-5. Deploy:
+3. Deploy:
 Next, we can upload the static file to the server. If you use Nginx as the Web server, you can configure it in `ngnix.conf`:
 ```
 server
 	{
 		listen       80;
+
         # Specify an accessible domain name
 		server_name web.delicate-rs.com;
+
         # The directory where the compiled files are stored
 		root  /home/www/delicate-web/dist;
 
-        # Proxy server .
-		location / {
+        # Proxy delicate-scheduler server .
+		location /api {
             proxy_set_header   X-Forwarded-For $remote_addr;
             proxy_set_header   Host $http_host;
-            proxy_pass         http://127.0.0.1:7000;
+            proxy_pass         http://*.*.*.*:8090;
         }
 
-         Because the front end uses BrowserHistory, it will route backback to index.html
+        # Because the front end uses BrowserHistory, it will 
+		# route back to index.html
 		location / {
 				index  index.html;
 				try_files $uri $uri/ /index.html;
 		}
 	}
 ```
+
+4. After the startup is complete, open a browser and visit [http://yourdomain.com](http://yourdomain.com), If you need to change the startup port, you can configure it in the `.env` file, And you can set the backend request address in `delicate-web/src/utils/envConfig.js`.
+
 
 
 ## Browsers support

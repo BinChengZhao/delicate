@@ -73,7 +73,7 @@ server
 
         # Proxy server interface to avoid cross-domain
 		location /api {
-			 proxy_pass http://localhost:7000/api;
+			 proxy_pass http://*.*.*.*:8090/api;
 		}
 
          Because the front end uses BrowserHistory, it will route backback to index.html

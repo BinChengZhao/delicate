@@ -32,9 +32,9 @@ https://github.com/BinChengZhao/delicate)
 
 - **高性能：** 轻量级和基本功能加快了性能，`delicate'的基本资源开销大约是（小于0.1%的cpu使用率，10m的内存.)
 
-- **可观察性:**有许多有意义的统计数据定期以图表的方式展现。
+- **可观察性:** 有许多有意义的统计数据定期以图表的方式展现。
 
-- **升级：**系统的动态升级（升级是通过获得最新的源代码和进行数据库迁移.)
+- **升级：** 系统的动态升级（升级是通过获得最新的源代码和进行数据库迁移.)
 
 `Delicate` 架构图:
 
@@ -47,7 +47,8 @@ https://github.com/BinChengZhao/delicate)
 
 ## Get Started
 
-`Delicate`的基本用途是为后端服务器和执行器快速设置。我们把它分成多个简单的步骤来说明`Delicate`的概念和操作.
+如下是`Delicate` - `scheduler` & `executor` 的基本用途和快速设置。
+我们把它分成多个简单的步骤来说明`Delicate`的概念和操作.
 
 源码安装的依赖:
  * [rustc](https://www.rust-lang.org/tools/install) (minimum-supported version of `rustc` is **1.49**.) 

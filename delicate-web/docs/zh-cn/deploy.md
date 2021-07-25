@@ -74,7 +74,7 @@ server
 
         # 代理服务端接口，避免跨域
 		location /api {
-			 proxy_pass http://localhost:7000/api;
+			 proxy_pass http://*.*.*.*:8090/api;
 		}
 
         # 因为前端使用了BrowserHistory，所以将路由 fallback 到 index.html

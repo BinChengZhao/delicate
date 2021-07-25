@@ -8,7 +8,7 @@
 
 <div align="center">
 
-一个轻量的分布式的任务调度平台通过 rust & js 编写.
+一个轻量的分布式的任务调度平台通过 rust & react 编写.
 
 `delicate` 的前端项目是基于 "antd-admin "开发的，非常感谢各位。
 
@@ -23,7 +23,7 @@ https://github.com/BinChengZhao/delicate)
 </div>
 
 
-## 特性
+## 前端特性
 
 - 国际化，源码中抽离翻译字段，按需加载语言包
 - 动态权限，不同权限对应不同菜单
@@ -49,13 +49,40 @@ sudo yarn install
 sudo yarn build
 ```
 
-3. 启动本地服务器。
 
-```bash
-sudo yarn start
+3. 部署:
+接下来，我们可以将静态文件上传到服务器。如果你使用Nginx作为Web服务器，你可以在`ngnix.conf`中配置它:
+
+```
+server
+	{
+		listen       80;
+
+        # Specify an accessible domain name
+		server_name web.delicate-rs.com;
+
+        # The directory where the compiled files are stored
+		root  /home/www/delicate-web/dist;
+
+        # Proxy delicate-scheduler server .
+		location /api {
+            proxy_set_header   X-Forwarded-For $remote_addr;
+            proxy_set_header   Host $http_host;
+            proxy_pass         http://*.*.*.*:8090;
+        }
+
+        # Because the front end uses BrowserHistory, it will 
+		# route back to index.html
+		location / {
+				index  index.html;
+				try_files $uri $uri/ /index.html;
+		}
+	}
 ```
 
-4. 启动完成后打开浏览器访问 [http://localhost:7000](http://localhost:7000)，如果需要更改启动端口，可在 `.env` 文件中配置。
+4. 启动完成后，打开浏览器，访问[http://yourdomain.com](http://yourdomain.com)，如果你需要改变启动端口，可以在`.env`文件中配置，而且你可以在`delicate-web/src/utils/envConfig.js`中设置`delicate-scheduler`服务端的请求地址。.
+
+
 
 
 > 更多信息请参考 。
