@@ -97,6 +97,11 @@ impl QueryParamsExecutorProcessor {
                 statement_builder.filter(executor_processor::id.eq(executor_processor_id));
         }
 
+        if let Some(machine_id) = self.machine_id {
+            statement_builder =
+                statement_builder.filter(executor_processor::machine_id.eq(machine_id));
+        }
+
         if let Some(executor_processor_name) = self.name {
             statement_builder =
                 statement_builder.filter(executor_processor::name.like(executor_processor_name));
