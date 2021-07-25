@@ -159,6 +159,7 @@ class TaskLog extends PureComponent {
         key: 'name',
         width: 120,
         fixed: 'left',
+        ellipsis: true,
         render: (text, row) => {
           return (
             <Tooltip title={t`Description` + ':' + row.description}>
@@ -184,15 +185,14 @@ class TaskLog extends PureComponent {
         }
       },
       {
-        title: '机器节点ID',
-        dataIndex: 'executor_processor_id',
-        key: 'executor_processor_id',
-        width: 150
-      },
-      {
         title: '节点执行ID',
         dataIndex: 'record_id',
         key: 'record_id'
+      },
+      {
+        title: 'Host',
+        dataIndex: 'executor_processor_host',
+        key: 'executor_processor_host'
       },
       {
         title: '表达式',
@@ -245,6 +245,7 @@ class TaskLog extends PureComponent {
                 onCancel={() => this.cancel()}
                 okText="Yes"
                 cancelText="No"
+                disabled={row.status !== STATUS_RUN_ING}
               >
                 <Button disabled={row.status !== STATUS_RUN_ING} type={'link'} danger>
                   中断进程

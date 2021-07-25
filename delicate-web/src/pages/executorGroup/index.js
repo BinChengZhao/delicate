@@ -63,11 +63,13 @@ class ExecutorGroup extends PureComponent {
       title: title,
       centered: true,
       width: 800,
-      onOk: (data) => dispatch({ type: `${NAMESPACE}/${modalType}`, payload: data }).then(() => this.handleRefresh()),
+      onOk: (data) => dispatch({ type: `${NAMESPACE}/${modalType}`, payload: data }),
       onCancel: () => dispatch({ type: `${NAMESPACE}/hideGroupModal` }),
       getGroupBindList: () => dispatch({ type: `${NAMESPACE}/groupBindList` }),
-      onGroupBindExecutor: (data) => dispatch({ type: `${NAMESPACE}/onGroupBindExecutor`, payload: data }),
-      groupUsedExecutor: (data) => dispatch({ type: `${NAMESPACE}/groupUsedExecutor`, payload: data })
+      onGroupBindExecutor: (data) =>
+        dispatch({ type: `${NAMESPACE}/onGroupBindExecutor`, payload: data }).then(() => this.handleRefresh()),
+      groupUsedExecutor: (data) => dispatch({ type: `${NAMESPACE}/groupUsedExecutor`, payload: data }),
+      onRefresh: (newQuery) => this.handleRefresh(newQuery)
     }
   }
 

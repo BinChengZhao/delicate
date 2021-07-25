@@ -54,12 +54,7 @@ class ExecutorList extends PureComponent {
         key: 'host'
       },
       {
-        title: '端口号',
-        dataIndex: 'port',
-        key: 'port'
-      },
-      {
-        title: '机器节点id',
+        title: '机器节点ID',
         dataIndex: 'machine_id',
         key: 'machine_id'
       },

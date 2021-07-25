@@ -64,8 +64,9 @@ class List extends PureComponent {
         title: <Trans>Task Name</Trans>,
         dataIndex: 'name',
         key: 'name',
-        width: 120,
+        width: 150,
         fixed: 'left',
+        ellipsis: true,
         render: (text, row) => {
           return (
             <Tooltip title={t`Description` + ':' + row.description}>
@@ -138,21 +139,9 @@ class List extends PureComponent {
         width: 120
       },
       {
-        title: <Trans>Task Id</Trans>,
-        dataIndex: 'task_id',
-        key: 'task_id',
-        width: 100
-      },
-      {
         title: <Trans>Tag</Trans>,
         dataIndex: 'tag',
         key: 'tag'
-      },
-      {
-        title: <Trans>Bind Id</Trans>,
-        dataIndex: 'bind_id',
-        key: 'bind_id',
-        width: 100
       },
       {
         title: <Trans>Operation</Trans>,
@@ -180,7 +169,7 @@ class List extends PureComponent {
         className={styles.table}
         columns={columns}
         simple
-        scroll={{ x: 1800 }}
+        scroll={{ x: 1900 }}
         rowKey={(record) => record.id}
       />
     )
