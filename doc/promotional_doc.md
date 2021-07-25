@@ -1,10 +1,8 @@
 [delicate](https://github.com/BinChengZhao/delicate) A lightweight and distributed task scheduling platform written in rust.
 
-//TODO: there is features and pictures.
-//TODO: 1.Introduction (repo address) 2.Function 3.Technology stack 4.roadmap 5.Thanks (repo address).
 
 <a href="">
-    <img src="https://github.com/BinChengZhao/delicate/blob/main/doc/delicate_logo.png"
+    <img src="https://delicate-rs-1301941387.cos.ap-beijing.myqcloud.com/delicate-rs/delicate_logo.png"
          alt="delicate logo" title="delicate" height="125" width="125"  align="right"/>
 </a>
 
@@ -22,7 +20,7 @@
 - **Upgrade:**  Dynamic upgrade of the system (upgrade is done by obtaining the latest source code and performing database migration.
 
 
-![architecture](https://github.com/BinChengZhao/delicate/blob/main/doc/architecture.svg)
+![architecture](https://delicate-rs-1301941387.cos.ap-beijing.myqcloud.com/delicate-rs/delicate-architecture.svg)
 
 ## Technology-stack
 
@@ -55,3 +53,57 @@ We would like to thank the whole community and code contributors. In particular,
 
 Thanks to users reporting spelling mistakes on the documentation. This is always appreciated.
 Thanks to users joining us provide feedbacks, discuss features, and get assistance!
+
+
+## Renderings
+
+<a href="">
+    <img src="https://delicate-rs-1301941387.cos.ap-beijing.myqcloud.com/delicate-rs/dashboard.jpg"
+         alt="" title="delicate" align="right"/>
+</a>
+
+<a href="">
+    <img src="https://delicate-rs-1301941387.cos.ap-beijing.myqcloud.com/delicate-rs/task_list.jpg"
+         alt="" title="delicate" align="right"/>
+</a>
+
+<a href="">
+    <img src="https://delicate-rs-1301941387.cos.ap-beijing.myqcloud.com/delicate-rs/task_list_operation.jpg"
+         alt="" title="delicate" align="right"/>
+</a>
+
+<a href="">
+    <img src="https://delicate-rs-1301941387.cos.ap-beijing.myqcloud.com/delicate-rs/task_logs.jpg"
+         alt="" title="delicate" align="right"/>
+</a>
+
+<a href="">
+    <img src="https://delicate-rs-1301941387.cos.ap-beijing.myqcloud.com/delicate-rs/task_log_kill.jpg"
+         alt="" title="delicate" align="right"/>
+</a>
+
+<a href="">
+    <img src="https://delicate-rs-1301941387.cos.ap-beijing.myqcloud.com/delicate-rs/executor_list.jpg"
+         alt="" title="delicate" align="right"/>
+</a>
+
+<a href="">
+    <img src="https://delicate-rs-1301941387.cos.ap-beijing.myqcloud.com/delicate-rs/group_list.jpg"
+         alt="" title="delicate" align="right"/>
+</a>
+
+<a href="">
+    <img src="https://delicate-rs-1301941387.cos.ap-beijing.myqcloud.com/delicate-rs/group_inner_bind.jpg"
+         alt="" title="delicate" align="right"/>
+</a>
+
+<a href="">
+    <img src="https://delicate-rs-1301941387.cos.ap-beijing.myqcloud.com/delicate-rs/task_logs_2.jpg"
+         alt="" title="delicate" align="right"/>
+</a>
+
+<a href="">
+    <img src="https://delicate-rs-1301941387.cos.ap-beijing.myqcloud.com/delicate-rs/user_list.jpg"
+         alt="" title="delicate" align="right"/>
+</a>
+

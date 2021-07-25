@@ -6,8 +6,6 @@
          alt="delicate logo" title="delicate" height="125" width="125"  align="right"/>
 </a>
 
-//TODO: there is features and pictures.
-//TODO: 1.Introduction (repo address) 2.Function 3.Technology stack 4.roadmap 5.Thanks (repo address).
 
 ## 特性
 - **友好的用户界面：** [前端]方便地管理任务和执行器，监控其状态，支持手动维护运行中的任务等。
@@ -16,11 +14,11 @@
 
 - **高可用性：** Delicate支持横向扩展。通过部署尽可能多的Delicate服务器和执行器，很容易实现高可用性和性能。
 
-- **高性能：** 轻量级和基本功能加快了性能，`delicate'的基本资源开销大约是（小于0.1%的cpu使用率，10m的内存.)
+- **高性能:** 轻量级和基本功能加快了性能，`delicate'的基本资源开销大约是（小于0.1%的cpu使用率，10m的内存.)
 
-- **可观察性:**有许多有意义的统计数据定期以图表的方式展现。
+- **可观察性:** 有许多有意义的统计数据定期以图表的方式展现。
 
-- **升级：**系统的动态升级（升级是通过获得最新的源代码和进行数据库迁移.)
+- **升级:** 系统的动态升级（升级是通过获得最新的源代码和进行数据库迁移.)
 
 
 
@@ -40,7 +38,7 @@ Ui: Ant Design
 
 
 
-[Quick-start](https://github.com/BinChengZhao/delicate/blob/main/doc/promotional_doc_zh_cn.md)
+[Quick-start](https://github.com/BinChengZhao/delicate/blob/main/doc/quick_start_zh_cn.md)
 
 
 ## 下一步是什么
@@ -58,3 +56,57 @@ Ui: Ant Design
 
 感谢用户报告文档中的拼写错误, 这非常感谢大家。
 感谢用户加入我们，提供反馈，讨论功能，并获得帮助!
+
+
+## 效果图
+
+<a href="">
+    <img src="https://delicate-rs-1301941387.cos.ap-beijing.myqcloud.com/delicate-rs/dashboard.jpg"
+         alt="" title="delicate" align="right"/>
+</a>
+
+<a href="">
+    <img src="https://delicate-rs-1301941387.cos.ap-beijing.myqcloud.com/delicate-rs/task_list.jpg"
+         alt="" title="delicate" align="right"/>
+</a>
+
+<a href="">
+    <img src="https://delicate-rs-1301941387.cos.ap-beijing.myqcloud.com/delicate-rs/task_list_operation.jpg"
+         alt="" title="delicate" align="right"/>
+</a>
+
+<a href="">
+    <img src="https://delicate-rs-1301941387.cos.ap-beijing.myqcloud.com/delicate-rs/task_logs.jpg"
+         alt="" title="delicate" align="right"/>
+</a>
+
+<a href="">
+    <img src="https://delicate-rs-1301941387.cos.ap-beijing.myqcloud.com/delicate-rs/task_log_kill.jpg"
+         alt="" title="delicate" align="right"/>
+</a>
+
+<a href="">
+    <img src="https://delicate-rs-1301941387.cos.ap-beijing.myqcloud.com/delicate-rs/executor_list.jpg"
+         alt="" title="delicate" align="right"/>
+</a>
+
+<a href="">
+    <img src="https://delicate-rs-1301941387.cos.ap-beijing.myqcloud.com/delicate-rs/group_list.jpg"
+         alt="" title="delicate" align="right"/>
+</a>
+
+<a href="">
+    <img src="https://delicate-rs-1301941387.cos.ap-beijing.myqcloud.com/delicate-rs/group_inner_bind.jpg"
+         alt="" title="delicate" align="right"/>
+</a>
+
+<a href="">
+    <img src="https://delicate-rs-1301941387.cos.ap-beijing.myqcloud.com/delicate-rs/task_logs_2.jpg"
+         alt="" title="delicate" align="right"/>
+</a>
+
+<a href="">
+    <img src="https://delicate-rs-1301941387.cos.ap-beijing.myqcloud.com/delicate-rs/user_list.jpg"
+         alt="" title="delicate" align="right"/>
+</a>
+
