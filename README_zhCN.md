@@ -93,6 +93,9 @@ $ tar zxvf delicate-v1.0.0-linux-amd64.tar.gz -C delicate && cd delicate -->
 13. `delicate-scheduler`和`delicate-web`需要在同一个域下（如`api. delicate.com`和`web. delicate.com`），以避免跨域问题，`delicate-scheduler`和`delicate-web`都可以通过反向代理部署为集群版本。
 
 
+## Quick start
+[快速开始](./doc/quick_start_zh_cn.md)
+
 ## documentation
 
 See [reference](./doc/reference.md) for more information.

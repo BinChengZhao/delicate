@@ -92,9 +92,12 @@ $ tar zxvf delicate-v1.0.0-linux-amd64.tar.gz -C delicate && cd delicate -->
 13. `delicate-scheduler` & `delicate-web` need to be under the same domain (such as `api.delicate.com` & `web.delicate.com`), so as to avoid cross-domain issues, Both `delicate-scheduler` & `delicate-web` can be deployed in clustered versions, accessible via reverse proxy.
 
 
+## Quick start
+[Quick-start](./doc/quick_start.md)
+
 ## Documentation
 
-See [reference](./doc/reference.md) and [developer guide](./doc/developer-guide.md) for more information.
+See [reference](./doc/reference.md) for more information.
 
 
 ## To Do List
