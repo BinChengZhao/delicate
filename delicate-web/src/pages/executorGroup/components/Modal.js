@@ -41,14 +41,27 @@ class ExecutorGroupModal extends PureComponent {
   }
 
   handleOk = () => {
-    const { item = {}, onOk } = this.props
+    const { item = {}, onOk, modalType, onGroupBindExecutor, onRefresh } = this.props
 
     this.formRef.current
       .validateFields()
       .then((values) => {
         const data = { ...values, id: item.id }
-        data.tag = data.tag.join(',')
-        onOk(data)
+        data.tag = data.tag && data.tag.join(',')
+        onOk(data).then((ret) => {
+          if (modalType === 'create') {
+            // 绑定
+            const bindParams = {
+              group_id: ret.data,
+              executor_ids: data.executor_ids,
+              name: data.name + '绑定执行器',
+              weight: 0
+            }
+            onGroupBindExecutor(bindParams)
+          } else {
+            onRefresh()
+          }
+        })
       })
       .catch((errorInfo) => {
         console.log(errorInfo)
@@ -57,7 +70,7 @@ class ExecutorGroupModal extends PureComponent {
 
   render() {
     const { onOk, form, modalType, ...modalProps } = this.props
-    const { forms } = this.state
+    const { forms, bindList } = this.state
     const initValues = modalProps.item ? modalProps.item : forms
     return (
       <Modal {...modalProps} onOk={this.handleOk}>
@@ -75,9 +88,22 @@ class ExecutorGroupModal extends PureComponent {
             <Input placeholder="这个执行组的描述" />
           </FormItem>
 
-          <FormItem name="tag" label="任务标签" hasFeedback {...formItemLayout}>
+          <FormItem name="tag" label="任务标签" rules={[{ required: true }]} hasFeedback {...formItemLayout}>
             <Select mode="tags" allowClear style={{ width: '100%' }} placeholder="支持自定义标签" />
           </FormItem>
+          {modalType === 'create' ? (
+            <FormItem name="executor_ids" label="绑定执行器" hasFeedback {...formItemLayout}>
+              <Select mode={'multiple'} placeholder="请选择执行器ID" onFocus={() => this.getGroupBindList()}>
+                {bindList.map((point, i) => {
+                  return (
+                    <Select.Option key={parseInt(point.id)} value={parseInt(point.id)}>
+                      {point.title}
+                    </Select.Option>
+                  )
+                })}
+              </Select>
+            </FormItem>
+          ) : null}
         </Form>
       </Modal>
     )
@@ -89,6 +115,7 @@ ExecutorGroupModal.propTypes = {
   getGroupBindList: PropTypes.func,
   onGroupBindExecutor: PropTypes.func,
   groupUsedExecutor: PropTypes.func,
+  onRefresh: PropTypes.func,
   item: PropTypes.object
 }
 

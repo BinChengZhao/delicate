@@ -55,8 +55,7 @@ export default {
     },
 
     *create({ payload }, { call, put }) {
-      const data = yield call(groupCreate, payload)
-      if (!data.code) yield put({ type: 'hideGroupModal' })
+      return yield call(groupCreate, payload)
     },
 
     *update({ payload }, { select, call, put }) {
@@ -81,6 +80,7 @@ export default {
     *onGroupBindExecutor({ payload }, { call, put }) {
       const data = yield call(groupBindExecutor, payload)
       if (data.code) message.success('执行器绑定异常')
+      yield put({ type: 'hideGroupModal' })
     },
 
     *onGroupUpdateExecutor({ payload }, { call, put }) {

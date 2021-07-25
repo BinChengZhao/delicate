@@ -208,8 +208,8 @@ class TaskModal extends PureComponent {
           <FormItem name="tag" label="任务标签" hasFeedback {...formItemLayout}>
             <Select mode="tags" allowClear style={{ width: '100%' }} placeholder="支持自定义标签" />
           </FormItem>
-          <FormItem name="binding_ids" label="组ID" hasFeedback {...formItemLayout}>
-            <Select mode={'multiple'} placeholder="请选择执行组ID" onFocus={() => this.bindList()}>
+          <FormItem name="binding_ids" label="机器绑定" hasFeedback {...formItemLayout}>
+            <Select mode={'multiple'} placeholder="请选择" onFocus={() => this.bindList()}>
               {bindList.map((point, i) => {
                 return (
                   <Select.Option key={parseInt(point.id)} value={parseInt(point.id)}>

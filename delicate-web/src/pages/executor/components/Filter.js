@@ -34,6 +34,7 @@ class ExecutorFilter extends PureComponent {
       values[i] = values[i] === '' ? null : values[i]
     }
     const initFlitter = this.initFilter()
+    values.machine_id = parseInt(values.machine_id)
     query({ ...initFlitter, ...values })
   }
 
