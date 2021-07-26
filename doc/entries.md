@@ -17,6 +17,10 @@
 - [User](#User)
     - [Configuration](#configuration-6)
 
+- [Status Data Aggregation](#StatusDataAggregation)
+
+- [Security](#Security)
+
 
 ## ExecutorGroup
 
@@ -171,4 +175,21 @@ PS: When the system is first installed, you can set the initial user in `.env`.
 | certificate | string                                            | Password credentials (the station saves the password, the station does not save or save the token)       | Yes       |
 
 
+## StatusDataAggregation
+
+delicate aggregates the task scheduling for the latest day, including: (successful scheduling, timeout, manual cancellation, abnormal end, normal end, etc.), which we can view in the home dashboard.
+
+<a href="">
+    <img src="https://delicate-rs-1301941387.cos.ap-beijing.myqcloud.com/delicate-rs/dashboard.jpg"
+         alt="" title="delicate" align="right"/>
+</a>
+
+## Security
+
+There are two levels of security, 0 and 1.
+This can be adjusted by setting the environment variable `DELICATE_SECURITY_LEVEL`.
+
+At level 0, the executor and scheduler communicate without security signatures.
+
+Under level 1, executor and scheduler will use RSA key for authentication when binding, and then dynamically generate a token, which will be stored in the database of scheduler, and each subsequent communication will use token & sha2 hash algorithm for signature authentication.
 
