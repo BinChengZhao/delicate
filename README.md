@@ -120,11 +120,11 @@ See [delicate Roadmap](./doc/Roadmap.md) for details.
 ## Contributing
 
 :balloon: Thanks for your help improving the project! We are so happy to have
-you! We have a [contributing guide][guide] to help you get involved in the Tokio
+you! We have a contributing guide to help you get involved in the Delicate
 project.
 
-[Rust-guide]: ./CONTRIBUTING.md
-[Js-guide]: ./delicate-web/CONTRIBUTING.md
+[Rust-guide](./CONTRIBUTING.md)
+[Js-guide](./delicate-web/CONTRIBUTING.md)
 
 
 ## Thanks
