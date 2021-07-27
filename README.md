@@ -13,6 +13,7 @@ https://github.com/BinChengZhao/delicate)
     - [Setting up delicate](#setting-up-delicate)
   - [Documentation](#documentation)
   - [Roadmap](#roadmap)
+  - [Contributing](#Contributing)
   - [License](#license)
 
 ## What is delicate
@@ -114,6 +115,17 @@ See [reference](./doc/reference.md) for more information.
 ## Roadmap 
 
 See [delicate Roadmap](./doc/Roadmap.md) for details.
+
+
+## Contributing
+
+:balloon: Thanks for your help improving the project! We are so happy to have
+you! We have a [contributing guide][guide] to help you get involved in the Tokio
+project.
+
+[Rust-guide]: ./CONTRIBUTING.md
+[Js-guide]: ./delicate-web/CONTRIBUTING.md
+
 
 ## Thanks
 Sincere thanks to my friend `Walker-os` who helped me solve a lot of front-end resource problems and speed up the release of delicate and `Liping Wang` help me beautify the logo.
