@@ -49,7 +49,6 @@ class TaskModal extends PureComponent {
   setParams(data) {
     const params = { task: data, binding_ids: data.binding_ids }
     delete data.binding_ids
-    console.log(params)
     return params
   }
 
@@ -58,12 +57,19 @@ class TaskModal extends PureComponent {
     this.formRef.current
       .validateFields()
       .then((values) => {
+        const count = parseInt(values.frequency.extend.count)
+        values.frequency.extend.count = count ? count : 0
+       
+        const cron_space_len = values.cron_expression.split(' ').length - 1
+        const cron_str_raw =  values.cron_expression.replaceAll('?', '*')
+        const cron_str =  cron_space_len >= 6 ? cron_str_raw : cron_str_raw + ' *'
+
         const data = {
           ...item,
           ...values,
           tag: values.tag.join(','),
           frequency: JSON.stringify(values.frequency),
-          cron_expression: values.cron_expression.replaceAll('?', '*') + ' *'
+          cron_expression: cron_str
         }
         const params = this.setParams(data)
         onOk(params)
