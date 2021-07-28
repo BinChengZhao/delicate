@@ -13,6 +13,7 @@ https://github.com/BinChengZhao/delicate)
     - [部署 delicate](#部署-delicate)
   - [文档](#documentation)
   - [路线图](#roadmap)
+  - [贡献指南](#Contributing)
   - [License](#license)
 
 ## What is delicate
@@ -115,6 +116,15 @@ See [reference](./doc/reference.md) for more information.
 ## Roadmap 
 
 查看更多路线图详情 [delicate Roadmap](./doc/Roadmap.md) .
+
+## Contributing
+
+:balloon: 感谢你对改进项目的帮助! 我们非常高兴能有你的参与! 这里有一个贡献指南，以帮助你参与到Delicate
+项目.
+
+[Rust-guide](./CONTRIBUTING.md)
+[Js-guide](./delicate-web/CONTRIBUTING.md)
+
 
 ## 感谢
 我们要感谢整个社区和代码贡献者。特别是，感谢过去两个月的代码贡献者:
