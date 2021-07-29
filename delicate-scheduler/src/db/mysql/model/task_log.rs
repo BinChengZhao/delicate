@@ -318,6 +318,9 @@ impl QueryParamsTaskLog {
             statement_builder = statement_builder.filter(task_log::tag.like(task_tag));
         }
 
+        // TODO: Input time-range is a date-string.
+        //  Get NaiveDateTime by called `parse_from_str`.
+        
         if let Some(start_time) = self.start_time {
             let end_time = self.end_time.unwrap_or_else(|| start_time + 86400 * 3);
 

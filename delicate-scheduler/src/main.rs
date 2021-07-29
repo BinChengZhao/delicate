@@ -66,6 +66,7 @@ async fn main() -> AnyResut<()> {
             .configure(actions::executor_processor_bind::config)
             .configure(actions::data_reports::config)
             .configure(actions::components::config)
+            .configure(actions::operation_log::config)
             .app_data(shared_delay_timer.clone())
             .app_data(shared_connection_pool.clone())
             .app_data(shared_scheduler_meta_info.clone())
