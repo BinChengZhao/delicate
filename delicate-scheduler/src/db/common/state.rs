@@ -66,3 +66,24 @@ pub mod executor_group {
         Forbidden = 2,
     }
 }
+
+pub mod operation_log {
+
+    pub enum OperationType {
+        Addition = 1,
+        Modify = 2,
+        Delete = 3,
+        Unknown = 81,
+    }
+
+    impl From<i16> for OperationType {
+        fn from(v: i16) -> OperationType {
+            match v {
+                1 => OperationType::Addition,
+                2 => OperationType::Modify,
+                3 => OperationType::Delete,
+                _ => OperationType::Unknown,
+            }
+        }
+    }
+}

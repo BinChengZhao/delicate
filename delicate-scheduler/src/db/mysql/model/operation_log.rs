@@ -36,6 +36,16 @@ pub struct NewOperationLog {
     user_name: String,
 }
 
+#[derive(Insertable, Debug, Default, Serialize, Deserialize)]
+#[table_name = "operation_log_detail"]
+
+pub struct NewOperationLogDetail {
+    operation_log_id: u64,
+    column_comment: String,
+    values: String,
+}
+
+
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub(crate) struct QueryParamsOperationLog {
     id: Option<u64>,

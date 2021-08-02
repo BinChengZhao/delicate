@@ -16,8 +16,8 @@ KEY `idx_user_id_type_time` (`user_id`,`operation_type`,`operation_time`) USING 
 CREATE TABLE operation_log_detail (
 `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'Self-incrementing id',
 `operation_log_id` bigint(20) unsigned NOT NULL DEFAULT '0' COMMENT 'Operation log id',
-`column_comment` varchar(128) NOT NULL DEFAULT '' COMMENT 'Field Description',
-`values` varchar(128) NOT NULL DEFAULT '' COMMENT 'Values',
+`column_comment` text NOT NULL COMMENT 'Field Description',
+`values` text NOT NULL COMMENT 'Values',
 PRIMARY KEY (`id`),
 KEY `idx_operation_log_id` (`operation_log_id`) USING BTREE
 )ENGINE INNODB DEFAULT CHARSET=utf8mb4 COMMENT 'Operation log details table';
