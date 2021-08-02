@@ -50,18 +50,18 @@ pub(crate) fn generate_operation_log(
     session: &Session,
     operation_type: OperationType,
     value: impl Serialize + SeekTableId,
-    column_comment: impl Serialize,
+    _column_comment: impl Serialize,
 ) -> (NewOperationLog, NewOperationLogDetail) {
     // name: String,
     // table_id: u64,
     // operation_type: i8,
     // user_id: u64,
     // user_name: String,
-    let name = operation_name.to_string();
-    let table_id = value.seek_table_id();
-    let operation_type = operation_type as i8;
-    let user_id = session.get::<u64>("user_id");
-    let user_name = session.get::<u64>("user_name");
+    let _name = operation_name.to_string();
+    let _table_id = value.seek_table_id();
+    let _operation_type = operation_type as i8;
+    let _user_id = session.get::<u64>("user_id");
+    let _user_name = session.get::<u64>("user_name");
 
     todo!();
 }
@@ -69,10 +69,10 @@ pub(crate) fn generate_operation_log(
 #[allow(dead_code)]
 
 pub(crate) fn generate_operation_addtion_log(
-    operation_name: impl ToString,
-    session: &Session,
-    values: impl Serialize,
-    column_comment: impl Serialize,
+    _operation_name: impl ToString,
+    _session: &Session,
+    _values: impl Serialize,
+    _column_comment: impl Serialize,
 ) -> NewOperationLog {
     todo!();
 }
@@ -80,10 +80,10 @@ pub(crate) fn generate_operation_addtion_log(
 #[allow(dead_code)]
 
 pub(crate) fn generate_operation_modify_log(
-    operation_name: impl ToString,
-    session: &Session,
-    values: impl Serialize,
-    column_comment: impl Serialize,
+    _operation_name: impl ToString,
+    _session: &Session,
+    _values: impl Serialize,
+    _column_comment: impl Serialize,
 ) -> NewOperationLog {
     todo!();
 }
@@ -91,10 +91,10 @@ pub(crate) fn generate_operation_modify_log(
 #[allow(dead_code)]
 
 pub(crate) fn generate_operation_delete_log(
-    operation_name: impl ToString,
-    session: &Session,
-    values: impl Serialize,
-    column_comment: impl Serialize,
+    _operation_name: impl ToString,
+    _session: &Session,
+    _values: impl Serialize,
+    _column_comment: impl Serialize,
 ) -> NewOperationLog {
     todo!();
 }
