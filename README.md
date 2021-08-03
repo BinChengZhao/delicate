@@ -11,8 +11,10 @@ https://github.com/BinChengZhao/delicate)
   - [Benchmark](#benchmark)
   - [Get Started](#get-started)
     - [Setting up delicate](#setting-up-delicate)
+  - [Quick start](#quick-start)
   - [Documentation](#documentation)
   - [Roadmap](#roadmap)
+  - [Contributing](#Contributing)
   - [License](#license)
 
 ## What is delicate
@@ -39,6 +41,8 @@ https://github.com/BinChengZhao/delicate)
 The architecture of delicate:
 
 ![architecture](./doc/architecture.svg)
+![topology](./doc/topology.svg)
+
 
 ## Benchmark
 Task take about 6,424 ns (+/- 52) per scheduling on CentOS Linux release 7.6.1810 (Core)  (varies by OS/hardware).
@@ -114,6 +118,17 @@ See [reference](./doc/reference.md) for more information.
 ## Roadmap 
 
 See [delicate Roadmap](./doc/Roadmap.md) for details.
+
+
+## Contributing
+
+:balloon: Thanks for your help improving the project! We are so happy to have
+you! We have a contributing guide to help you get involved in the Delicate
+project.
+
+[Rust-guide](./CONTRIBUTING.md)
+[Js-guide](./delicate-web/CONTRIBUTING.md)
+
 
 ## Thanks
 Sincere thanks to my friend `Walker-os` who helped me solve a lot of front-end resource problems and speed up the release of delicate and `Liping Wang` help me beautify the logo.
