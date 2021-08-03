@@ -41,6 +41,8 @@ https://github.com/BinChengZhao/delicate)
 The architecture of delicate:
 
 ![architecture](./doc/architecture.svg)
+![topology](./doc/topology.svg)
+
 
 ## Benchmark
 Task take about 6,424 ns (+/- 52) per scheduling on CentOS Linux release 7.6.1810 (Core)  (varies by OS/hardware).
