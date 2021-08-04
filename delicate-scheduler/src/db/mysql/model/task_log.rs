@@ -105,7 +105,7 @@ impl From<ExecutorEvent> for SupplyTaskLogTuple {
 #[derive(Queryable, Identifiable, AsChangeset, Debug, Clone, Serialize, Deserialize)]
 #[table_name = "task_log"]
 pub struct TaskLog {
-    id: i64,
+    pub(crate) id: i64,
     task_id: i64,
     name: String,
     description: String,
@@ -190,7 +190,7 @@ impl From<TaskLog> for FrontEndTaskLog {
 )]
 #[table_name = "task_log_extend"]
 pub struct TaskLogExtend {
-    id: i64,
+    pub(crate) id: i64,
     task_id: i64,
     stdout: String,
     stderr: String,

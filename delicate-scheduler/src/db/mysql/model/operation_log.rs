@@ -29,20 +29,20 @@ pub struct OperationLogDetail {
 #[derive(Insertable, Debug, Default, Serialize, Deserialize)]
 #[table_name = "operation_log"]
 pub struct NewOperationLog {
-    name: String,
-    table_id: u64,
-    operation_type: i8,
-    user_id: u64,
-    user_name: String,
+   pub(crate) name: String,
+   pub(crate) table_id: u64,
+   pub(crate) operation_type: i8,
+   pub(crate) user_id: u64,
+   pub(crate) user_name: String,
 }
 
 #[derive(Insertable, Debug, Default, Serialize, Deserialize)]
 #[table_name = "operation_log_detail"]
 
 pub struct NewOperationLogDetail {
-    operation_log_id: u64,
-    column_comment: String,
-    values: String,
+   pub(crate) operation_log_id: u64,
+   pub(crate) column_comment: String,
+   pub(crate) values: String,
 }
 
 

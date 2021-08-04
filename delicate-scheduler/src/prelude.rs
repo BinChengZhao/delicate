@@ -67,6 +67,7 @@ pub(crate) use tracing_subscriber::FmtSubscriber;
 pub(crate) use ring::digest::{digest, SHA256};
 pub(crate) use serde::de::DeserializeOwned;
 pub(crate) use serde::{Deserialize, Serialize};
+pub(crate) use serde_json::to_string as to_json_string;
 
 pub(crate) use validator::{Validate, ValidationErrors};
 
