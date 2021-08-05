@@ -31,7 +31,7 @@ async fn show_operation_log(
                     .get_result::<i64>(&conn)?;
 
                 let front_end_operation_log: Vec<model::OperationLog> =
-                    operation_log.into_iter().map(|t| t.into()).collect();
+                    operation_log.into_iter().collect();
                 Ok(PaginateData::<model::OperationLog>::default()
                     .set_data_source(front_end_operation_log)
                     .set_page_size(per_page)
