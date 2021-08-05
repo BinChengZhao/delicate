@@ -135,10 +135,11 @@ async fn show_task_log_detail(
 
 #[post("/api/task_instance/kill")]
 async fn kill_task_instance(
+    req: HttpRequest,
     web::Json(task_record): web::Json<model::TaskRecord>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
-    let response_result = kill_one_task_instance(pool, task_record).await;
+    let response_result = kill_one_task_instance(req, pool, task_record).await;
 
     let response = Into::<UnifiedResponseMessages<()>>::into(response_result);
     HttpResponse::Ok().json(response)
@@ -209,6 +210,7 @@ fn batch_update_task_logs(
 }
 
 async fn kill_one_task_instance(
+    req: HttpRequest,
     pool: ShareData<db::ConnectionPool>,
     model::TaskRecord {
         task_id,
@@ -217,6 +219,14 @@ async fn kill_one_task_instance(
     }: model::TaskRecord,
 ) -> Result<(), CommonError> {
     use db::schema::task_log;
+
+    let operation_log_pair_option = generate_operation_task_log_modify_log(
+        &req.get_session(),
+        &CommonTableRecord::default()
+            .set_id(record_id.0)
+            .set_description("kill task instance."),
+    )
+    .ok();
 
     let token = model::get_executor_token_by_id(executor_processor_id, pool.get()?).await;
 
@@ -232,6 +242,9 @@ async fn kill_one_task_instance(
             .filter(task_log::status.eq(state::task_log::State::Running as i16))
             .set(task_log::status.eq(state::task_log::State::TmanualCancellation as i16))
             .execute(&conn)?;
+
+        operation_log_pair_option.map(|operation_log_pair| operate_log(&conn, operation_log_pair));
+
         Ok(host)
     })
     .await?;

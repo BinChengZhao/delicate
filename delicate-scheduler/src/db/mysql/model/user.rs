@@ -43,7 +43,7 @@ pub struct NewUser {
 #[table_name = "user"]
 
 pub struct UpdateUser {
-    id: u64,
+    pub(crate) id: u64,
     user_name: String,
     nick_name: String,
     mobile: String,

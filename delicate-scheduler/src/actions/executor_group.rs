@@ -10,10 +10,14 @@ pub(crate) fn config(cfg: &mut web::ServiceConfig) {
 
 #[post("/api/executor_group/create")]
 async fn create_executor_group(
+    req: HttpRequest,
     web::Json(executor_group): web::Json<model::NewExecutorGroup>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
     use db::schema::executor_group;
+
+    let operation_log_pair_option =
+        generate_operation_executor_group_addtion_log(&req.get_session(), &executor_group).ok();
 
     if let Ok(conn) = pool.get() {
         return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<u64>>::into(
@@ -21,6 +25,9 @@ async fn create_executor_group(
                 diesel::insert_into(executor_group::table)
                     .values(&executor_group)
                     .execute(&conn)?;
+                operation_log_pair_option
+                    .map(|operation_log_pair| operate_log(&conn, operation_log_pair));
+
                 diesel::select(db::last_insert_id).get_result::<u64>(&conn)
             })
             .await,
@@ -127,12 +134,19 @@ async fn pre_show_executor_group_detail(
 
 #[post("/api/executor_group/update")]
 async fn update_executor_group(
+    req: HttpRequest,
     web::Json(executor_group): web::Json<model::UpdateExecutorGroup>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
+    let operation_log_pair_option =
+        generate_operation_executor_group_modify_log(&req.get_session(), &executor_group).ok();
+
     if let Ok(conn) = pool.get() {
         return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
             web::block(move || {
+                operation_log_pair_option
+                    .map(|operation_log_pair| operate_log(&conn, operation_log_pair));
+
                 diesel::update(&executor_group)
                     .set(&executor_group)
                     .execute(&conn)
@@ -145,14 +159,24 @@ async fn update_executor_group(
 }
 #[post("/api/executor_group/delete")]
 async fn delete_executor_group(
+    req: HttpRequest,
     web::Json(model::ExecutorGroupId { executor_group_id }): web::Json<model::ExecutorGroupId>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
     use db::schema::executor_group::dsl::*;
 
+    let operation_log_pair_option = generate_operation_executor_group_delete_log(
+        &req.get_session(),
+        &CommonTableRecord::default().set_id(executor_group_id),
+    )
+    .ok();
+
     if let Ok(conn) = pool.get() {
         return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
             web::block(move || {
+                operation_log_pair_option
+                    .map(|operation_log_pair| operate_log(&conn, operation_log_pair));
+
                 // Cannot link to delete internal bindings, otherwise it will cause data misalignment.
                 diesel::delete(executor_group.find(executor_group_id)).execute(&conn)
             })

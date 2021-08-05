@@ -322,8 +322,11 @@ async fn delete_task(
 ) -> HttpResponse {
     use db::schema::{task, task_bind};
 
-    let operation_log_pair_option =
-        generate_operation_task_delete_log(&req.get_session(), &CommonTableId { id: task_id }).ok();
+    let operation_log_pair_option = generate_operation_task_delete_log(
+        &req.get_session(),
+        &CommonTableRecord::default().set_id(task_id),
+    )
+    .ok();
     // delete
     if let Ok(conn) = pool.get() {
         return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<()>>::into(
@@ -344,41 +347,46 @@ async fn delete_task(
 
 #[post("/api/task/run")]
 async fn run_task(
+    req: HttpRequest,
     web::Json(model::TaskId { task_id }): web::Json<model::TaskId>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
-    let result: UnifiedResponseMessages<()> = Into::into(pre_run_task(task_id, pool).await);
+    let result: UnifiedResponseMessages<()> = Into::into(pre_run_task(req, task_id, pool).await);
 
     HttpResponse::Ok().json(result)
 }
 
 #[post("/api/task/suspend")]
 async fn suspend_task(
+    req: HttpRequest,
     web::Json(model::TaskId { task_id }): web::Json<model::TaskId>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
     let _span_ = span!(Level::INFO, "Suspend", task_id).entered();
 
-    let result: UnifiedResponseMessages<()> =
-        Into::into(pre_operate_task(pool.clone(), (task_id, "/api/task/remove", "Suspend")).await);
+    let result: UnifiedResponseMessages<()> = Into::into(
+        pre_operate_task(req, pool.clone(), (task_id, "/api/task/remove", "Suspend")).await,
+    );
 
     HttpResponse::Ok().json(result)
 }
 
 #[post("/api/task/advance")]
 async fn advance_task(
+    req: HttpRequest,
     web::Json(model::TaskId { task_id }): web::Json<model::TaskId>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
     let _span_ = span!(Level::INFO, "Advance", task_id).entered();
 
     let result: UnifiedResponseMessages<()> =
-        Into::into(pre_operate_task(pool, (task_id, "/api/task/advance", "Advance")).await);
+        Into::into(pre_operate_task(req, pool, (task_id, "/api/task/advance", "Advance")).await);
 
     HttpResponse::Ok().json(result)
 }
 
 async fn pre_run_task(
+    req: HttpRequest,
     task_id: i64,
     pool: ShareData<db::ConnectionPool>,
 ) -> Result<(), CommonError> {
@@ -388,6 +396,14 @@ async fn pre_run_task(
 
     use state::task::State;
 
+    let operation_log_pair_option = generate_operation_task_modify_log(
+        &req.get_session(),
+        &CommonTableRecord::default()
+            .set_id(task_id)
+            .set_description("Run task"),
+    )
+    .ok();
+
     let conn = pool.get()?;
 
     // Many machine.
@@ -396,6 +412,9 @@ async fn pre_run_task(
             diesel::update(task.find(task_id))
                 .set(task::status.eq(State::Enabled as i16))
                 .execute(&conn)?;
+
+            operation_log_pair_option
+                .map(|operation_log_pair| operate_log(&conn, operation_log_pair));
 
             task_bind::table
                 .inner_join(executor_processor_bind::table.inner_join(executor_processor::table))
@@ -441,6 +460,7 @@ async fn pre_run_task(
 }
 
 async fn pre_operate_task(
+    req: HttpRequest,
     pool: ShareData<db::ConnectionPool>,
     (task_id, url, action): (i64, &str, &'static str),
 ) -> Result<(), CommonError> {
@@ -450,8 +470,18 @@ async fn pre_operate_task(
 
     let conn = pool.get()?;
 
+    let operation_log_pair_option = generate_operation_task_modify_log(
+        &req.get_session(),
+        &CommonTableRecord::default()
+            .set_id(task_id)
+            .set_description(action),
+    )
+    .ok();
+
     // Many machine.
     let executor_packages: IntoIter<(String, String)> = web::block(move || {
+        operation_log_pair_option.map(|operation_log_pair| operate_log(&conn, operation_log_pair));
+
         // TODO: Optimize.
         if action.eq("Suspend") {
             diesel::update(task::table.find(task_id))

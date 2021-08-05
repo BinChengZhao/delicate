@@ -11,6 +11,7 @@ pub(crate) fn config(cfg: &mut web::ServiceConfig) {
 
 #[post("/api/user/create")]
 async fn create_user(
+    req: HttpRequest,
     web::Json(user): web::Json<model::QueryNewUser>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
@@ -21,12 +22,17 @@ async fn create_user(
         return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<()>>::into(validate_result));
     }
 
+    let new_user = Into::<model::NewUser>::into(&user);
+
+    let operation_log_pair_option =
+        generate_operation_user_addtion_log(&req.get_session(), &new_user).ok();
+
     if let Ok(conn) = pool.get() {
         return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<()>>::into(
             web::block::<_, _, diesel::result::Error>(move || {
                 conn.transaction(|| {
                     diesel::insert_into(user::table)
-                        .values(&(Into::<model::NewUser>::into(&user)))
+                        .values(&new_user)
                         .execute(&conn)?;
 
                     let last_id = diesel::select(db::last_insert_id).get_result::<u64>(&conn)?;
@@ -37,6 +43,9 @@ async fn create_user(
                     diesel::insert_into(user_auth::table)
                         .values(&user_auths.0[..])
                         .execute(&conn)?;
+                    operation_log_pair_option
+                        .map(|operation_log_pair| operate_log(&conn, operation_log_pair));
+
                     Ok(())
                 })
             })
@@ -86,12 +95,22 @@ async fn show_users(
 
 #[post("/api/user/update")]
 async fn update_user(
+    req: HttpRequest,
     web::Json(user_value): web::Json<model::UpdateUser>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
+    let operation_log_pair_option =
+        generate_operation_user_modify_log(&req.get_session(), &user_value).ok();
+
     if let Ok(conn) = pool.get() {
         return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
-            web::block(move || diesel::update(&user_value).set(&user_value).execute(&conn)).await,
+            web::block(move || {
+                operation_log_pair_option
+                    .map(|operation_log_pair| operate_log(&conn, operation_log_pair));
+
+                diesel::update(&user_value).set(&user_value).execute(&conn)
+            })
+            .await,
         ));
     }
 
@@ -100,10 +119,17 @@ async fn update_user(
 
 #[post("/api/user/delete")]
 async fn delete_user(
+    req: HttpRequest,
     web::Json(model::UserId { user_id }): web::Json<model::UserId>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
     use db::schema::{user, user_auth};
+
+    let operation_log_pair_option = generate_operation_user_delete_log(
+        &req.get_session(),
+        &CommonTableRecord::default().set_id(user_id as i64),
+    )
+    .ok();
 
     if let Ok(conn) = pool.get() {
         return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<()>>::into(
@@ -112,6 +138,9 @@ async fn delete_user(
                     diesel::delete(user::table.filter(user::id.eq(user_id))).execute(&conn)?;
                     diesel::delete(user_auth::table.filter(user_auth::user_id.eq(user_id)))
                         .execute(&conn)?;
+                    operation_log_pair_option
+                        .map(|operation_log_pair| operate_log(&conn, operation_log_pair));
+
                     Ok(())
                 })
             })

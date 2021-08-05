@@ -10,12 +10,20 @@ pub(crate) fn config(cfg: &mut web::ServiceConfig) {
 
 #[post("/api/executor_processor/create")]
 async fn create_executor_processor(
+    req: HttpRequest,
     web::Json(executor_processor): web::Json<model::NewExecutorProcessor>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
+    let operation_log_pair_option =
+        generate_operation_executor_processor_addtion_log(&req.get_session(), &executor_processor)
+            .ok();
+
     if let Ok(conn) = pool.get() {
         return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
             web::block(move || {
+                operation_log_pair_option
+                    .map(|operation_log_pair| operate_log(&conn, operation_log_pair));
+
                 diesel::insert_into(executor_processor::table)
                     .values(&executor_processor)
                     .execute(&conn)
@@ -68,12 +76,20 @@ async fn show_executor_processors(
 
 #[post("/api/executor_processor/update")]
 async fn update_executor_processor(
+    req: HttpRequest,
     web::Json(executor_processor): web::Json<model::UpdateExecutorProcessor>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
+    let operation_log_pair_option =
+        generate_operation_executor_processor_modify_log(&req.get_session(), &executor_processor)
+            .ok();
+
     if let Ok(conn) = pool.get() {
         return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
             web::block(move || {
+                operation_log_pair_option
+                    .map(|operation_log_pair| operate_log(&conn, operation_log_pair));
+
                 diesel::update(&executor_processor)
                     .set(&executor_processor)
                     .execute(&conn)
@@ -86,6 +102,7 @@ async fn update_executor_processor(
 }
 #[post("/api/executor_processor/delete")]
 async fn delete_executor_processor(
+    req: HttpRequest,
     web::Json(model::ExecutorProcessorId {
         executor_processor_id,
     }): web::Json<model::ExecutorProcessorId>,
@@ -93,9 +110,18 @@ async fn delete_executor_processor(
 ) -> HttpResponse {
     use db::schema::executor_processor::dsl::*;
 
+    let operation_log_pair_option = generate_operation_executor_processor_delete_log(
+        &req.get_session(),
+        &CommonTableRecord::default().set_id(executor_processor_id),
+    )
+    .ok();
+
     if let Ok(conn) = pool.get() {
         return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
             web::block(move || {
+                operation_log_pair_option
+                    .map(|operation_log_pair| operate_log(&conn, operation_log_pair));
+
                 diesel::delete(executor_processor.find(executor_processor_id)).execute(&conn)
             })
             .await,

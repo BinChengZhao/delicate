@@ -34,7 +34,7 @@ pub struct ExecutorGroupDetail {
 #[table_name = "executor_group"]
 
 pub struct UpdateExecutorGroup {
-    id: i64,
+    pub(crate) id: i64,
     name: String,
     description: String,
     tag: String,
