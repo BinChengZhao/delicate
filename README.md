@@ -38,6 +38,8 @@ https://github.com/BinChengZhao/delicate)
 
 - **Upgrade:**  Dynamic upgrade of the system (upgrade is done by obtaining the latest source code and performing database migration.
 
+- **Reusability:**  Excutor provides `restful-api` that allows user applications to maintain custom tasks.
+
 The architecture of delicate:
 
 ![architecture](./doc/architecture.svg)

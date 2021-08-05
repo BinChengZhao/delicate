@@ -38,9 +38,14 @@ https://github.com/BinChengZhao/delicate)
 
 - **升级：** 系统的动态升级（升级是通过获得最新的源代码和进行数据库迁移.)
 
+- **复用性：**  执行器提供`restful-api` ，可以让用户应用维护自定义任务.
+
+
 `Delicate` 架构图:
 
 ![architecture](./doc/architecture.svg)
+
+![topology](./doc/topology.svg)
 
 ## Benchmark
 每次调度耗时 6,424 ns (+/- 52) 在 CentOS Linux release 7.6.1810 (Core) (不同系统/硬件会有不同的结果).
