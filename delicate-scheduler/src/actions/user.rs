@@ -1,4 +1,6 @@
 use super::prelude::*;
+use model::schema::{user, user_auth, user_login_log};
+
 pub(crate) fn config(cfg: &mut web::ServiceConfig) {
     cfg.service(create_user)
         .service(show_users)
@@ -15,8 +17,6 @@ async fn create_user(
     web::Json(user): web::Json<model::QueryNewUser>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
-    use db::schema::{user, user_auth};
-
     let validate_result: Result<(), ValidationErrors> = user.validate();
     if validate_result.is_err() {
         return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<()>>::into(validate_result));
@@ -123,8 +123,6 @@ async fn delete_user(
     web::Json(model::UserId { user_id }): web::Json<model::UserId>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
-    use db::schema::{user, user_auth};
-
     let operation_log_pair_option = generate_operation_user_delete_log(
         &req.get_session(),
         &CommonTableRecord::default().set_id(user_id as i64),
@@ -153,17 +151,19 @@ async fn delete_user(
 
 #[post("/api/user/login")]
 async fn login_user(
+    req: HttpRequest,
     web::Json(user_login): web::Json<model::UserAuthLogin>,
     session: Session,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
     let login_result: UnifiedResponseMessages<()> =
-        pre_login_user(user_login, session, pool).await.into();
+        pre_login_user(req, user_login, session, pool).await.into();
 
     HttpResponse::Ok().json(login_result)
 }
 
 async fn pre_login_user(
+    req: HttpRequest,
     model::UserAuthLogin {
         login_type,
         account,
@@ -172,23 +172,51 @@ async fn pre_login_user(
     session: Session,
     pool: ShareData<db::ConnectionPool>,
 ) -> Result<(), CommonError> {
-    use model::schema::{user, user_auth};
     use model::user::get_encrypted_certificate_by_raw_certificate;
+    use model::user_login_log::NewUserLoginLog;
 
-    // TODO: logging login log.
+    let connection = req.connection_info();
+    let client_ip = connection.realip_remote_addr();
+    let mut new_user_login_log = NewUserLoginLog::default();
+    new_user_login_log
+        .set_lastip(client_ip)
+        .set_login_type(login_type);
+
     let conn = pool.get()?;
     let user_package: (model::UserAuth, model::User) =
         web::block::<_, _, diesel::result::Error>(move || {
-            user_auth::table
+            let login_result = user_auth::table
                 .inner_join(user::table)
                 .select((user_auth::all_columns, user::all_columns))
                 .filter(user_auth::identity_type.eq(login_type))
-                .filter(user_auth::identifier.eq(account))
+                .filter(user_auth::identifier.eq(&account))
                 .filter(
                     user_auth::certificate
                         .eq(get_encrypted_certificate_by_raw_certificate(&password)),
                 )
-                .first::<(model::UserAuth, model::User)>(&conn)
+                .first::<(model::UserAuth, model::User)>(&conn);
+
+            login_result
+                .as_ref()
+                .map(|(_, user)| {
+                    new_user_login_log
+                        .set_user_name(user.user_name.clone())
+                        .set_user_id(user.id)
+                        .set_command(state::user_login_log::LoginCommand::LoginSuccess as u8);
+                })
+                .map_err(|_| {
+                    new_user_login_log
+                        .set_user_name(account)
+                        .set_command(state::user_login_log::LoginCommand::Logoutfailure as u8);
+                })
+                .ok();
+
+            diesel::insert_into(user_login_log::table)
+                .values(&new_user_login_log)
+                .execute(&conn)
+                .ok();
+
+            login_result
         })
         .await?;
     save_session(session, user_package)
@@ -224,8 +252,6 @@ async fn pre_check_user(
     session: Session,
     pool: ShareData<db::ConnectionPool>,
 ) -> Result<model::User, CommonError> {
-    use model::schema::user;
-
     let conn = pool.get()?;
     let user_id = session
         .get::<u64>("user_id")?

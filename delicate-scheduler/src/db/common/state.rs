@@ -87,3 +87,24 @@ pub mod operation_log {
         }
     }
 }
+
+pub mod user_login_log {
+
+    #[allow(dead_code)]
+    pub enum LoginType {
+        Mobile = 1,
+        Email = 2,
+        UserName = 3,
+        Ldap = 4,
+        OtherOAuth = 5,
+        Logout = 81,
+    }
+
+    #[allow(dead_code)]
+    pub enum LoginCommand {
+        LoginSuccess = 1,
+        LogoutSuccess = 2,
+        Loginfailure = 3,
+        Logoutfailure = 4,
+    }
+}

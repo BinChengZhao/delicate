@@ -23,5 +23,6 @@ KEY `idx_operation_log_id` (`operation_log_id`) USING BTREE
 )ENGINE INNODB DEFAULT CHARSET=utf8mb4 COMMENT 'Operation log details table';
 
 
- ALTER TABLE `user_login_log` ADD `user_name` varchar(64) NOT NULL DEFAULT '' COMMENT 'Login user name' ;
+ALTER TABLE `user_login_log` ADD `user_name` varchar(64) NOT NULL DEFAULT '' COMMENT 'Login user name' ;
+ALTER table `user_login_log` modify column `login_type` tinyint(3) unsigned NOT NULL DEFAULT '3' COMMENT 'Login method 1:Mobie-number 2:Email 3:Username 4:LDAP 5:Other-OAuth etc. 81:Logout';
 

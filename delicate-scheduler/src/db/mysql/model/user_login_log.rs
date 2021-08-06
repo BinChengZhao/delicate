@@ -15,15 +15,44 @@ pub struct UserLoginLog {
 
 }
 
-#[derive(Insertable, Debug, Serialize, Deserialize)]
+#[derive(Insertable, Debug, Default, Serialize, Deserialize)]
 #[table_name = "user_login_log"]
 pub struct NewUserLoginLog {
     user_id: u64,
     login_type: u8,
     command: u8,
     lastip: String,
-    created_time: NaiveDateTime,
     user_name: String,
+}
+
+impl NewUserLoginLog {
+    pub fn set_user_id(&mut self, user_id:u64) -> &mut Self{
+        self.user_id = user_id;
+        self
+    }
+
+    pub fn set_login_type(&mut self, login_type:u8) -> &mut Self{
+        self.login_type = login_type;
+        self
+    }
+
+    pub fn set_command(&mut self, command:u8) -> &mut Self{
+        self.command = command;
+        self
+    }
+
+    pub fn set_lastip(&mut self, lastip:Option<&str>) -> &mut Self{
+        if let Some(ip) = lastip{
+            self.lastip = ip.to_string();
+        }
+        self
+    }
+
+    pub fn set_user_name(&mut self, user_name:String) -> &mut Self{
+        self.user_name = user_name;
+        self
+    }
+
 }
 
 
