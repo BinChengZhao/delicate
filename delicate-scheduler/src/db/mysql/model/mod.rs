@@ -21,4 +21,5 @@ pub(crate) use task_bind::*;
 pub(crate) use task_log::*;
 pub(crate) use user::*;
 pub(crate) use operation_log::*;
+pub(crate) use user_login_log::*;
 

@@ -9,3 +9,4 @@ pub(crate) mod operation_log;
 pub(crate) mod task;
 pub(crate) mod task_log;
 pub(crate) mod user;
+pub(crate) mod user_login_log;
