@@ -175,6 +175,7 @@ async fn pre_login_user(
     use model::schema::{user, user_auth};
     use model::user::get_encrypted_certificate_by_raw_certificate;
 
+    // TODO: logging login log.
     let conn = pool.get()?;
     let user_package: (model::UserAuth, model::User) =
         web::block::<_, _, diesel::result::Error>(move || {

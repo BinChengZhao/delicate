@@ -9,10 +9,17 @@ pub(crate) fn config(cfg: &mut web::ServiceConfig) {
 
 #[post("/api/executor_processor_bind/create")]
 async fn create_executor_processor_bind(
+    req: HttpRequest,
     web::Json(executor_processor_binds): web::Json<model::NewExecutorProcessorBinds>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
     use db::schema::executor_processor_bind;
+
+    let operation_log_pair_option = generate_operation_executor_processor_bind_addtion_log(
+        &req.get_session(),
+        &executor_processor_binds,
+    )
+    .ok();
 
     if let Ok(conn) = pool.get() {
         return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
@@ -27,6 +34,10 @@ async fn create_executor_processor_bind(
                         weight: executor_processor_binds.weight,
                     })
                     .collect();
+
+                operation_log_pair_option
+                    .map(|operation_log_pair| operate_log(&conn, operation_log_pair));
+
                 diesel::insert_into(executor_processor_bind::table)
                     .values(&new_binds[..])
                     .execute(&conn)
@@ -77,15 +88,17 @@ async fn show_executor_processor_binds(
 
 #[post("/api/executor_processor_bind/update")]
 async fn update_executor_processor_bind(
+    req: HttpRequest,
     web::Json(executor_processor_bind): web::Json<model::UpdateExecutorProcessorBind>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
     return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<()>>::into(
-        pre_update_executor_processor_bind(executor_processor_bind, pool).await,
+        pre_update_executor_processor_bind(req, executor_processor_bind, pool).await,
     ));
 }
 
 async fn pre_update_executor_processor_bind(
+    req: HttpRequest,
     executor_processor_bind: model::UpdateExecutorProcessorBind,
     pool: ShareData<db::ConnectionPool>,
 ) -> Result<(), CommonError> {
@@ -94,6 +107,11 @@ async fn pre_update_executor_processor_bind(
     use state::task::State;
 
     let conn = pool.get()?;
+    let operation_log_pair_option = generate_operation_executor_processor_bind_modify_log(
+        &req.get_session(),
+        &executor_processor_bind,
+    )
+    .ok();
 
     let task_packages: Vec<(TaskPackage, (String, String))> =
         web::block::<_, _, diesel::result::Error>(move || {
@@ -117,6 +135,9 @@ async fn pre_update_executor_processor_bind(
             diesel::update(&executor_processor_bind)
                 .set(&executor_processor_bind)
                 .execute(&conn)?;
+
+            operation_log_pair_option
+                .map(|operation_log_pair| operate_log(&conn, operation_log_pair));
 
             Ok(task_packages)
         })
@@ -162,6 +183,7 @@ async fn pre_update_executor_processor_bind(
 }
 #[post("/api/executor_processor_bind/delete")]
 async fn delete_executor_processor_bind(
+    req: HttpRequest,
     web::Json(model::ExecutorProcessorBindId {
         executor_processor_bind_id,
     }): web::Json<model::ExecutorProcessorBindId>,
@@ -169,10 +191,19 @@ async fn delete_executor_processor_bind(
 ) -> HttpResponse {
     use db::schema::executor_processor_bind::dsl::*;
 
+    let operation_log_pair_option = generate_operation_executor_processor_bind_delete_log(
+        &req.get_session(),
+        &CommonTableRecord::default().set_id(executor_processor_bind_id),
+    )
+    .ok();
+
     // TODO: Check if there are associated tasks on the binding.
     if let Ok(conn) = pool.get() {
         return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
             web::block(move || {
+                operation_log_pair_option
+                    .map(|operation_log_pair| operate_log(&conn, operation_log_pair));
+
                 diesel::delete(executor_processor_bind.find(executor_processor_bind_id))
                     .execute(&conn)
             })

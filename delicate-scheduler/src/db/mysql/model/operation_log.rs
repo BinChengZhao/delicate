@@ -66,11 +66,6 @@ pub struct OperationLogId {
     pub(crate) operation_log_id: u64,
 }
 
-#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
-
-pub struct OperationLogTableId {
-    pub(crate) table_id: u64,
-}
 
 pub(crate) struct OperationLogQueryBuilder;
 impl OperationLogQueryBuilder {
