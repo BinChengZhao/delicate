@@ -6,7 +6,7 @@ pub(crate) use actix_web::rt::spawn as rt_spawn;
 pub(crate) use actix_web::rt::time::{timeout as rt_timeout, Timeout as RtTimeout};
 
 pub(crate) use actix_web::web::{self, Data as ShareData};
-pub(crate) use actix_web::{post, App, HttpResponse, HttpServer, Responder};
+pub(crate) use actix_web::{post, App, HttpRequest, HttpResponse, HttpServer, Responder};
 pub(crate) use async_lock::RwLock;
 
 pub(crate) use dotenv::dotenv;
@@ -18,6 +18,7 @@ pub(crate) use delicate_utils::consensus_message::service_binding::{
     BindRequest, BindResponse, EncryptedBindResponse, SignedBindRequest,
 };
 
+pub(crate) use delicate_utils::consensus_message::executor_processor::*;
 pub(crate) use delicate_utils::consensus_message::task::*;
 pub(crate) use delicate_utils::consensus_message::task_log::*;
 #[allow(unused_imports)]
