@@ -116,6 +116,8 @@ async fn update_task(
     web::Json(update_task_body): web::Json<model::UpdateTaskBody>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
+    let _span_ = span!(Level::INFO, "update-task").entered();
+
     let respose: UnifiedResponseMessages<()> =
         pre_update_task(req, update_task_body, pool).await.into();
     HttpResponse::Ok().json(respose)
@@ -351,6 +353,8 @@ async fn run_task(
     web::Json(model::TaskId { task_id }): web::Json<model::TaskId>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
+    let _span_ = span!(Level::INFO, "run-task").entered();
+
     let result: UnifiedResponseMessages<()> = Into::into(pre_run_task(req, task_id, pool).await);
 
     HttpResponse::Ok().json(result)

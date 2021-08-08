@@ -49,6 +49,8 @@ async fn main() -> AnyResut<()> {
     let shared_scheduler_meta_info: SharedSchedulerMetaInfo =
         ShareData::new(SchedulerMetaInfo::default());
 
+    launch_health_check(shared_connection_pool.clone());
+
     let result = HttpServer::new(move || {
         let cors = Cors::default()
             .allowed_origin(&scheduler_front_end_domain)
@@ -81,4 +83,8 @@ async fn main() -> AnyResut<()> {
     .await;
 
     Ok(result?)
+}
+
+fn launch_health_check(pool: ShareData<db::ConnectionPool>) {
+    rt_spawn(loop_health_check(pool));
 }

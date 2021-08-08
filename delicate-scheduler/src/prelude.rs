@@ -1,4 +1,5 @@
 pub(crate) use super::components::base::{SchedulerMetaInfo, SharedSchedulerMetaInfo};
+pub(crate) use super::components::health_checker::loop_health_check;
 pub(crate) use super::components::helper::handle_response;
 
 pub(crate) use super::db;
@@ -11,7 +12,8 @@ pub(crate) use common_model::PaginateData;
 pub(crate) use delicate_utils::consensus_message::security::{self, SecurityLevel};
 pub(crate) use delicate_utils::consensus_message::service_binding;
 pub(crate) use delicate_utils::consensus_message::{
-    executor_processor as delicate_utils_executor_processor, task as delicate_utils_task,
+    executor_processor as delicate_utils_executor_processor,
+    health_check as delicate_utils_health_check, task as delicate_utils_task,
     task_log as delicate_utils_task_log,
 };
 pub(crate) use delicate_utils::error::CommonError;
@@ -54,6 +56,7 @@ pub(crate) use actix_web::dev::{
 };
 pub(crate) use actix_web::http::StatusCode;
 pub(crate) use actix_web::middleware::Logger as MiddlewareLogger;
+pub(crate) use actix_web::rt::spawn as rt_spawn;
 pub(crate) use actix_web::rt::time::interval;
 pub(crate) use actix_web::web::{self, Data as ShareData};
 pub(crate) use actix_web::{get, post, App, HttpRequest, HttpResponse, HttpServer};

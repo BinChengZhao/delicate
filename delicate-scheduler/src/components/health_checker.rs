@@ -1,7 +1,7 @@
 use super::prelude::*;
 use db::schema::executor_processor;
 
-async fn loop_health_check(pool: ShareData<db::ConnectionPool>) {
+pub(crate) async fn loop_health_check(pool: ShareData<db::ConnectionPool>) {
     let mut interval = interval(Duration::from_secs(20));
     loop {
         interval.tick().await;
@@ -40,7 +40,6 @@ async fn health_check(conn: db::PoolConnection) -> Result<(), CommonError> {
         })
         .map(|(signed_health_screen_unit, executor_host)| {
             RequestClient::builder()
-                .timeout(Duration::from_secs(15))
                 .finish()
                 .post(executor_host)
                 .send_json(&signed_health_screen_unit)
@@ -49,6 +48,11 @@ async fn health_check(conn: db::PoolConnection) -> Result<(), CommonError> {
         .into_iter()
         .collect();
 
-    handle_response::<UnifiedResponseMessages<()>>(request_all).await;
+    // TODO: Need to know which machine the indicator comes from.
+    let _span_ = span!(Level::INFO, "health-check").entered();
+    handle_response::<UnifiedResponseMessages<delicate_utils_health_check::SystemSnapshot>>(
+        request_all,
+    )
+    .await;
     Ok(())
 }
