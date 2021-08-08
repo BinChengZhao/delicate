@@ -12,9 +12,12 @@ impl SystemMirror {
         let mut system = self.inner_system.write().await;
         system.refresh_cpu();
         system.refresh_memory();
-        system.refresh_processes();
 
-        let processes: Processes = system.get_processes().into();
+        // TODO: The heartbeat check is concerned with system metrics
+        // And does not require a detailed list of processes.
+        // system.refresh_processes();
+        // let processes: Processes = system.get_processes().into();
+      
         let processor: Processor = system.get_global_processor_info().into();
 
         let memory: Memory = Memory {
@@ -24,7 +27,7 @@ impl SystemMirror {
         };
 
         let mut inner_snapshot = self.inner_snapshot.write().await;
-        inner_snapshot.processes = processes;
+        // inner_snapshot.processes = processes;
         inner_snapshot.processor = processor;
         inner_snapshot.memory = memory;
 

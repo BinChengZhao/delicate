@@ -2,11 +2,15 @@ use crate::prelude::*;
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct SystemSnapshot {
-    pub processes: Processes,
+    // TODO: The heartbeat check is concerned with system metrics
+    // And does not require a detailed list of processes.
+
+    // pub processes: Processes,
     pub processor: Processor,
     pub memory: Memory,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Processes {
     inner: HashMap<SysPid, Process>,
