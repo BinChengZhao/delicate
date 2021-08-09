@@ -162,10 +162,19 @@ async fn health_screen(
         let ip = connection.realip_remote_addr().unwrap_or_default();
         info!("From: {}, Request-time:{}", ip, health_screen_unit);
 
+        let system_snapshot = system_mirror.refresh_all().await;
+        let bind_request = executor_conf
+            .get_bind_scheduler_inner_ref()
+            .await
+            .clone()
+            .unwrap_or_default();
+
+        let health_check_package = HealthCheckPackage {
+            system_snapshot,
+            bind_request,
+        };
         return HttpResponse::Ok().json(
-            UnifiedResponseMessages::<SystemSnapshot>::success_with_data(
-                system_mirror.refresh_all().await,
-            ),
+            UnifiedResponseMessages::<HealthCheckPackage>::success_with_data(health_check_package),
         );
     }
 

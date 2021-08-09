@@ -17,7 +17,7 @@ impl SystemMirror {
         // And does not require a detailed list of processes.
         // system.refresh_processes();
         // let processes: Processes = system.get_processes().into();
-      
+
         let processor: Processor = system.get_global_processor_info().into();
 
         let memory: Memory = Memory {

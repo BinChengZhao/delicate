@@ -48,9 +48,8 @@ async fn health_check(conn: db::PoolConnection) -> Result<(), CommonError> {
         .into_iter()
         .collect();
 
-    // TODO: Need to know which machine the indicator comes from.
     let _span_ = span!(Level::INFO, "health-check").entered();
-    handle_response::<UnifiedResponseMessages<delicate_utils_health_check::SystemSnapshot>>(
+    handle_response::<UnifiedResponseMessages<delicate_utils_health_check::HealthCheckPackage>>(
         request_all,
     )
     .await;

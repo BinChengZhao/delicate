@@ -1,6 +1,12 @@
 use crate::prelude::*;
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct HealthCheckPackage {
+    pub system_snapshot: SystemSnapshot,
+    pub bind_request: service_binding::BindRequest,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct SystemSnapshot {
     // TODO: The heartbeat check is concerned with system metrics
     // And does not require a detailed list of processes.
