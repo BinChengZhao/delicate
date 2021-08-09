@@ -17,6 +17,7 @@ documentation = ""
 actix-web = "^3.3.2"
 actix-session = "0.4.1"
 actix-cors = "^0.5.4"
+async-channel = "1.6.1"
 anyhow = "^1.0.38"
 awc = { version = "2.0.3", default-features = false }
 concat-idents = "1.1.3"
@@ -29,6 +30,7 @@ diesel_migrations = "^1.4.0"
 diesel = { version = "^1.4.6", features = ["postgres", "mysql", "extras", "r2d2", "chrono"] }
 dotenv = "^0.15.0"
 futures = "^0.3.14"
+lazy_static = "1.4.0"
 ring = "^0.16.20"
 rsa = { version = "^0.4.0", features = ["std", "pem" ,"serde"] }
 sysinfo = "^0.16.5"

@@ -64,6 +64,7 @@ pub(crate) use actix_web::{Error as ActixWebError, Result};
 pub(crate) use awc::{JsonBody, SendClientRequest};
 
 pub(crate) use anyhow::Result as AnyResut;
+pub(crate) use async_channel::{Receiver as AsyncReceiver, Sender as AsyncSender};
 pub(crate) use delay_timer::prelude::*;
 pub(crate) use diesel::query_dsl::RunQueryDsl;
 pub(crate) use dotenv::dotenv;

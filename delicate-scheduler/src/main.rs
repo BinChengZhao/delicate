@@ -7,6 +7,8 @@
 #[macro_use]
 extern crate diesel;
 #[macro_use]
+extern crate lazy_static;
+#[macro_use]
 extern crate serde;
 #[macro_use]
 extern crate diesel_migrations;
@@ -83,6 +85,13 @@ async fn main() -> AnyResut<()> {
     .await;
 
     Ok(result?)
+}
+
+lazy_static! {
+    static ref OPERATION_LOG_CONSUMERS: (
+        AsyncSender<NewOperationLogPair>,
+        AsyncReceiver<NewOperationLogPair>
+    ) = async_channel::unbounded::<NewOperationLogPair>();
 }
 
 fn launch_health_check(pool: ShareData<db::ConnectionPool>) {
