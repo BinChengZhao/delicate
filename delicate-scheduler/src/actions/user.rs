@@ -104,10 +104,7 @@ async fn update_user(
 
     if let Ok(conn) = pool.get() {
         return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
-            web::block(move || {
-                diesel::update(&user_value).set(&user_value).execute(&conn)
-            })
-            .await,
+            web::block(move || diesel::update(&user_value).set(&user_value).execute(&conn)).await,
         ));
     }
 

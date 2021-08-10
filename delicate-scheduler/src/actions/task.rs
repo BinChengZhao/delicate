@@ -145,7 +145,14 @@ pub async fn pre_update_task_row(
     conn: db::PoolConnection,
     task: model::UpdateTask,
     binding_ids: Vec<i64>,
-) -> Result<(Vec<model::BindProcessor>, Vec<model::BindProcessor>), CommonError> {
+) -> Result<
+    (
+        Vec<model::BindProcessor>,
+        Vec<model::BindProcessor>,
+        Vec<model::BindProcessor>,
+    ),
+    CommonError,
+> {
     use db::schema::{executor_processor, executor_processor_bind, task_bind};
     use model::BindProcessor;
     use std::collections::HashSet;
@@ -153,7 +160,7 @@ pub async fn pre_update_task_row(
     let task_binds_pair = web::block::<_, _, diesel::result::Error>(move || {
         conn.transaction(|| {
             let task_id = task.id;
-            diesel::update(&task).set(&task).execute(&conn)?;
+            let update_effect_row = diesel::update(&task).set(&task).execute(&conn)?;
 
             let original_bind_processors: Vec<BindProcessor> = task_bind::table
                 .inner_join(executor_processor_bind::table.inner_join(executor_processor::table))
@@ -204,8 +211,9 @@ pub async fn pre_update_task_row(
                 removed_task_binds_set.map(|b| (*b, ())).collect();
 
             let removed_bind_processors: Vec<BindProcessor> = original_bind_processors
-                .into_iter()
+                .iter()
                 .filter(|b| removed_task_binds_map.get(&b.bind_id).is_some())
+                .cloned()
                 .collect();
 
             let append_binds: Vec<i64> = append_task_binds.iter().map(|b| b.bind_id).collect();
@@ -220,7 +228,26 @@ pub async fn pre_update_task_row(
                 .filter(executor_processor_bind::id.eq_any(&append_binds))
                 .load(&conn)?;
 
-            Ok((removed_bind_processors, append_bind_processors))
+            let reserved_bind_processors: Vec<model::BindProcessor> = if update_effect_row != 0 {
+                let reserved_task_binds_set: HashSet<i64> = original_task_binds
+                    .intersection(&current_task_binds)
+                    .copied()
+                    .into_iter()
+                    .collect();
+
+                original_bind_processors
+                    .into_iter()
+                    .filter(|b| reserved_task_binds_set.contains(&b.bind_id))
+                    .collect()
+            } else {
+                Vec::new()
+            };
+
+            Ok((
+                removed_bind_processors,
+                append_bind_processors,
+                reserved_bind_processors,
+            ))
         })
     })
     .await?;
@@ -231,7 +258,8 @@ pub async fn pre_update_task_row(
 pub async fn pre_update_task_sevice(
     conn: db::PoolConnection,
     task_id: i64,
-    (removed_bind_processors, append_bind_processors): (
+    (removed_bind_processors, append_bind_processors, reserved_bind_processors): (
+        Vec<model::BindProcessor>,
         Vec<model::BindProcessor>,
         Vec<model::BindProcessor>,
     ),
@@ -272,10 +300,10 @@ pub async fn pre_update_task_sevice(
                     .map(|s| (s, executor_host))
                     .ok()
             })
-            .map(|(signed_task_package, executor_host)| {
+            .map(|(signed_task_unit, executor_host)| {
                 RequestClient::default()
                     .post(executor_host)
-                    .send_json(&signed_task_package)
+                    .send_json(&signed_task_unit)
             })
             .collect::<Vec<_>>()
             .into_iter()
@@ -286,7 +314,7 @@ pub async fn pre_update_task_sevice(
             .filter_map(|processor| {
                 let executor_host = "http://".to_string() + &processor.host + "/api/task/create";
 
-                info!("Remove task{} at:{}", &task_package, &executor_host);
+                info!("Create task{} at:{}", &task_package, &executor_host);
                 task_package
                     .clone()
                     .sign(Some(&processor.token))
@@ -302,9 +330,31 @@ pub async fn pre_update_task_sevice(
             .into_iter()
             .collect();
 
-        join(
+        let update_tasks_future: JoinAll<_> = reserved_bind_processors
+            .into_iter()
+            .filter_map(|processor| {
+                let executor_host = "http://".to_string() + &processor.host + "/api/task/update";
+
+                info!("Update task{} at:{}", &task_package, &executor_host);
+                task_package
+                    .clone()
+                    .sign(Some(&processor.token))
+                    .map(|s| (s, executor_host))
+                    .ok()
+            })
+            .map(|(signed_task_package, executor_host)| {
+                RequestClient::default()
+                    .post(executor_host)
+                    .send_json(&signed_task_package)
+            })
+            .collect::<Vec<_>>()
+            .into_iter()
+            .collect();
+
+        join3(
             handle_response::<UnifiedResponseMessages<()>>(remove_tasks_future),
             handle_response::<UnifiedResponseMessages<()>>(append_tasks_future),
+            handle_response::<UnifiedResponseMessages<()>>(update_tasks_future),
         )
         .await;
     }

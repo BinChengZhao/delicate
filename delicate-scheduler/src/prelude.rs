@@ -33,7 +33,7 @@ pub(crate) use std::time::Duration;
 pub(crate) use std::time::SystemTime;
 pub(crate) use std::vec::IntoIter;
 
-pub(crate) use futures::future::{join, ok, JoinAll, Ready};
+pub(crate) use futures::future::{join, join3, ok, JoinAll, Ready};
 pub(crate) use futures::Future;
 
 pub(crate) use cached::proc_macro::cached;
