@@ -21,6 +21,7 @@ async fn create_task(
     if let Ok(conn) = pool.get() {
         let operation_log_pair_option =
             generate_operation_task_addtion_log(&req.get_session(), &task).ok();
+        send_option_operation_log_pair(operation_log_pair_option).await;
 
         return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
             web::block::<_, _, diesel::result::Error>(move || {
@@ -36,8 +37,6 @@ async fn create_task(
                         .map(|bind_id| model::NewTaskBind { task_id, bind_id })
                         .collect();
 
-                    operation_log_pair_option
-                        .map(|operation_log_pair| operate_log(&conn, operation_log_pair));
                     diesel::insert_into(task_bind::table)
                         .values(&new_task_binds)
                         .execute(&conn)
@@ -132,9 +131,9 @@ pub async fn pre_update_task(
     let conn = pool.get()?;
     let operation_log_pair_option =
         generate_operation_task_modify_log(&req.get_session(), &task).ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
 
-    let task_binds_pair =
-        pre_update_task_row(conn, task, binding_ids, operation_log_pair_option).await?;
+    let task_binds_pair = pre_update_task_row(conn, task, binding_ids).await?;
 
     let conn = pool.get()?;
     pre_update_task_sevice(conn, task_id, task_binds_pair).await?;
@@ -146,7 +145,6 @@ pub async fn pre_update_task_row(
     conn: db::PoolConnection,
     task: model::UpdateTask,
     binding_ids: Vec<i64>,
-    operation_log_pair_option: NewOperationLogPairOption,
 ) -> Result<(Vec<model::BindProcessor>, Vec<model::BindProcessor>), CommonError> {
     use db::schema::{executor_processor, executor_processor_bind, task_bind};
     use model::BindProcessor;
@@ -222,8 +220,6 @@ pub async fn pre_update_task_row(
                 .filter(executor_processor_bind::id.eq_any(&append_binds))
                 .load(&conn)?;
 
-            operation_log_pair_option
-                .map(|operation_log_pair| operate_log(&conn, operation_log_pair));
             Ok((removed_bind_processors, append_bind_processors))
         })
     })
@@ -329,6 +325,8 @@ async fn delete_task(
         &CommonTableRecord::default().set_id(task_id),
     )
     .ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
+
     // delete
     if let Ok(conn) = pool.get() {
         return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<()>>::into(
@@ -336,8 +334,6 @@ async fn delete_task(
                 diesel::delete(task::table.find(task_id)).execute(&conn)?;
                 diesel::delete(task_bind::table.filter(task_bind::task_id.eq(task_id)))
                     .execute(&conn)?;
-                operation_log_pair_option
-                    .map(|operation_log_pair| operate_log(&conn, operation_log_pair));
                 Ok(())
             })
             .await,
@@ -407,6 +403,7 @@ async fn pre_run_task(
             .set_description("Run task"),
     )
     .ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
 
     let conn = pool.get()?;
 
@@ -416,9 +413,6 @@ async fn pre_run_task(
             diesel::update(task.find(task_id))
                 .set(task::status.eq(State::Enabled as i16))
                 .execute(&conn)?;
-
-            operation_log_pair_option
-                .map(|operation_log_pair| operate_log(&conn, operation_log_pair));
 
             task_bind::table
                 .inner_join(executor_processor_bind::table.inner_join(executor_processor::table))
@@ -481,11 +475,10 @@ async fn pre_operate_task(
             .set_description(action),
     )
     .ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
 
     // Many machine.
     let executor_packages: IntoIter<(String, String)> = web::block(move || {
-        operation_log_pair_option.map(|operation_log_pair| operate_log(&conn, operation_log_pair));
-
         // TODO: Optimize.
         if action.eq("Suspend") {
             diesel::update(task::table.find(task_id))

@@ -1,7 +1,6 @@
 use super::prelude::*;
 use concat_idents::concat_idents;
 use db::model::*;
-use db::schema::{operation_log, operation_log_detail};
 use state::operation_log::OperationType;
 use std::string::ToString;
 
@@ -100,20 +99,6 @@ impl_seek_table_id_unify!(
     UpdateExecutorGroup
 );
 impl_seek_table_id_unify!(NewTaskLog=>0, NewTask=>0, NewUser=>0, NewTaskBind=>0, NewExecutorProcessor=>0, NewExecutorProcessorBind=>0, NewExecutorGroup=>0, NewExecutorProcessorBinds=>0);
-
-pub(crate) fn operate_log(
-    conn: &db::PoolConnection,
-    (operation_record, operation_record_detail): (NewOperationLog, NewOperationLogDetail),
-) -> Result<(), CommonError> {
-    diesel::insert_into(operation_log::table)
-        .values(&operation_record)
-        .execute(conn)?;
-
-    diesel::insert_into(operation_log_detail::table)
-        .values(&operation_record_detail)
-        .execute(conn)?;
-    Ok(())
-}
 
 pub(crate) fn generate_operation_log(
     operation_name: impl ToString,

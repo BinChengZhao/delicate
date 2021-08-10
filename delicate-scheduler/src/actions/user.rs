@@ -26,6 +26,7 @@ async fn create_user(
 
     let operation_log_pair_option =
         generate_operation_user_addtion_log(&req.get_session(), &new_user).ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
 
     if let Ok(conn) = pool.get() {
         return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<()>>::into(
@@ -43,8 +44,6 @@ async fn create_user(
                     diesel::insert_into(user_auth::table)
                         .values(&user_auths.0[..])
                         .execute(&conn)?;
-                    operation_log_pair_option
-                        .map(|operation_log_pair| operate_log(&conn, operation_log_pair));
 
                     Ok(())
                 })
@@ -101,13 +100,11 @@ async fn update_user(
 ) -> HttpResponse {
     let operation_log_pair_option =
         generate_operation_user_modify_log(&req.get_session(), &user_value).ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
 
     if let Ok(conn) = pool.get() {
         return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
             web::block(move || {
-                operation_log_pair_option
-                    .map(|operation_log_pair| operate_log(&conn, operation_log_pair));
-
                 diesel::update(&user_value).set(&user_value).execute(&conn)
             })
             .await,
@@ -128,6 +125,7 @@ async fn delete_user(
         &CommonTableRecord::default().set_id(user_id as i64),
     )
     .ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
 
     if let Ok(conn) = pool.get() {
         return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<()>>::into(
@@ -136,8 +134,6 @@ async fn delete_user(
                     diesel::delete(user::table.filter(user::id.eq(user_id))).execute(&conn)?;
                     diesel::delete(user_auth::table.filter(user_auth::user_id.eq(user_id)))
                         .execute(&conn)?;
-                    operation_log_pair_option
-                        .map(|operation_log_pair| operate_log(&conn, operation_log_pair));
 
                     Ok(())
                 })

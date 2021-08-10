@@ -227,6 +227,7 @@ async fn kill_one_task_instance(
             .set_description("kill task instance."),
     )
     .ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
 
     let token = model::get_executor_token_by_id(executor_processor_id, pool.get()?).await;
 
@@ -242,8 +243,6 @@ async fn kill_one_task_instance(
             .filter(task_log::status.eq(state::task_log::State::Running as i16))
             .set(task_log::status.eq(state::task_log::State::TmanualCancellation as i16))
             .execute(&conn)?;
-
-        operation_log_pair_option.map(|operation_log_pair| operate_log(&conn, operation_log_pair));
 
         Ok(host)
     })

@@ -20,6 +20,7 @@ async fn create_executor_processor_bind(
         &executor_processor_binds,
     )
     .ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
 
     if let Ok(conn) = pool.get() {
         return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
@@ -34,9 +35,6 @@ async fn create_executor_processor_bind(
                         weight: executor_processor_binds.weight,
                     })
                     .collect();
-
-                operation_log_pair_option
-                    .map(|operation_log_pair| operate_log(&conn, operation_log_pair));
 
                 diesel::insert_into(executor_processor_bind::table)
                     .values(&new_binds[..])
@@ -112,6 +110,7 @@ async fn pre_update_executor_processor_bind(
         &executor_processor_bind,
     )
     .ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
 
     let task_packages: Vec<(TaskPackage, (String, String))> =
         web::block::<_, _, diesel::result::Error>(move || {
@@ -135,9 +134,6 @@ async fn pre_update_executor_processor_bind(
             diesel::update(&executor_processor_bind)
                 .set(&executor_processor_bind)
                 .execute(&conn)?;
-
-            operation_log_pair_option
-                .map(|operation_log_pair| operate_log(&conn, operation_log_pair));
 
             Ok(task_packages)
         })
@@ -196,14 +192,12 @@ async fn delete_executor_processor_bind(
         &CommonTableRecord::default().set_id(executor_processor_bind_id),
     )
     .ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
 
     // TODO: Check if there are associated tasks on the binding.
     if let Ok(conn) = pool.get() {
         return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
             web::block(move || {
-                operation_log_pair_option
-                    .map(|operation_log_pair| operate_log(&conn, operation_log_pair));
-
                 diesel::delete(executor_processor_bind.find(executor_processor_bind_id))
                     .execute(&conn)
             })

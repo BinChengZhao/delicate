@@ -52,6 +52,7 @@ async fn main() -> AnyResut<()> {
         ShareData::new(SchedulerMetaInfo::default());
 
     launch_health_check(shared_connection_pool.clone());
+    launch_operation_log_consumer(shared_connection_pool.clone());
 
     let result = HttpServer::new(move || {
         let cors = Cors::default()
@@ -87,13 +88,17 @@ async fn main() -> AnyResut<()> {
     Ok(result?)
 }
 
-lazy_static! {
-    static ref OPERATION_LOG_CONSUMERS: (
-        AsyncSender<NewOperationLogPair>,
-        AsyncReceiver<NewOperationLogPair>
-    ) = async_channel::unbounded::<NewOperationLogPair>();
-}
-
+// Heartbeat checker
+// That constantly goes to detect whether the machine survives with the machine's indicators.
 fn launch_health_check(pool: ShareData<db::ConnectionPool>) {
     rt_spawn(loop_health_check(pool));
+}
+
+// Operation log asynchronous consumer
+//
+// The user's operations in the system are logged to track,
+// But in order not to affect the performance of the system,
+// These logs go through the channel with the asynchronous state machine to consume.
+fn launch_operation_log_consumer(pool: ShareData<db::ConnectionPool>) {
+    rt_spawn(loop_operate_logs(pool));
 }

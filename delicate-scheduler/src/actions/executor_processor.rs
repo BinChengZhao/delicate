@@ -17,13 +17,11 @@ async fn create_executor_processor(
     let operation_log_pair_option =
         generate_operation_executor_processor_addtion_log(&req.get_session(), &executor_processor)
             .ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
 
     if let Ok(conn) = pool.get() {
         return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
             web::block(move || {
-                operation_log_pair_option
-                    .map(|operation_log_pair| operate_log(&conn, operation_log_pair));
-
                 diesel::insert_into(executor_processor::table)
                     .values(&executor_processor)
                     .execute(&conn)
@@ -83,13 +81,11 @@ async fn update_executor_processor(
     let operation_log_pair_option =
         generate_operation_executor_processor_modify_log(&req.get_session(), &executor_processor)
             .ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
 
     if let Ok(conn) = pool.get() {
         return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
             web::block(move || {
-                operation_log_pair_option
-                    .map(|operation_log_pair| operate_log(&conn, operation_log_pair));
-
                 diesel::update(&executor_processor)
                     .set(&executor_processor)
                     .execute(&conn)
@@ -115,13 +111,11 @@ async fn delete_executor_processor(
         &CommonTableRecord::default().set_id(executor_processor_id),
     )
     .ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
 
     if let Ok(conn) = pool.get() {
         return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
             web::block(move || {
-                operation_log_pair_option
-                    .map(|operation_log_pair| operate_log(&conn, operation_log_pair));
-
                 diesel::delete(executor_processor.find(executor_processor_id)).execute(&conn)
             })
             .await,
