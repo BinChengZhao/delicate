@@ -50,6 +50,15 @@ pub struct UpdateUser {
     email: String,
 }
 
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+
+pub struct UserChangePassword {
+    pub current_password: String,
+    pub modified_password: String,
+    pub identity_type: u8,
+}
+
 impl From<&QueryNewUser> for NewUser {
     fn from(value: &QueryNewUser) -> NewUser {
         NewUser {

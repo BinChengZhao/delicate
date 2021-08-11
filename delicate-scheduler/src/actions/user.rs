@@ -1,5 +1,6 @@
 use super::prelude::*;
 use model::schema::{user, user_auth, user_login_log};
+use model::user::get_encrypted_certificate_by_raw_certificate;
 
 pub(crate) fn config(cfg: &mut web::ServiceConfig) {
     cfg.service(create_user)
@@ -111,6 +112,45 @@ async fn update_user(
     HttpResponse::Ok().json(UnifiedResponseMessages::<usize>::error())
 }
 
+#[post("/api/user/change_password")]
+async fn change_password(
+    req: HttpRequest,
+    web::Json(user_value): web::Json<model::UserChangePassword>,
+    pool: ShareData<db::ConnectionPool>,
+) -> HttpResponse {
+    let session = req.get_session();
+    let user_id = session
+        .get::<u64>("user_id")
+        .unwrap_or_default()
+        .unwrap_or_default();
+
+    if let Ok(conn) = pool.get() {
+        return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
+            web::block::<_, _, diesel::result::Error>(move || {
+                let user_auth_id = user_auth::table
+                    .select(user_auth::id)
+                    .filter(user_auth::user_id.eq(&user_id))
+                    .filter(user_auth::identity_type.eq(user_value.identity_type))
+                    .filter(user_auth::certificate.eq(
+                        get_encrypted_certificate_by_raw_certificate(&user_value.current_password),
+                    ))
+                    .first::<i64>(&conn)?;
+
+                diesel::update(user_auth::table.find(user_auth_id))
+                    .set(
+                        user_auth::certificate.eq(get_encrypted_certificate_by_raw_certificate(
+                            &user_value.modified_password,
+                        )),
+                    )
+                    .execute(&conn)
+            })
+            .await,
+        ));
+    }
+
+    HttpResponse::Ok().json(UnifiedResponseMessages::<usize>::error())
+}
+
 #[post("/api/user/delete")]
 async fn delete_user(
     req: HttpRequest,
@@ -165,7 +205,6 @@ async fn pre_login_user(
     session: Session,
     pool: ShareData<db::ConnectionPool>,
 ) -> Result<(), CommonError> {
-    use model::user::get_encrypted_certificate_by_raw_certificate;
     use model::user_login_log::NewUserLoginLog;
 
     let connection = req.connection_info();

@@ -100,6 +100,7 @@ impl_seek_table_id_unify!(
 );
 impl_seek_table_id_unify!(NewTaskLog=>0, NewTask=>0, NewUser=>0, NewTaskBind=>0, NewExecutorProcessor=>0, NewExecutorProcessorBind=>0, NewExecutorGroup=>0, NewExecutorProcessorBinds=>0);
 
+#[inline(always)]
 pub(crate) fn generate_operation_log(
     operation_name: impl ToString,
     session: &Session,
@@ -132,6 +133,7 @@ pub(crate) fn generate_operation_log(
     Ok((new_operation_log, new_operation_log_detail))
 }
 
+#[inline(always)]
 pub(crate) fn generate_operation_addtion_log(
     operation_name: impl ToString,
     session: &Session,
@@ -147,6 +149,7 @@ pub(crate) fn generate_operation_addtion_log(
     )
 }
 
+#[inline(always)]
 pub(crate) fn generate_operation_modify_log(
     operation_name: impl ToString,
     session: &Session,
@@ -162,6 +165,7 @@ pub(crate) fn generate_operation_modify_log(
     )
 }
 
+#[inline(always)]
 pub(crate) fn generate_operation_delete_log(
     operation_name: impl ToString,
     session: &Session,

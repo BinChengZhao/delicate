@@ -54,8 +54,8 @@ pub(crate) struct QueryParamsOperationLog {
     operation_type: Option<i8>,
     user_id: Option<u64>,
     user_name: Option<String>,
-    pub(crate) start_time: Option<i64>,
-    pub(crate) end_time: Option<i64>,
+    pub(crate) start_time: Option<String>,
+    pub(crate) end_time: Option<String>,
     pub(crate) per_page: i64,
     pub(crate) page: i64,
 }
@@ -113,13 +113,8 @@ impl QueryParamsOperationLog {
                 .filter(operation_log::user_name.like(user_name));
         }
 
-        // TODO: Input time-range is a date-string.
-        //  Get NaiveDateTime by called `parse_from_str`.
-        if let Some(start_time) = self.start_time {
-            let end_time = self.end_time.unwrap_or_else(|| start_time + 86400 * 3);
-
-            let start_time = NaiveDateTime::from_timestamp(start_time, 0);
-            let end_time = NaiveDateTime::from_timestamp(end_time, 0);
+        if let Some(Ok(start_time)) = self.start_time.map(|s|NaiveDateTime::parse_from_str(&s,  "%Y-%m-%d %H:%M:%S")) {
+            let end_time = self.end_time.map(|s|NaiveDateTime::parse_from_str(&s,  "%Y-%m-%d %H:%M:%S").unwrap_or_else(|_| start_time + ChronoDuration::days(3))).unwrap_or_else(|| start_time + ChronoDuration::days(3));
 
             statement_builder =
                 statement_builder.filter(operation_log::operation_time.between(start_time, end_time));

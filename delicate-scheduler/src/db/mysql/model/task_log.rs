@@ -270,8 +270,8 @@ pub struct QueryParamsTaskLog {
     tag: Option<String>,
     status: Option<i16>,
     executor_processor_id: Option<i64>,
-    pub(crate) start_time: Option<i64>,
-    pub(crate) end_time: Option<i64>,
+    pub(crate) start_time: Option<String>,
+    pub(crate) end_time: Option<String>,
     pub(crate) per_page: i64,
     pub(crate) page: i64,
 }
@@ -318,14 +318,8 @@ impl QueryParamsTaskLog {
             statement_builder = statement_builder.filter(task_log::tag.like(task_tag));
         }
 
-        // TODO: Input time-range is a date-string.
-        //  Get NaiveDateTime by called `parse_from_str`.
-        
-        if let Some(start_time) = self.start_time {
-            let end_time = self.end_time.unwrap_or_else(|| start_time + 86400 * 3);
-
-            let start_time = NaiveDateTime::from_timestamp(start_time, 0);
-            let end_time = NaiveDateTime::from_timestamp(end_time, 0);
+        if let Some(Ok(start_time)) = self.start_time.map(|s|NaiveDateTime::parse_from_str(&s,  "%Y-%m-%d %H:%M:%S")) {
+            let end_time = self.end_time.map(|s|NaiveDateTime::parse_from_str(&s,  "%Y-%m-%d %H:%M:%S").unwrap_or_else(|_| start_time + ChronoDuration::days(3))).unwrap_or_else(|| start_time + ChronoDuration::days(3));
 
             statement_builder =
                 statement_builder.filter(task_log::created_time.between(start_time, end_time));
