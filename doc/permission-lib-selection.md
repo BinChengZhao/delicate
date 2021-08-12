@@ -21,3 +21,12 @@ The definition of `casbin` is **simple and easy to change**.
 `oso` is actually a **very good permission authentication library**, and if I use it personally I am likely to use oso because it is **very expressive and flexible**, and I will introduce it into my other works in the future.
 
 Or the **future may support a variety of authentication methods**, **the first step to achieve casbin authentication**, the **second step to complement the function of oso authentication**.
+
+
+
+
+## Final conclusion
+
+### The first step is based on casbin's permission management, which does not give users permission to dynamically modify the page. **(The application listens for file changes and does the action of permission adjustment)**
+
+### Write the model file in advance and let the user use the extension.
