@@ -13,15 +13,14 @@ extern crate serde;
 #[macro_use]
 extern crate diesel_migrations;
 
+#[macro_use]
+pub(crate) mod macros;
 pub(crate) mod actions;
 pub(crate) mod components;
 pub(crate) mod db;
 pub(crate) mod prelude;
-#[macro_use]
-pub(crate) mod macros;
 
 pub(crate) use prelude::*;
-use {cfg_mysql_support, cfg_postgres_support};
 
 #[actix_web::main]
 async fn main() -> AnyResut<()> {
@@ -80,6 +79,16 @@ async fn main() -> AnyResut<()> {
             .wrap(components::session::session_middleware())
             .wrap(cors)
             .wrap(MiddlewareLogger::default())
+            .wrap_fn(|req, srv| {
+                let log_id = uuid::Uuid::new_v4().to_string();
+                let _span_ = span!(Level::INFO, "", log_id=&*log_id).entered();
+
+                let fut = srv.call(req);
+                async {
+                    let res = fut.await?;
+                    Ok(res)
+                }
+            })
     })
     .bind(scheduler_listening_address)?
     .run()

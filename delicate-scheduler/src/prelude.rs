@@ -79,7 +79,7 @@ pub(crate) use serde::{Deserialize, Serialize};
 pub(crate) use serde_json::to_string as to_json_string;
 pub(crate) use validator::{Validate, ValidationErrors};
 
-#[allow(unused_imports)]
-pub(crate) use rsa::{
-    errors as ras_error, hash, pem, PaddingScheme, PublicKey, RSAPrivateKey, RSAPublicKey,
-};
+cfg_auth_casbin!(
+    pub(crate) use casbin::prelude::*;
+);
+pub(crate) use rsa::RSAPrivateKey;
