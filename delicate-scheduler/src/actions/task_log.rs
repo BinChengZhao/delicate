@@ -265,3 +265,37 @@ async fn kill_one_task_instance(
         .await?
         .into()
 }
+
+#[post("/api/task_log/delete")]
+async fn delete_task(
+    req: HttpRequest,
+    web::Json(delete_params): web::Json<model::DeleteParamsTaskLog>,
+    pool: ShareData<db::ConnectionPool>,
+) -> HttpResponse {
+    // Because `diesel` does not support join table deletion, so here is divided into two steps to delete logs.
+
+    // 1. query the primary key of task-log according to the given conditions, with a single maximum limit of 524288 items.
+
+    // 2. the primary key in batches of 2048 items and then start executing the deletion, task-log and task-log-extend.
+
+    let operation_log_pair_option =
+        generate_operation_task_delete_log(&req.get_session(), &delete_params).ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
+
+    // let boxed_query = delete_params.query_filter(statement_builder);
+
+    // delete
+    // if let Ok(conn) = pool.get() {
+    //     return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<()>>::into(
+    //         web::block::<_, _, diesel::result::Error>(move || {
+    //             diesel::delete(task::table.find(task_id)).execute(&conn)?;
+    //             diesel::delete(task_bind::table.filter(task_bind::task_id.eq(task_id)))
+    //                 .execute(&conn)?;
+    //             Ok(())
+    //         })
+    //         .await,
+    //     ));
+    // }
+
+    HttpResponse::Ok().json(UnifiedResponseMessages::<()>::error())
+}

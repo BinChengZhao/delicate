@@ -81,7 +81,7 @@ async fn main() -> AnyResut<()> {
             .wrap(MiddlewareLogger::default())
             .wrap_fn(|req, srv| {
                 let log_id = uuid::Uuid::new_v4().to_string();
-                let _span_ = span!(Level::INFO, "", log_id=&*log_id).entered();
+                let _span_ = span!(Level::INFO, "", log_id = &*log_id).entered();
 
                 let fut = srv.call(req);
                 async {

@@ -98,7 +98,7 @@ impl_seek_table_id_unify!(
     ExecutorGroup,
     UpdateExecutorGroup
 );
-impl_seek_table_id_unify!(NewTaskLog=>0, NewTask=>0, NewUser=>0, NewTaskBind=>0, NewExecutorProcessor=>0, NewExecutorProcessorBind=>0, NewExecutorGroup=>0, NewExecutorProcessorBinds=>0);
+impl_seek_table_id_unify!(NewTaskLog=>0, NewTask=>0, NewUser=>0, NewTaskBind=>0, NewExecutorProcessor=>0, NewExecutorProcessorBind=>0, NewExecutorGroup=>0, NewExecutorProcessorBinds=>0, DeleteParamsTaskLog=>0);
 
 #[inline(always)]
 pub(crate) fn generate_operation_log(

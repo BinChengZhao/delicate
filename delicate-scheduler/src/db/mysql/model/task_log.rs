@@ -328,3 +328,46 @@ impl QueryParamsTaskLog {
         statement_builder.order(task_log::id.desc())
     }
 }
+
+
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+pub struct DeleteParamsTaskLog {
+    task_id: Option<i64>,
+    status: Option<i16>,
+    executor_processor_id: Option<i64>,
+    limit: Option<u64>,
+    pub(crate) start_time: Option<String>,
+    pub(crate) end_time: Option<String>,
+}
+impl DeleteParamsTaskLog {
+    pub(crate) fn query_filter(
+        self,
+    ) -> BoxedDeleteStatement<'static, Mysql, task_log::table> {
+        // TODO: Update there.
+        let mut statement_builder = diesel::delete(task_log::table)
+    .into_boxed();
+
+        if let Some(task_id) = self.task_id {
+            statement_builder = statement_builder.filter(task_log::task_id.eq(task_id));
+        }
+
+        if let Some(status) = self.status {
+            statement_builder = statement_builder.filter(task_log::status.eq(status));
+        }
+
+        if let Some(executor_processor_id) = self.executor_processor_id {
+            statement_builder = statement_builder.filter(task_log::executor_processor_id.eq(executor_processor_id));
+        }
+
+
+        if let Some(Ok(start_time)) = self.start_time.map(|s|NaiveDateTime::parse_from_str(&s,  "%Y-%m-%d %H:%M:%S")) {
+            let end_time = self.end_time.map(|s|NaiveDateTime::parse_from_str(&s,  "%Y-%m-%d %H:%M:%S").unwrap_or_else(|_| start_time + ChronoDuration::days(3))).unwrap_or_else(|| start_time + ChronoDuration::days(3));
+
+            statement_builder =
+                statement_builder.filter(task_log::created_time.between(start_time, end_time));
+        }
+
+        statement_builder
+
+    }
+}

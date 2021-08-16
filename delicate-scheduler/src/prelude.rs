@@ -43,6 +43,7 @@ pub(crate) use chrono::{DateTime, Duration as ChronoDuration, Local, NaiveDateTi
 
 pub(crate) use diesel::mysql::Mysql;
 pub(crate) use diesel::prelude::*;
+pub(crate) use diesel::query_builder::BoxedDeleteStatement;
 pub(crate) use diesel::query_builder::{AsQuery, AstPass, Query, QueryFragment};
 pub(crate) use diesel::query_dsl::methods::LoadQuery;
 pub(crate) use diesel::r2d2::CustomizeConnection;
