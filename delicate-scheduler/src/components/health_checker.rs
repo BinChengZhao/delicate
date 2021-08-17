@@ -31,7 +31,7 @@ async fn health_check(conn: db::PoolConnection) -> Result<(), CommonError> {
             let message = delicate_utils_executor_processor::HealthScreenUnit::default();
 
             let executor_host =
-                "http://".to_string() + &executor_host + "/api/executor/health_screen";
+                "http://".to_string() + (executor_host.deref()) + "/api/executor/health_screen";
 
             message
                 .sign(Some(&executor_token))

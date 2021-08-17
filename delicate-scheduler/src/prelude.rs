@@ -32,6 +32,7 @@ pub(crate) use std::task::{Context, Poll};
 pub(crate) use std::time::Duration;
 pub(crate) use std::time::SystemTime;
 pub(crate) use std::vec::IntoIter;
+pub(crate) use std::ops::Deref;
 
 pub(crate) use futures::future::{join, join3, ok, JoinAll, Ready};
 pub(crate) use futures::Future;
@@ -80,6 +81,10 @@ pub(crate) use serde_json::to_string as to_json_string;
 pub(crate) use validator::{Validate, ValidationErrors};
 
 cfg_auth_casbin!(
+    pub(crate) use async_lock::RwLock;
     pub(crate) use casbin::prelude::*;
+    pub(crate) use casbin::Enforcer;
+    pub(crate) use futures::executor::block_on as futures_block_on;
+    pub(crate) use super::components::auth::casbin::*;
 );
 pub(crate) use rsa::RSAPrivateKey;

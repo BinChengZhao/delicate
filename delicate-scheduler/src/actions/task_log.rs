@@ -249,7 +249,7 @@ async fn kill_one_task_instance(
     .await?;
 
     let client = RequestClient::default();
-    let url = "http://".to_string() + &host + "/api/task_instance/kill";
+    let url = "http://".to_string() + (host.deref()) + "/api/task_instance/kill";
 
     let record = delicate_utils_task_log::CancelTaskRecord::default()
         .set_task_id(task_id)

@@ -16,5 +16,14 @@ fn main() {
         ),
     }
 
+    //  Authentication-Model, currently optional value `casbin` （optional feature）.
+    env::var("AUTH_MODEL").map(|a|{
+        match a.as_str() {
+            "casbin" | "CASBIN" => emit("AUTH_CASBIN"),
+            _ => (),
+        }
+    }).ok();
+    
+
     autocfg::rerun_path("build.rs");
 }

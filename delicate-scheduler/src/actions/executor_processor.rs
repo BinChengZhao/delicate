@@ -179,7 +179,7 @@ async fn activate_executor(
     }: model::UpdateExecutorProcessor = query;
 
     let client = RequestClient::default();
-    let url = "http://".to_string() + &host + "/api/executor/bind";
+    let url = "http://".to_string() + (host.deref()) + "/api/executor/bind";
 
     let private_key = scheduler.get_app_security_key();
     let scheduler_host = scheduler.get_app_host_name().clone();

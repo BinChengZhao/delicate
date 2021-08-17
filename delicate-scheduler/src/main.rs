@@ -50,8 +50,8 @@ async fn main() -> AnyResut<()> {
     let shared_scheduler_meta_info: SharedSchedulerMetaInfo =
         ShareData::new(SchedulerMetaInfo::default());
 
-    launch_health_check(shared_connection_pool.clone());
-    launch_operation_log_consumer(shared_connection_pool.clone());
+    // All ready work when the delicate-application starts.
+    launch_ready_operation(shared_connection_pool.clone()).await;
 
     let result = HttpServer::new(move || {
         let cors = Cors::default()
@@ -97,6 +97,13 @@ async fn main() -> AnyResut<()> {
     Ok(result?)
 }
 
+// All ready work when the delicate-application starts.
+async fn launch_ready_operation(pool: ShareData<db::ConnectionPool>) {
+    launch_health_check(pool.clone());
+    launch_operation_log_consumer(pool.clone());
+    launch_cache_warm_up().await;
+}
+
 // Heartbeat checker
 // That constantly goes to detect whether the machine survives with the machine's indicators.
 fn launch_health_check(pool: ShareData<db::ConnectionPool>) {
@@ -110,4 +117,10 @@ fn launch_health_check(pool: ShareData<db::ConnectionPool>) {
 // These logs go through the channel with the asynchronous state machine to consume.
 fn launch_operation_log_consumer(pool: ShareData<db::ConnectionPool>) {
     rt_spawn(loop_operate_logs(pool));
+}
+
+// Application cache warmup.
+async fn launch_cache_warm_up() {
+    #[cfg(AUTH_CASBIN)]
+    warm_up_auther().await;
 }

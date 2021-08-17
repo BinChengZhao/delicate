@@ -142,7 +142,7 @@ async fn pre_update_executor_processor_bind(
     let remove_task_units: JoinAll<_> = task_packages
         .iter()
         .filter_map(|&(ref t, (ref host, ref token))| {
-            let executor_host = "http://".to_string() + host + "/api/task/remove";
+            let executor_host = "http://".to_string() + (host.deref()) + "/api/task/remove";
             TaskUnit::default()
                 .set_task_id(t.id)
                 .set_time(get_timestamp())
@@ -162,7 +162,7 @@ async fn pre_update_executor_processor_bind(
     let create_task_packages: JoinAll<_> = task_packages
         .into_iter()
         .filter_map(|(t, (host, token))| {
-            let executor_host = "http://".to_string() + &host + "/api/task/create";
+            let executor_host = "http://".to_string() + (host.deref()) + "/api/task/create";
             t.sign(Some(&token)).map(|t| (t, executor_host)).ok()
         })
         .map(|(signed_task_package, executor_host)| {
