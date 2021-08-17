@@ -272,30 +272,49 @@ async fn delete_task(
     web::Json(delete_params): web::Json<model::DeleteParamsTaskLog>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
+    let operation_log_pair_option =
+        generate_operation_task_delete_log(&req.get_session(), &delete_params).ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
+
+    if let Ok(conn) = pool.get() {
+        return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<()>>::into(
+            pre_delete_task(delete_params, conn).await,
+        ));
+    }
+
+    HttpResponse::Ok().json(UnifiedResponseMessages::<()>::error())
+}
+
+async fn pre_delete_task(
+    delete_params: model::DeleteParamsTaskLog,
+    conn: db::PoolConnection,
+) -> Result<(), CommonError> {
+    use db::schema::{task_log, task_log_extend};
+
     // Because `diesel` does not support join table deletion, so here is divided into two steps to delete logs.
 
     // 1. query the primary key of task-log according to the given conditions, with a single maximum limit of 524288 items.
 
     // 2. the primary key in batches of 2048 items and then start executing the deletion, task-log and task-log-extend.
 
-    let operation_log_pair_option =
-        generate_operation_task_delete_log(&req.get_session(), &delete_params).ok();
-    send_option_operation_log_pair(operation_log_pair_option).await;
+    web::block::<_, _, diesel::result::Error>(move || {
+        let query_builder = model::TaskLogQueryBuilder::query_id_column();
+        let task_log_ids = delete_params
+            .query_filter(query_builder)
+            .load::<i64>(&conn)?;
 
-    // let boxed_query = delete_params.query_filter(statement_builder);
+        let ids_chunk = task_log_ids.chunks(2048);
+        for ids in ids_chunk {
+            conn.transaction::<_, diesel::result::Error, _>(|| {
+                diesel::delete(task_log::table.filter(task_log::id.eq_any(ids))).execute(&conn)?;
+                diesel::delete(task_log_extend::table.filter(task_log_extend::id.eq_any(ids)))
+                    .execute(&conn)?;
+                Ok(())
+            })?;
+        }
 
-    // delete
-    // if let Ok(conn) = pool.get() {
-    //     return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<()>>::into(
-    //         web::block::<_, _, diesel::result::Error>(move || {
-    //             diesel::delete(task::table.find(task_id)).execute(&conn)?;
-    //             diesel::delete(task_bind::table.filter(task_bind::task_id.eq(task_id)))
-    //                 .execute(&conn)?;
-    //             Ok(())
-    //         })
-    //         .await,
-    //     ));
-    // }
-
-    HttpResponse::Ok().json(UnifiedResponseMessages::<()>::error())
+        Ok(())
+    })
+    .await?;
+    Ok(())
 }

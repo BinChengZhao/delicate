@@ -8,6 +8,10 @@ impl TaskLogQueryBuilder {
         task_log::table.into_boxed().select(task_log::all_columns)
     }
 
+    pub(crate) fn query_id_column() -> task_log::BoxedQuery<'static, Mysql, diesel::sql_types::Bigint> {
+        task_log::table.into_boxed().select(task_log::id)
+    }
+
     pub(crate) fn query_count() -> task_log::BoxedQuery<'static, Mysql, diesel::sql_types::Bigint> {
         task_log::table.into_boxed().count()
     }
@@ -340,12 +344,10 @@ pub struct DeleteParamsTaskLog {
     pub(crate) end_time: Option<String>,
 }
 impl DeleteParamsTaskLog {
-    pub(crate) fn query_filter(
+    pub(crate) fn query_filter<ST>(
         self,
-    ) -> BoxedDeleteStatement<'static, Mysql, task_log::table> {
-        // TODO: Update there.
-        let mut statement_builder = diesel::delete(task_log::table)
-    .into_boxed();
+        mut statement_builder: task_log::BoxedQuery<'static, Mysql, ST>,
+    ) -> task_log::BoxedQuery<'static, Mysql, ST> {
 
         if let Some(task_id) = self.task_id {
             statement_builder = statement_builder.filter(task_log::task_id.eq(task_id));
@@ -367,7 +369,8 @@ impl DeleteParamsTaskLog {
                 statement_builder.filter(task_log::created_time.between(start_time, end_time));
         }
 
-        statement_builder
+        let limit = self.limit.unwrap_or(524_288) as i64;
+        statement_builder.limit(limit)
 
     }
 }
