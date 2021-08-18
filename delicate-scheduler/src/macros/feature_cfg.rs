@@ -24,6 +24,7 @@ macro_rules! cfg_postgres_support {
     }
 }
 
+#[allow(unused_macros)]
 macro_rules! cfg_auth_casbin {
     ($($item:item)*) => {
         $(

@@ -288,7 +288,8 @@ pub async fn pre_update_task_sevice(
         let remove_tasks_future: JoinAll<_> = removed_bind_processors
             .into_iter()
             .filter_map(|processor| {
-                let executor_host = "http://".to_string() + (processor.host.deref()) + "/api/task/remove";
+                let executor_host =
+                    "http://".to_string() + (processor.host.deref()) + "/api/task/remove";
 
                 let message = delicate_utils_task::TaskUnit::default()
                     .set_task_id(task_id)
@@ -312,7 +313,8 @@ pub async fn pre_update_task_sevice(
         let append_tasks_future: JoinAll<_> = append_bind_processors
             .into_iter()
             .filter_map(|processor| {
-                let executor_host = "http://".to_string() + (processor.host.deref()) + "/api/task/create";
+                let executor_host =
+                    "http://".to_string() + (processor.host.deref()) + "/api/task/create";
 
                 info!("Create task{} at:{}", &task_package, &executor_host);
                 task_package
@@ -333,7 +335,8 @@ pub async fn pre_update_task_sevice(
         let update_tasks_future: JoinAll<_> = reserved_bind_processors
             .into_iter()
             .filter_map(|processor| {
-                let executor_host = "http://".to_string() + (processor.host.deref()) + "/api/task/update";
+                let executor_host =
+                    "http://".to_string() + (processor.host.deref()) + "/api/task/update";
 
                 info!("Update task{} at:{}", &task_package, &executor_host);
                 task_package
@@ -486,7 +489,8 @@ async fn pre_run_task(
     let request_all: JoinAll<_> = task_packages
         .into_iter()
         .filter_map(|(task_package, (executor_host_str, executor_token))| {
-            let executor_host = "http://".to_string() + (executor_host_str.deref()) + "/api/task/create";
+            let executor_host =
+                "http://".to_string() + (executor_host_str.deref()) + "/api/task/create";
             info!("Run task{} at:{}", &task_package, &executor_host);
             task_package
                 .sign(Some(&executor_token))
