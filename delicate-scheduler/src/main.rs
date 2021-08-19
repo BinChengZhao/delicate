@@ -61,7 +61,7 @@ async fn main() -> AnyResut<()> {
             .supports_credentials()
             .max_age(3600);
 
-        App::new()
+        let app = App::new()
             .configure(actions::task::config)
             .configure(actions::user::config)
             .configure(actions::task_log::config)
@@ -88,7 +88,12 @@ async fn main() -> AnyResut<()> {
                     let res = fut.await?;
                     Ok(res)
                 }
-            })
+            });
+
+        #[cfg(AUTH_CASBIN)]
+        let app = app.wrap(CasbinService);
+
+        app
     })
     .bind(scheduler_listening_address)?
     .run()
