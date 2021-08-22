@@ -10,6 +10,7 @@ pub(crate) async fn loop_health_check(pool: ShareData<db::ConnectionPool>) {
                 .await
                 .map_err(|e| error!(target:"loop-health-check", "{}", e.to_string()))
                 .ok();
+            continue;
         }
 
         error!(target:"loop-health-check", "No available database connection.");

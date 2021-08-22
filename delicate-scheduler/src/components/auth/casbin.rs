@@ -94,26 +94,31 @@ where
             .unwrap_or_default()
             .unwrap_or_default();
         Box::pin(async move {
-            let auther = get_auther_read_guard().await;
+            info!("{}, {}, {}", username, path, action);
+            service.call(req).await
 
-            if !username.is_empty() {
-                match auther.enforce(vec![username, path, action]) {
-                    Ok(true) => {
-                        drop(auther);
-                        service.call(req).await
-                    }
-                    Ok(false) => {
-                        drop(auther);
-                        todo!();
-                    }
-                    Err(_) => {
-                        drop(auther);
-                        todo!();
-                    }
-                }
-            } else {
-                todo!();
-            }
+            // let auther = get_auther_read_guard().await;
+
+            // if !username.is_empty() {
+            //     match auther.enforce(vec![username, path, action]) {
+            //         Ok(true) => {
+            //             drop(auther);
+            //             service.call(req).await
+            //         }
+            //         Ok(false) => {
+            //             drop(auther);
+            //             //
+            //             todo!();
+            //         }
+            //         Err(_) => {
+            //             drop(auther);
+            //             //
+            //             todo!();
+            //         }
+            //     }
+            // } else {
+            //     todo!();
+            // }
         })
     }
 }
