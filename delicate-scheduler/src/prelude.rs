@@ -1,3 +1,4 @@
+#[allow(unused_imports)]
 pub(crate) use super::components::auth::casbin::*;
 pub(crate) use super::components::base::{SchedulerMetaInfo, SharedSchedulerMetaInfo};
 pub(crate) use super::components::health_checker::loop_health_check;

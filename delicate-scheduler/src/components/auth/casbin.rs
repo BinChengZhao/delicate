@@ -2,12 +2,17 @@
 use crate::prelude::*;
 
 lazy_static! {
+    
     pub static ref CASBIN_MODEL_CONF_PATH: String = {
             env::var("CASBIN_MODEL_CONF").expect("CASBIN_MODEL_CONF must be set")
     };
+
+
+    // TODO: Can be listened to by `hotwatch` for changes.
     pub static ref CASBIN_POLICY_CONF_PATH: String = {
             env::var("CASBIN_POLICY_CONF").expect("CASBIN_POLICY_CONF must be set")
     };
+
       // Because casbin requires that the `&str` type must satisfy static.
       // And the String read by environment variable does not satisfy this condition after passing deref.
       // Two ways to solve it.
@@ -23,10 +28,12 @@ lazy_static! {
 
 }
 
+#[allow(dead_code)]
 pub(crate) async fn warm_up_auther() {
     AUTHER.write().await.enable_log(true);
 }
 
+#[allow(dead_code)]
 pub(crate) async fn get_auther_read_guard() -> RwLockReadGuard<'static, Enforcer> {
     AUTHER.read().await
 }

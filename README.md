@@ -40,10 +40,31 @@ https://github.com/BinChengZhao/delicate)
 
 - **Reusability:**  Excutor provides `restful-api` that allows user applications to maintain custom tasks.
 
+
+
 The architecture of delicate:
 
 ![architecture](./doc/architecture.svg)
 ![topology](./doc/topology.svg)
+
+## Project rendering
+<details>
+<summary>Click me</summary>
+
+![](./doc/_media/dashboard.jpg)
+![](./doc/_media/executor_create.jpg)
+![](./doc/_media/executor_list.jpg)
+![](./doc/_media/group_create.jpg)
+![](./doc/_media/group_inner_bind.jpg)
+![](./doc/_media/login_en.jpg)
+![](./doc/_media/task_edit.jpg)
+![](./doc/_media/task_list_operation.jpg)
+![](./doc/_media/task_log_kill.jpg)
+![](./doc/_media/task_log_logs_2.jpg)
+![](./doc/_media/task_log_logs.jpg)
+![](./doc/_media/user_list.jpg)
+
+</details>
 
 
 ## Benchmark

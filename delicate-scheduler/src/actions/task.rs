@@ -338,7 +338,7 @@ pub async fn pre_update_task_sevice(
                 let executor_host =
                     "http://".to_string() + (processor.host.deref()) + "/api/task/update";
 
-                info!("Update task{} at:{}", &task_package, &executor_host);
+                info!("Update task {} at:{}", &task_package, &executor_host);
                 task_package
                     .clone()
                     .sign(Some(&processor.token))

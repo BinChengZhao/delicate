@@ -9,7 +9,7 @@ pub(crate) async fn handle_response<T: DeserializeOwned + Trial>(
         .map(|response| match response {
             Ok(mut r) => Some(r.json::<T>()),
             Err(e) => {
-                error!("{}", e);
+                error!("SendRequestError : {}", e);
                 None
             }
         })
@@ -25,10 +25,10 @@ pub(crate) async fn handle_response<T: DeserializeOwned + Trial>(
         .map(|json_result| {
             match json_result {
                 Err(ref e) => {
-                    error!("{}", e);
+                    error!("Payload errors: {}", e);
                 }
                 Ok(ref json) if json.is_err() => {
-                    error!("{}", json.get_msg());
+                    error!("Customized error messages: {}", json.get_msg());
                 }
                 _ => {}
             }

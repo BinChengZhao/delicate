@@ -1,5 +1,6 @@
 #![recursion_limit = "256"]
 #![allow(clippy::expect_fun_call)]
+#![allow(clippy::let_and_return)]
 #![warn(missing_docs, missing_debug_implementations, rust_2018_idioms)]
 
 //! delicate-scheduler.
@@ -78,17 +79,7 @@ async fn main() -> AnyResut<()> {
             .wrap(components::session::auth_middleware())
             .wrap(components::session::session_middleware())
             .wrap(cors)
-            .wrap(MiddlewareLogger::default())
-            .wrap_fn(|req, srv| {
-                let log_id = uuid::Uuid::new_v4().to_string();
-                let _span_ = span!(Level::INFO, "", log_id = &*log_id).entered();
-
-                let fut = srv.call(req);
-                async {
-                    let res = fut.await?;
-                    Ok(res)
-                }
-            });
+            .wrap(MiddlewareLogger::default());
 
         #[cfg(AUTH_CASBIN)]
         let app = app.wrap(CasbinService);

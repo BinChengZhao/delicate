@@ -47,6 +47,27 @@ https://github.com/BinChengZhao/delicate)
 
 ![topology](./doc/topology.svg)
 
+
+## 项目效果图
+<details>
+<summary>请点击</summary>
+
+![](./doc/_media/dashboard.jpg)
+![](./doc/_media/executor_create.jpg)
+![](./doc/_media/executor_list.jpg)
+![](./doc/_media/group_create.jpg)
+![](./doc/_media/group_inner_bind.jpg)
+![](./doc/_media/login_en.jpg)
+![](./doc/_media/task_edit.jpg)
+![](./doc/_media/task_list_operation.jpg)
+![](./doc/_media/task_log_kill.jpg)
+![](./doc/_media/task_log_logs_2.jpg)
+![](./doc/_media/task_log_logs.jpg)
+![](./doc/_media/user_list.jpg)
+
+</details>
+
+
 ## Benchmark
 每次调度耗时 6,424 ns (+/- 52) 在 CentOS Linux release 7.6.1810 (Core) (不同系统/硬件会有不同的结果).
 

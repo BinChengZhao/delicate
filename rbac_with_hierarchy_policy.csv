@@ -1,0 +1,31 @@
+p, task_admin, task, read
+p, task_admin, task, write
+
+p, processor_admin, processor, read
+p, processor_admin, processor, write
+
+p, group_admin, group, read
+p, group_admin, group, write
+
+p, user_admin, user, read
+p, user_admin, user, write
+
+p, log_admin, log, read
+p, log_admin, log, write
+
+g, bincheng, root
+g, bincheng-tester, admin
+
+g, team_leader, task_admin
+g, team_leader, processor_admin
+g, team_leader, group_admin
+g, team_leader, user_admin
+g, team_leader, log_admin
+
+g, developer, task_admin
+g, developer, processor_admin
+
+
+# User Role Definition Area
+
+g, username, task_admin
