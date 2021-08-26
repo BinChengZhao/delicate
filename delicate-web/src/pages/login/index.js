@@ -57,16 +57,6 @@ class Login extends PureComponent {
               <Button type="primary" htmlType="submit" loading={loading.effects.login}>
                 <Trans>Sign in</Trans>
               </Button>
-              <p>
-                <span className="margin-right">
-                  <Trans>Username</Trans>
-                  ：guest
-                </span>
-                <span>
-                  <Trans>Password</Trans>
-                  ：guest
-                </span>
-              </p>
             </Row>
           </Form>
         </div>

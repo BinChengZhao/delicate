@@ -17,7 +17,8 @@ import {
   OrderedListOutlined,
   BoxPlotOutlined,
   CheckCircleOutlined,
-  StopOutlined
+  StopOutlined,
+  ReadOutlined
 } from '@ant-design/icons'
 
 export default {
@@ -38,5 +39,6 @@ export default {
   dashboard: <DashboardOutlined />,
   user: <UserOutlined />,
   api: <ApiOutlined />,
-  edit: <EditOutlined />
+  edit: <EditOutlined />,
+  readOut: <ReadOutlined />
 }

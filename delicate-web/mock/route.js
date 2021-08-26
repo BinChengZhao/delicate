@@ -58,93 +58,52 @@ const database = [
   {
     id: '4',
     breadcrumbParentId: '1',
+    name: 'Logs',
+    zh: { name: '日志相关' },
+    icon: 'readOut'
+  },
+  {
+    id: '41',
+    menuParentId: '4',
+    breadcrumbParentId: '4',
+    name: 'Operate Logs',
+    zh: { name: '操作日志' },
+    route: '/operateLogs'
+  },
+  {
+    id: '411',
+    menuParentId: '-1',
+    breadcrumbParentId: '41',
+    name: 'Operate Log Detail',
+    zh: { name: '操作日志详情' },
+    route: '/operateLogs/:id'
+  },
+  {
+    id: '42',
+    menuParentId: '4',
+    breadcrumbParentId: '4',
+    name: 'Login Logs',
+    zh: { name: '登陆日志' },
+    route: '/loginLogs'
+  },
+  {
+    id: '9',
+    breadcrumbParentId: '1',
     name: 'user',
     zh: { name: '用户管理' },
     icon: 'user',
     route: '/user'
   },
   {
-    id: '41',
+    id: '91',
     menuParentId: '-1',
-    breadcrumbParentId: '4',
+    breadcrumbParentId: '9',
     name: 'User Detail',
     zh: {
       name: '用户详情'
     },
     route: '/user/:id'
   }
-  // {
-  //   id: '6',
-  //   breadcrumbParentId: '1',
-  //   name: 'Request',
-  //   zh: {
-  //     name: 'Request'
-  //   },
-  //   icon: 'api',
-  //   route: '/request'
-  // },
-  // {
-  //   id: '4',
-  //   breadcrumbParentId: '1',
-  //   name: 'UI Element',
-  //   zh: {
-  //     name: 'UI组件'
-  //   },
-  //   icon: 'camera-o'
-  // },
-  // {
-  //   id: '45',
-  //   breadcrumbParentId: '4',
-  //   menuParentId: '4',
-  //   name: 'Editor',
-  //   zh: {
-  //     name: 'Editor'
-  //   },
-  //   icon: 'edit',
-  //   route: '/editor'
-  // },
-  // {
-  //   id: '5',
-  //   breadcrumbParentId: '1',
-  //   name: 'Charts',
-  //   zh: {
-  //     name: 'Charts'
-  //   },
-  //   icon: 'code-o'
-  // },
-  // {
-  //   id: '51',
-  //   breadcrumbParentId: '5',
-  //   menuParentId: '5',
-  //   name: 'ECharts',
-  //   zh: {
-  //     name: 'ECharts'
-  //   },
-  //   icon: 'line-chart',
-  //   route: '/chart/ECharts'
-  // },
-  // {
-  //   id: '52',
-  //   breadcrumbParentId: '5',
-  //   menuParentId: '5',
-  //   name: 'HighCharts',
-  //   zh: {
-  //     name: 'HighCharts'
-  //   },
-  //   icon: 'bar-chart',
-  //   route: '/chart/highCharts'
-  // },
-  // {
-  //   id: '53',
-  //   breadcrumbParentId: '5',
-  //   menuParentId: '5',
-  //   name: 'Rechartst',
-  //   zh: {
-  //     name: 'Rechartst'
-  //   },
-  //   icon: 'area-chart',
-  //   route: '/chart/Recharts'
-  // }
 ]
 
 export default database

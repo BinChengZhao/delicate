@@ -11,6 +11,7 @@ const {
   taskSuspend,
   taskLogList,
   taskLogDetail,
+  taskLogDelete,
   taskKill,
   taskBindList
 } = api
@@ -98,12 +99,29 @@ export default {
     },
     // 任务日志详情
     *taskLogDetail({ payload }, { call, put }) {
-      return yield call(taskLogDetail, payload)
+      try {
+        return yield call(taskLogDetail, payload)
+      } catch (e) {
+        console.error(e)
+      }
+    },
+    // 删除任务日志
+    *taskLogDelete({ payload }, { call, put }) {
+      try {
+        const data = yield call(taskLogDelete, payload)
+        if (!data.code) message.success('删除成功')
+      } catch (e) {
+        console.error(e)
+      }
     },
     // 立即执行任务
     *onTaskAdvance({ payload }, { call, put }) {
-      const data = yield call(taskAdvance, payload)
-      if (!data.code) message.success('手动执行操作成功')
+      try {
+        const data = yield call(taskAdvance, payload)
+        if (!data.code) message.success('手动执行操作成功')
+      } catch (e) {
+        console.log(e)
+      }
     },
     // 启用任务
     *onTaskRun({ payload }, { call, put }) {

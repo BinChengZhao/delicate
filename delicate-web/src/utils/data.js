@@ -1,5 +1,7 @@
 // 数据工具类
 
+import moment from 'moment'
+
 export const isEmpty = (val) => {
   // null or undefined
   if (val == null) return true
@@ -29,4 +31,18 @@ export const isEmpty = (val) => {
   }
 
   return false
+}
+
+/**
+ * DatePiker组件获取时间范围
+ * @param range
+ * @returns {{start_time: null|number, end_time: null|number}}
+ */
+export const getDatePikerRange = (range) => {
+  const timeRange = { start_time: null, end_time: null }
+  if (range) {
+    timeRange.start_time = parseInt(moment(range[0]._d).valueOf() / 1000)
+    timeRange.end_time = parseInt(moment(range[1]._d).valueOf() / 1000)
+  }
+  return timeRange
 }
