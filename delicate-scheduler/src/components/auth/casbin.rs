@@ -2,13 +2,14 @@
 use crate::prelude::*;
 
 lazy_static! {
-    
+
     pub static ref CASBIN_MODEL_CONF_PATH: String = {
             env::var("CASBIN_MODEL_CONF").expect("CASBIN_MODEL_CONF must be set")
     };
 
 
     // TODO: Can be listened to by `hotwatch` for changes.
+    // TODO: `redis` based publish-subscribe, do real-time permission information synchronization.
     pub static ref CASBIN_POLICY_CONF_PATH: String = {
             env::var("CASBIN_POLICY_CONF").expect("CASBIN_POLICY_CONF must be set")
     };
@@ -73,6 +74,17 @@ pub struct CasbinAuthMiddleware<S> {
     service: Rc<RefCell<S>>,
 }
 
+const WHITE_LIST: [&str; 8] = [
+    "/api/tasks_state/one_day",
+    "/api/user/login",
+    "/api/user/logout",
+    "/api/binding/list",
+    "/api/user/check",
+    "/api/executor/list",
+    "/api/user/change_password",
+    "/api/task_logs/event_trigger",
+];
+
 impl<S, B> Service for CasbinAuthMiddleware<S>
 where
     S: Service<Request = ServiceRequest, Response = ServiceResponse<B>, Error = ActixWebError>
@@ -95,37 +107,56 @@ where
         let mut service = self.service.clone();
         let session = req.get_session();
         let path = req.path().to_string();
-        let action = req.method().as_str().to_string();
+        let auth_part = path.split('/').into_iter().collect::<Vec<&str>>();
+
+        let resource = auth_part.get(1).map(|s| s.to_string()).unwrap_or_default();
+        let action = auth_part.get(2).map(|s| s.to_string()).unwrap_or_default();
         let username = session
             .get::<String>("user_name")
             .unwrap_or_default()
             .unwrap_or_default();
+
         Box::pin(async move {
-            info!("{}, {}, {}", username, path, action);
-            service.call(req).await
+            // Path in the whitelist do not need to be verified.
+            if WHITE_LIST.contains(&path.deref()) {
+                return service.call(req).await;
+            }
 
-            // let auther = get_auther_read_guard().await;
+            let auther = get_auther_read_guard().await;
 
-            // if !username.is_empty() {
-            //     match auther.enforce(vec![username, path, action]) {
-            //         Ok(true) => {
-            //             drop(auther);
-            //             service.call(req).await
-            //         }
-            //         Ok(false) => {
-            //             drop(auther);
-            //             //
-            //             todo!();
-            //         }
-            //         Err(_) => {
-            //             drop(auther);
-            //             //
-            //             todo!();
-            //         }
-            //     }
-            // } else {
-            //     todo!();
-            // }
+            if username.is_empty() || resource.is_empty() || action.is_empty() {
+                return Ok(req.error_response(
+                    HttpResponseBuilder::new(StatusCode::default()).json(
+                        UnifiedResponseMessages::<()>::error()
+                            .customized_error_msg(String::from("Permission check failed.")),
+                    ),
+                ));
+            }
+
+            match auther.enforce(vec![username, resource, action]) {
+                Ok(true) => {
+                    drop(auther);
+                    service.call(req).await
+                }
+                Ok(false) => {
+                    drop(auther);
+                    Ok(req.error_response(
+                        HttpResponseBuilder::new(StatusCode::default()).json(
+                            UnifiedResponseMessages::<()>::error()
+                                .customized_error_msg(String::from("Permission check failed.")),
+                        ),
+                    ))
+                }
+                Err(e) => {
+                    drop(auther);
+                    Ok(req.error_response(
+                        HttpResponseBuilder::new(StatusCode::default()).json(
+                            UnifiedResponseMessages::<()>::error()
+                                .customized_error_msg(format!("Permission check failed. ({})", e)),
+                        ),
+                    ))
+                }
+            }
         })
     }
 }

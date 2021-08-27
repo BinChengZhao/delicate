@@ -71,7 +71,6 @@ async fn operate_logs(
             operation_log_details.push(operation_log_detail);
         });
     web::block::<_, _, diesel::result::Error>(move || {
-
         // Use this solution to ensure that the conditions are met (innodb_autoinc_lock_mode = 1 ("executive" lock mode)):
         // https://stackoverflow.com/questions/27225804/mysql-batch-insert-on-multiple-tables-with-last-insert-id
         // https://dev.mysql.com/doc/refman/8.0/en/innodb-auto-increment-handling.html

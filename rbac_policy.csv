@@ -1,0 +1,37 @@
+# Note: casbin-Vulnerability if A has role B, B has role C, then A has role C. This transitivity is infinite for now.
+
+p, developer, task, create
+p, developer, task, delete, deny
+p, developer, task, list
+p, developer, task, update
+p, developer, task, run
+p, developer, task, suspend, deny
+
+p, task_admin, task, *
+p, task_admin, task_instance, *
+p, task_admin, task_log, *
+
+p, processor_admin, executor_processor, *
+
+p, group_admin, executor_group, *
+p, group_admin, executor_processor_bind, *
+
+p, user_admin, user, *
+
+p, log_admin, user_login_log, *
+p, log_admin, operation_log, *
+
+# User Role Definition Area
+# g, username, task_admin
+
+g, bincheng, root
+g, bincheng-tester, admin
+
+g, team_leader, task_admin
+g, team_leader, processor_admin
+g, team_leader, group_admin
+g, team_leader, user_admin
+g, team_leader, log_admin
+
+g, developer, processor_admin
+g, developer, log_admin 
