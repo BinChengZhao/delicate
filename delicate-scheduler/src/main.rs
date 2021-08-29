@@ -75,16 +75,15 @@ async fn main() -> AnyResut<()> {
             .configure(actions::user_login_log::config)
             .app_data(shared_delay_timer.clone())
             .app_data(shared_connection_pool.clone())
-            .app_data(shared_scheduler_meta_info.clone())
-            .wrap(components::session::auth_middleware())
-            .wrap(components::session::session_middleware())
-            .wrap(cors)
-            .wrap(MiddlewareLogger::default());
-
+            .app_data(shared_scheduler_meta_info.clone());
+            
         #[cfg(AUTH_CASBIN)]
         let app = app.wrap(CasbinService);
 
-        app
+        app.wrap(components::session::auth_middleware())
+            .wrap(components::session::session_middleware())
+            .wrap(cors)
+            .wrap(MiddlewareLogger::default())
     })
     .bind(scheduler_listening_address)?
     .run()

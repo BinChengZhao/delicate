@@ -12,14 +12,14 @@ https://github.com/BinChengZhao/delicate)
   - [Get Started](#get-started)
     - [Setting up delicate](#setting-up-delicate)
   - [Quick start](#quick-start)
-  - [Documentation](#documentation)
+  - [Documentation](https://delicate-rs.github.io/Roadmap.html)
   - [Roadmap](#roadmap)
   - [Contributing](#Contributing)
   - [License](#license)
 
 ## What is delicate
 <a href="">
-    <img src="./doc/delicate_logo.png"
+    <img src="./doc/src/delicate_logo.png"
          alt="delicate logo" title="delicate" height="125" width="125"  align="right"/>
 </a>
 
@@ -44,25 +44,25 @@ https://github.com/BinChengZhao/delicate)
 
 The architecture of delicate:
 
-![architecture](./doc/architecture.svg)
-![topology](./doc/topology.svg)
+![architecture](./doc/src/architecture.svg)
+![topology](./doc/src/topology.svg)
 
 ## Project rendering
 <details>
 <summary>Click me</summary>
 
-![](./doc/_media/dashboard.jpg)
-![](./doc/_media/executor_create.jpg)
-![](./doc/_media/executor_list.jpg)
-![](./doc/_media/group_create.jpg)
-![](./doc/_media/group_inner_bind.jpg)
-![](./doc/_media/login_en.jpg)
-![](./doc/_media/task_edit.jpg)
-![](./doc/_media/task_list_operation.jpg)
-![](./doc/_media/task_log_kill.jpg)
-![](./doc/_media/task_log_logs_2.jpg)
-![](./doc/_media/task_log_logs.jpg)
-![](./doc/_media/user_list.jpg)
+![](./doc/src/_media/dashboard.jpg)
+![](./doc/src/_media/executor_create.jpg)
+![](./doc/src/_media/executor_list.jpg)
+![](./doc/src/_media/group_create.jpg)
+![](./doc/src/_media/group_inner_bind.jpg)
+![](./doc/src/_media/login_en.jpg)
+![](./doc/src/_media/task_edit.jpg)
+![](./doc/src/_media/task_list_operation.jpg)
+![](./doc/src/_media/task_log_kill.jpg)
+![](./doc/src/_media/task_log_logs_2.jpg)
+![](./doc/src/_media/task_log_logs.jpg)
+![](./doc/src/_media/user_list.jpg)
 
 </details>
 
@@ -120,11 +120,11 @@ $ tar zxvf delicate-v1.0.0-linux-amd64.tar.gz -C delicate && cd delicate -->
 
 
 ## Quick start
-[Quick-start](./doc/quick_start.md)
+[Quick-start](./doc/src/quick_start.md)
 
 ## Documentation
 
-See [reference](./doc/reference.md) for more information.
+See [reference](./doc/src/reference.md) for more information.
 
 
 ## To Do List
@@ -140,7 +140,7 @@ See [reference](./doc/reference.md) for more information.
 
 ## Roadmap 
 
-See [delicate Roadmap](./doc/Roadmap.md) for details.
+See [delicate Roadmap](./doc/src/Roadmap.md) for details.
 
 
 ## Contributing

@@ -18,6 +18,7 @@ Cargo.lock
 .env*
 *.out
 
+/doc/book/*
 
 # delicate-web
 coverage

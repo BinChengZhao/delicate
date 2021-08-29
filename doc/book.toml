@@ -1,0 +1,6 @@
+[book]
+authors = ["BinChengZhao"]
+language = "en"
+multilingual = false
+src = "src"
+title = "delicate-guide"

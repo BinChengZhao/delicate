@@ -1,7 +1,7 @@
 
 <p align="center">
   <a href="https://github.com/BinChengZhao/delicate">
-    <img alt="delicate" height="64" src="../doc/delicate_logo.png">
+    <img alt="delicate" height="64" src="../doc/src/delicate_logo.png">
   </a>
 </p>
 
@@ -19,7 +19,7 @@ The front-end project of `delicate` is based on `antd-admin` development, thank 
 </div>
 
 
-English | [简体中文](./docs/zh-cn/README.md) 
+English | [简体中文](./doc/srcs/zh-cn/README.md) 
 
 
 
