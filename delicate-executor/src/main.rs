@@ -144,13 +144,43 @@ async fn maintenance(shared_delay_timer: SharedDelayTimer) -> impl Responder {
     ))
 }
 
-//Health Screening
+// Health Screening
+
 #[post("/api/executor/health_screen")]
-async fn health_screen(system_mirror: SharedSystemMirror) -> impl Responder {
+async fn health_screen(
+    req: HttpRequest,
+    web::Json(signed_health_screen_unit): web::Json<SignedHealthScreenUnit>,
+    executor_conf: SharedExecutorSecurityConf,
+    system_mirror: SharedSystemMirror,
+) -> impl Responder {
+    let guard = executor_conf.get_bind_scheduler_token_ref().await;
+    let token = guard.as_ref().map(|s| s.deref());
+
+    let verify_result = signed_health_screen_unit.get_health_screen_unit_after_verify(token);
+    if let Ok(health_screen_unit) = verify_result {
+        let connection = req.connection_info();
+        let ip = connection.realip_remote_addr().unwrap_or_default();
+        info!("From: {}, Request-time:{}", ip, health_screen_unit);
+
+        let system_snapshot = system_mirror.refresh_all().await;
+        let bind_request = executor_conf
+            .get_bind_scheduler_inner_ref()
+            .await
+            .clone()
+            .unwrap_or_default();
+
+        let health_check_package = HealthCheckPackage {
+            system_snapshot,
+            bind_request,
+        };
+        return HttpResponse::Ok().json(
+            UnifiedResponseMessages::<HealthCheckPackage>::success_with_data(health_check_package),
+        );
+    }
+
     HttpResponse::Ok().json(
-        UnifiedResponseMessages::<SystemSnapshot>::success_with_data(
-            system_mirror.refresh_all().await,
-        ),
+        UnitUnifiedResponseMessages::error()
+            .customized_error_msg(verify_result.expect_err("").to_string()),
     )
 }
 

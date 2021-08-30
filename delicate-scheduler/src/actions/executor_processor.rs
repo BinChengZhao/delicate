@@ -10,9 +10,15 @@ pub(crate) fn config(cfg: &mut web::ServiceConfig) {
 
 #[post("/api/executor_processor/create")]
 async fn create_executor_processor(
+    req: HttpRequest,
     web::Json(executor_processor): web::Json<model::NewExecutorProcessor>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
+    let operation_log_pair_option =
+        generate_operation_executor_processor_addtion_log(&req.get_session(), &executor_processor)
+            .ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
+
     if let Ok(conn) = pool.get() {
         return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
             web::block(move || {
@@ -68,9 +74,15 @@ async fn show_executor_processors(
 
 #[post("/api/executor_processor/update")]
 async fn update_executor_processor(
+    req: HttpRequest,
     web::Json(executor_processor): web::Json<model::UpdateExecutorProcessor>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
+    let operation_log_pair_option =
+        generate_operation_executor_processor_modify_log(&req.get_session(), &executor_processor)
+            .ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
+
     if let Ok(conn) = pool.get() {
         return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
             web::block(move || {
@@ -86,12 +98,20 @@ async fn update_executor_processor(
 }
 #[post("/api/executor_processor/delete")]
 async fn delete_executor_processor(
+    req: HttpRequest,
     web::Json(model::ExecutorProcessorId {
         executor_processor_id,
     }): web::Json<model::ExecutorProcessorId>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
     use db::schema::executor_processor::dsl::*;
+
+    let operation_log_pair_option = generate_operation_executor_processor_delete_log(
+        &req.get_session(),
+        &CommonTableRecord::default().set_id(executor_processor_id),
+    )
+    .ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
 
     if let Ok(conn) = pool.get() {
         return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
@@ -159,7 +179,7 @@ async fn activate_executor(
     }: model::UpdateExecutorProcessor = query;
 
     let client = RequestClient::default();
-    let url = "http://".to_string() + &host + "/api/executor/bind";
+    let url = "http://".to_string() + (host.deref()) + "/api/executor/bind";
 
     let private_key = scheduler.get_app_security_key();
     let scheduler_host = scheduler.get_app_host_name().clone();

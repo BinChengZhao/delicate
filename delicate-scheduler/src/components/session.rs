@@ -27,9 +27,6 @@ pub(crate) fn auth_middleware() -> SessionAuth {
     SessionAuth
 }
 
-// The public middleware output type.
-type MiddlewareFuture<T, E> = Pin<Box<dyn Future<Output = Result<T, E>>>>;
-
 pub struct SessionAuth;
 
 impl<S, B> Transform<S> for SessionAuth

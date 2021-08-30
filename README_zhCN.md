@@ -12,14 +12,14 @@ https://github.com/BinChengZhao/delicate)
   - [上手 delicate](#get-started)
     - [部署 delicate](#部署-delicate)
   - [快速开始](#quick-start)
-  - [文档](#documentation)
+  - [文档](https://delicate-rs.github.io/Roadmap.html)
   - [路线图](#roadmap)
   - [贡献指南](#Contributing)
   - [License](#license)
 
 ## What is delicate
 <a href="">
-    <img src="./doc/delicate_logo.png"
+    <img src="./doc/src/delicate_logo.png"
          alt="delicate logo" title="delicate" height="125" width="125"  align="right"/>
 </a>
 
@@ -38,9 +38,37 @@ https://github.com/BinChengZhao/delicate)
 
 - **升级：** 系统的动态升级（升级是通过获得最新的源代码和进行数据库迁移.)
 
+- **复用性：**  执行器提供`restful-api` ，可以让用户应用维护自定义任务.
+
+- **权限管理：**  基于casbin实现的权限管理功能，持续优化体验.
+
+
 `Delicate` 架构图:
 
-![architecture](./doc/architecture.svg)
+![architecture](./doc/src/architecture.svg)
+
+![topology](./doc/src/topology.svg)
+
+
+## 项目效果图
+<details>
+<summary>请点击</summary>
+
+![](./doc/src/_media/dashboard.jpg)
+![](./doc/src/_media/executor_create.jpg)
+![](./doc/src/_media/executor_list.jpg)
+![](./doc/src/_media/group_create.jpg)
+![](./doc/src/_media/group_inner_bind.jpg)
+![](./doc/src/_media/login_en.jpg)
+![](./doc/src/_media/task_edit.jpg)
+![](./doc/src/_media/task_list_operation.jpg)
+![](./doc/src/_media/task_log_kill.jpg)
+![](./doc/src/_media/task_log_logs_2.jpg)
+![](./doc/src/_media/task_log_logs.jpg)
+![](./doc/src/_media/user_list.jpg)
+
+</details>
+
 
 ## Benchmark
 每次调度耗时 6,424 ns (+/- 52) 在 CentOS Linux release 7.6.1810 (Core) (不同系统/硬件会有不同的结果).
@@ -96,11 +124,11 @@ $ tar zxvf delicate-v1.0.0-linux-amd64.tar.gz -C delicate && cd delicate -->
 
 
 ## Quick start
-[快速开始](./doc/quick_start_zh_cn.md)
+[快速开始](./doc/src/quick_start_zh_cn.md)
 
 ## documentation
 
-See [reference](./doc/reference.md) for more information.
+See [reference](./doc/src/reference.md) for more information.
 
 
 ## To Do List
@@ -116,7 +144,7 @@ See [reference](./doc/reference.md) for more information.
 
 ## Roadmap 
 
-查看更多路线图详情 [delicate Roadmap](./doc/Roadmap.md) .
+查看更多路线图详情 [delicate Roadmap](./doc/src/Roadmap.md) .
 
 ## Contributing
 

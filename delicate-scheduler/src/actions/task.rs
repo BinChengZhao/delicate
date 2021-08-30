@@ -12,27 +12,35 @@ pub(crate) fn config(cfg: &mut web::ServiceConfig) {
 
 #[post("/api/task/create")]
 async fn create_task(
+    req: HttpRequest,
     web::Json(model::NewTaskBody { task, binding_ids }): web::Json<model::NewTaskBody>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
     use db::schema::{task, task_bind};
 
     if let Ok(conn) = pool.get() {
+        let operation_log_pair_option =
+            generate_operation_task_addtion_log(&req.get_session(), &task).ok();
+        send_option_operation_log_pair(operation_log_pair_option).await;
+
         return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
             web::block::<_, _, diesel::result::Error>(move || {
-                diesel::insert_into(task::table)
-                    .values(&task)
-                    .execute(&conn)?;
-                let task_id = diesel::select(db::last_insert_id).get_result::<u64>(&conn)? as i64;
+                conn.transaction::<_, _, _>(|| {
+                    diesel::insert_into(task::table)
+                        .values(&task)
+                        .execute(&conn)?;
+                    let task_id =
+                        diesel::select(db::last_insert_id).get_result::<u64>(&conn)? as i64;
 
-                let new_task_binds: Vec<model::NewTaskBind> = binding_ids
-                    .into_iter()
-                    .map(|bind_id| model::NewTaskBind { task_id, bind_id })
-                    .collect();
+                    let new_task_binds: Vec<model::NewTaskBind> = binding_ids
+                        .into_iter()
+                        .map(|bind_id| model::NewTaskBind { task_id, bind_id })
+                        .collect();
 
-                diesel::insert_into(task_bind::table)
-                    .values(&new_task_binds)
-                    .execute(&conn)
+                    diesel::insert_into(task_bind::table)
+                        .values(&new_task_binds)
+                        .execute(&conn)
+                })
             })
             .await,
         ));
@@ -103,19 +111,28 @@ async fn show_tasks(
 
 #[post("/api/task/update")]
 async fn update_task(
+    req: HttpRequest,
     web::Json(update_task_body): web::Json<model::UpdateTaskBody>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
-    let respose: UnifiedResponseMessages<()> = pre_update_task(update_task_body, pool).await.into();
+    let _span_ = span!(Level::INFO, "update-task").entered();
+
+    let respose: UnifiedResponseMessages<()> =
+        pre_update_task(req, update_task_body, pool).await.into();
     HttpResponse::Ok().json(respose)
 }
 
 pub async fn pre_update_task(
+    req: HttpRequest,
     model::UpdateTaskBody { task, binding_ids }: model::UpdateTaskBody,
     pool: ShareData<db::ConnectionPool>,
 ) -> Result<(), CommonError> {
     let task_id = task.id;
     let conn = pool.get()?;
+    let operation_log_pair_option =
+        generate_operation_task_modify_log(&req.get_session(), &task).ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
+
     let task_binds_pair = pre_update_task_row(conn, task, binding_ids).await?;
 
     let conn = pool.get()?;
@@ -128,7 +145,14 @@ pub async fn pre_update_task_row(
     conn: db::PoolConnection,
     task: model::UpdateTask,
     binding_ids: Vec<i64>,
-) -> Result<(Vec<model::BindProcessor>, Vec<model::BindProcessor>), CommonError> {
+) -> Result<
+    (
+        Vec<model::BindProcessor>,
+        Vec<model::BindProcessor>,
+        Vec<model::BindProcessor>,
+    ),
+    CommonError,
+> {
     use db::schema::{executor_processor, executor_processor_bind, task_bind};
     use model::BindProcessor;
     use std::collections::HashSet;
@@ -136,7 +160,7 @@ pub async fn pre_update_task_row(
     let task_binds_pair = web::block::<_, _, diesel::result::Error>(move || {
         conn.transaction(|| {
             let task_id = task.id;
-            diesel::update(&task).set(&task).execute(&conn)?;
+            let update_effect_row = diesel::update(&task).set(&task).execute(&conn)?;
 
             let original_bind_processors: Vec<BindProcessor> = task_bind::table
                 .inner_join(executor_processor_bind::table.inner_join(executor_processor::table))
@@ -187,8 +211,9 @@ pub async fn pre_update_task_row(
                 removed_task_binds_set.map(|b| (*b, ())).collect();
 
             let removed_bind_processors: Vec<BindProcessor> = original_bind_processors
-                .into_iter()
+                .iter()
                 .filter(|b| removed_task_binds_map.get(&b.bind_id).is_some())
+                .cloned()
                 .collect();
 
             let append_binds: Vec<i64> = append_task_binds.iter().map(|b| b.bind_id).collect();
@@ -202,7 +227,27 @@ pub async fn pre_update_task_row(
                 ))
                 .filter(executor_processor_bind::id.eq_any(&append_binds))
                 .load(&conn)?;
-            Ok((removed_bind_processors, append_bind_processors))
+
+            let reserved_bind_processors: Vec<model::BindProcessor> = if update_effect_row != 0 {
+                let reserved_task_binds_set: HashSet<i64> = original_task_binds
+                    .intersection(&current_task_binds)
+                    .copied()
+                    .into_iter()
+                    .collect();
+
+                original_bind_processors
+                    .into_iter()
+                    .filter(|b| reserved_task_binds_set.contains(&b.bind_id))
+                    .collect()
+            } else {
+                Vec::new()
+            };
+
+            Ok((
+                removed_bind_processors,
+                append_bind_processors,
+                reserved_bind_processors,
+            ))
         })
     })
     .await?;
@@ -213,7 +258,8 @@ pub async fn pre_update_task_row(
 pub async fn pre_update_task_sevice(
     conn: db::PoolConnection,
     task_id: i64,
-    (removed_bind_processors, append_bind_processors): (
+    (removed_bind_processors, append_bind_processors, reserved_bind_processors): (
+        Vec<model::BindProcessor>,
         Vec<model::BindProcessor>,
         Vec<model::BindProcessor>,
     ),
@@ -242,7 +288,8 @@ pub async fn pre_update_task_sevice(
         let remove_tasks_future: JoinAll<_> = removed_bind_processors
             .into_iter()
             .filter_map(|processor| {
-                let executor_host = "http://".to_string() + &processor.host + "/api/task/remove";
+                let executor_host =
+                    "http://".to_string() + (processor.host.deref()) + "/api/task/remove";
 
                 let message = delicate_utils_task::TaskUnit::default()
                     .set_task_id(task_id)
@@ -254,10 +301,10 @@ pub async fn pre_update_task_sevice(
                     .map(|s| (s, executor_host))
                     .ok()
             })
-            .map(|(signed_task_package, executor_host)| {
+            .map(|(signed_task_unit, executor_host)| {
                 RequestClient::default()
                     .post(executor_host)
-                    .send_json(&signed_task_package)
+                    .send_json(&signed_task_unit)
             })
             .collect::<Vec<_>>()
             .into_iter()
@@ -266,9 +313,10 @@ pub async fn pre_update_task_sevice(
         let append_tasks_future: JoinAll<_> = append_bind_processors
             .into_iter()
             .filter_map(|processor| {
-                let executor_host = "http://".to_string() + &processor.host + "/api/task/create";
+                let executor_host =
+                    "http://".to_string() + (processor.host.deref()) + "/api/task/create";
 
-                info!("Remove task{} at:{}", &task_package, &executor_host);
+                info!("Create task{} at:{}", &task_package, &executor_host);
                 task_package
                     .clone()
                     .sign(Some(&processor.token))
@@ -284,9 +332,32 @@ pub async fn pre_update_task_sevice(
             .into_iter()
             .collect();
 
-        join(
+        let update_tasks_future: JoinAll<_> = reserved_bind_processors
+            .into_iter()
+            .filter_map(|processor| {
+                let executor_host =
+                    "http://".to_string() + (processor.host.deref()) + "/api/task/update";
+
+                info!("Update task {} at:{}", &task_package, &executor_host);
+                task_package
+                    .clone()
+                    .sign(Some(&processor.token))
+                    .map(|s| (s, executor_host))
+                    .ok()
+            })
+            .map(|(signed_task_package, executor_host)| {
+                RequestClient::default()
+                    .post(executor_host)
+                    .send_json(&signed_task_package)
+            })
+            .collect::<Vec<_>>()
+            .into_iter()
+            .collect();
+
+        join3(
             handle_response::<UnifiedResponseMessages<()>>(remove_tasks_future),
             handle_response::<UnifiedResponseMessages<()>>(append_tasks_future),
+            handle_response::<UnifiedResponseMessages<()>>(update_tasks_future),
         )
         .await;
     }
@@ -296,11 +367,20 @@ pub async fn pre_update_task_sevice(
 
 #[post("/api/task/delete")]
 async fn delete_task(
+    req: HttpRequest,
     web::Json(model::TaskId { task_id }): web::Json<model::TaskId>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
     use db::schema::{task, task_bind};
 
+    let operation_log_pair_option = generate_operation_task_delete_log(
+        &req.get_session(),
+        &CommonTableRecord::default().set_id(task_id),
+    )
+    .ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
+
+    // delete
     if let Ok(conn) = pool.get() {
         return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<()>>::into(
             web::block::<_, _, diesel::result::Error>(move || {
@@ -318,41 +398,48 @@ async fn delete_task(
 
 #[post("/api/task/run")]
 async fn run_task(
+    req: HttpRequest,
     web::Json(model::TaskId { task_id }): web::Json<model::TaskId>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
-    let result: UnifiedResponseMessages<()> = Into::into(pre_run_task(task_id, pool).await);
+    let _span_ = span!(Level::INFO, "run-task").entered();
+
+    let result: UnifiedResponseMessages<()> = Into::into(pre_run_task(req, task_id, pool).await);
 
     HttpResponse::Ok().json(result)
 }
 
 #[post("/api/task/suspend")]
 async fn suspend_task(
+    req: HttpRequest,
     web::Json(model::TaskId { task_id }): web::Json<model::TaskId>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
     let _span_ = span!(Level::INFO, "Suspend", task_id).entered();
 
-    let result: UnifiedResponseMessages<()> =
-        Into::into(pre_operate_task(pool.clone(), (task_id, "/api/task/remove", "Suspend")).await);
+    let result: UnifiedResponseMessages<()> = Into::into(
+        pre_operate_task(req, pool.clone(), (task_id, "/api/task/remove", "Suspend")).await,
+    );
 
     HttpResponse::Ok().json(result)
 }
 
 #[post("/api/task/advance")]
 async fn advance_task(
+    req: HttpRequest,
     web::Json(model::TaskId { task_id }): web::Json<model::TaskId>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
     let _span_ = span!(Level::INFO, "Advance", task_id).entered();
 
     let result: UnifiedResponseMessages<()> =
-        Into::into(pre_operate_task(pool, (task_id, "/api/task/advance", "Advance")).await);
+        Into::into(pre_operate_task(req, pool, (task_id, "/api/task/advance", "Advance")).await);
 
     HttpResponse::Ok().json(result)
 }
 
 async fn pre_run_task(
+    req: HttpRequest,
     task_id: i64,
     pool: ShareData<db::ConnectionPool>,
 ) -> Result<(), CommonError> {
@@ -361,6 +448,15 @@ async fn pre_run_task(
     use db::schema::{executor_processor, executor_processor_bind, task, task_bind};
 
     use state::task::State;
+
+    let operation_log_pair_option = generate_operation_task_modify_log(
+        &req.get_session(),
+        &CommonTableRecord::default()
+            .set_id(task_id)
+            .set_description("Run task"),
+    )
+    .ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
 
     let conn = pool.get()?;
 
@@ -393,7 +489,8 @@ async fn pre_run_task(
     let request_all: JoinAll<_> = task_packages
         .into_iter()
         .filter_map(|(task_package, (executor_host_str, executor_token))| {
-            let executor_host = "http://".to_string() + &executor_host_str + "/api/task/create";
+            let executor_host =
+                "http://".to_string() + (executor_host_str.deref()) + "/api/task/create";
             info!("Run task{} at:{}", &task_package, &executor_host);
             task_package
                 .sign(Some(&executor_token))
@@ -415,6 +512,7 @@ async fn pre_run_task(
 }
 
 async fn pre_operate_task(
+    req: HttpRequest,
     pool: ShareData<db::ConnectionPool>,
     (task_id, url, action): (i64, &str, &'static str),
 ) -> Result<(), CommonError> {
@@ -423,6 +521,15 @@ async fn pre_operate_task(
     use state::task::State;
 
     let conn = pool.get()?;
+
+    let operation_log_pair_option = generate_operation_task_modify_log(
+        &req.get_session(),
+        &CommonTableRecord::default()
+            .set_id(task_id)
+            .set_description(action),
+    )
+    .ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
 
     // Many machine.
     let executor_packages: IntoIter<(String, String)> = web::block(move || {
@@ -449,7 +556,7 @@ async fn pre_operate_task(
                 .set_task_id(task_id)
                 .set_time(get_timestamp());
 
-            let executor_host = "http://".to_string() + &executor_host + url;
+            let executor_host = "http://".to_string() + (executor_host.deref()) + url;
 
             info!("{} task{} at:{}", action, message, &executor_host);
             message

@@ -135,10 +135,11 @@ async fn show_task_log_detail(
 
 #[post("/api/task_instance/kill")]
 async fn kill_task_instance(
+    req: HttpRequest,
     web::Json(task_record): web::Json<model::TaskRecord>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
-    let response_result = kill_one_task_instance(pool, task_record).await;
+    let response_result = kill_one_task_instance(req, pool, task_record).await;
 
     let response = Into::<UnifiedResponseMessages<()>>::into(response_result);
     HttpResponse::Ok().json(response)
@@ -209,6 +210,7 @@ fn batch_update_task_logs(
 }
 
 async fn kill_one_task_instance(
+    req: HttpRequest,
     pool: ShareData<db::ConnectionPool>,
     model::TaskRecord {
         task_id,
@@ -217,6 +219,15 @@ async fn kill_one_task_instance(
     }: model::TaskRecord,
 ) -> Result<(), CommonError> {
     use db::schema::task_log;
+
+    let operation_log_pair_option = generate_operation_task_log_modify_log(
+        &req.get_session(),
+        &CommonTableRecord::default()
+            .set_id(record_id.0)
+            .set_description("kill task instance."),
+    )
+    .ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
 
     let token = model::get_executor_token_by_id(executor_processor_id, pool.get()?).await;
 
@@ -232,12 +243,13 @@ async fn kill_one_task_instance(
             .filter(task_log::status.eq(state::task_log::State::Running as i16))
             .set(task_log::status.eq(state::task_log::State::TmanualCancellation as i16))
             .execute(&conn)?;
+
         Ok(host)
     })
     .await?;
 
     let client = RequestClient::default();
-    let url = "http://".to_string() + &host + "/api/task_instance/kill";
+    let url = "http://".to_string() + (host.deref()) + "/api/task_instance/kill";
 
     let record = delicate_utils_task_log::CancelTaskRecord::default()
         .set_task_id(task_id)
@@ -252,4 +264,57 @@ async fn kill_one_task_instance(
         .json::<UnifiedResponseMessages<()>>()
         .await?
         .into()
+}
+
+#[post("/api/task_log/delete")]
+async fn delete_task(
+    req: HttpRequest,
+    web::Json(delete_params): web::Json<model::DeleteParamsTaskLog>,
+    pool: ShareData<db::ConnectionPool>,
+) -> HttpResponse {
+    let operation_log_pair_option =
+        generate_operation_task_delete_log(&req.get_session(), &delete_params).ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
+
+    if let Ok(conn) = pool.get() {
+        return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<()>>::into(
+            pre_delete_task(delete_params, conn).await,
+        ));
+    }
+
+    HttpResponse::Ok().json(UnifiedResponseMessages::<()>::error())
+}
+
+async fn pre_delete_task(
+    delete_params: model::DeleteParamsTaskLog,
+    conn: db::PoolConnection,
+) -> Result<(), CommonError> {
+    use db::schema::{task_log, task_log_extend};
+
+    // Because `diesel` does not support join table deletion, so here is divided into two steps to delete logs.
+
+    // 1. query the primary key of task-log according to the given conditions, with a single maximum limit of 524288 items.
+
+    // 2. the primary key in batches of 2048 items and then start executing the deletion, task-log and task-log-extend.
+
+    web::block::<_, _, diesel::result::Error>(move || {
+        let query_builder = model::TaskLogQueryBuilder::query_id_column();
+        let task_log_ids = delete_params
+            .query_filter(query_builder)
+            .load::<i64>(&conn)?;
+
+        let ids_chunk = task_log_ids.chunks(2048);
+        for ids in ids_chunk {
+            conn.transaction::<_, diesel::result::Error, _>(|| {
+                diesel::delete(task_log::table.filter(task_log::id.eq_any(ids))).execute(&conn)?;
+                diesel::delete(task_log_extend::table.filter(task_log_extend::id.eq_any(ids)))
+                    .execute(&conn)?;
+                Ok(())
+            })?;
+        }
+
+        Ok(())
+    })
+    .await?;
+    Ok(())
 }

@@ -8,6 +8,10 @@ impl TaskLogQueryBuilder {
         task_log::table.into_boxed().select(task_log::all_columns)
     }
 
+    pub(crate) fn query_id_column() -> task_log::BoxedQuery<'static, Mysql, diesel::sql_types::Bigint> {
+        task_log::table.into_boxed().select(task_log::id)
+    }
+
     pub(crate) fn query_count() -> task_log::BoxedQuery<'static, Mysql, diesel::sql_types::Bigint> {
         task_log::table.into_boxed().count()
     }
@@ -105,7 +109,7 @@ impl From<ExecutorEvent> for SupplyTaskLogTuple {
 #[derive(Queryable, Identifiable, AsChangeset, Debug, Clone, Serialize, Deserialize)]
 #[table_name = "task_log"]
 pub struct TaskLog {
-    id: i64,
+    pub(crate) id: i64,
     task_id: i64,
     name: String,
     description: String,
@@ -190,7 +194,7 @@ impl From<TaskLog> for FrontEndTaskLog {
 )]
 #[table_name = "task_log_extend"]
 pub struct TaskLogExtend {
-    id: i64,
+    pub(crate) id: i64,
     task_id: i64,
     stdout: String,
     stderr: String,
@@ -270,8 +274,8 @@ pub struct QueryParamsTaskLog {
     tag: Option<String>,
     status: Option<i16>,
     executor_processor_id: Option<i64>,
-    pub(crate) start_time: Option<i64>,
-    pub(crate) end_time: Option<i64>,
+    pub(crate) start_time: Option<String>,
+    pub(crate) end_time: Option<String>,
     pub(crate) per_page: i64,
     pub(crate) page: i64,
 }
@@ -318,16 +322,55 @@ impl QueryParamsTaskLog {
             statement_builder = statement_builder.filter(task_log::tag.like(task_tag));
         }
 
-        if let Some(start_time) = self.start_time {
-            let end_time = self.end_time.unwrap_or_else(|| start_time + 86400 * 3);
-
-            let start_time = NaiveDateTime::from_timestamp(start_time, 0);
-            let end_time = NaiveDateTime::from_timestamp(end_time, 0);
+        if let Some(Ok(start_time)) = self.start_time.map(|s|NaiveDateTime::parse_from_str(&s,  "%Y-%m-%d %H:%M:%S")) {
+            let end_time = self.end_time.map(|s|NaiveDateTime::parse_from_str(&s,  "%Y-%m-%d %H:%M:%S").unwrap_or_else(|_| start_time + ChronoDuration::days(3))).unwrap_or_else(|| start_time + ChronoDuration::days(3));
 
             statement_builder =
                 statement_builder.filter(task_log::created_time.between(start_time, end_time));
         }
 
         statement_builder.order(task_log::id.desc())
+    }
+}
+
+
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+pub struct DeleteParamsTaskLog {
+    task_id: Option<i64>,
+    status: Option<i16>,
+    executor_processor_id: Option<i64>,
+    limit: Option<u64>,
+    pub(crate) start_time: Option<String>,
+    pub(crate) end_time: Option<String>,
+}
+impl DeleteParamsTaskLog {
+    pub(crate) fn query_filter<ST>(
+        self,
+        mut statement_builder: task_log::BoxedQuery<'static, Mysql, ST>,
+    ) -> task_log::BoxedQuery<'static, Mysql, ST> {
+
+        if let Some(task_id) = self.task_id {
+            statement_builder = statement_builder.filter(task_log::task_id.eq(task_id));
+        }
+
+        if let Some(status) = self.status {
+            statement_builder = statement_builder.filter(task_log::status.eq(status));
+        }
+
+        if let Some(executor_processor_id) = self.executor_processor_id {
+            statement_builder = statement_builder.filter(task_log::executor_processor_id.eq(executor_processor_id));
+        }
+
+
+        if let Some(Ok(start_time)) = self.start_time.map(|s|NaiveDateTime::parse_from_str(&s,  "%Y-%m-%d %H:%M:%S")) {
+            let end_time = self.end_time.map(|s|NaiveDateTime::parse_from_str(&s,  "%Y-%m-%d %H:%M:%S").unwrap_or_else(|_| start_time + ChronoDuration::days(3))).unwrap_or_else(|| start_time + ChronoDuration::days(3));
+
+            statement_builder =
+                statement_builder.filter(task_log::created_time.between(start_time, end_time));
+        }
+
+        let limit = self.limit.unwrap_or(524_288) as i64;
+        statement_builder.limit(limit)
+
     }
 }

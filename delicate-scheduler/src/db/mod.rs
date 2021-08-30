@@ -40,6 +40,7 @@ joinable!(schema::task_bind -> schema::executor_processor_bind (bind_id));
 joinable!(schema::executor_processor_bind -> schema::executor_processor (executor_id));
 joinable!(schema::executor_processor_bind -> schema::executor_group (group_id));
 joinable!(schema::user_auth -> schema::user (user_id));
+joinable!(schema::task_log_extend -> schema::task_log (id));
 
 pub(crate) fn init() {
     let connection = establish_connection();

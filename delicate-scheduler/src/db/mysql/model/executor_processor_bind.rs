@@ -5,7 +5,7 @@ use super::schema::executor_processor_bind;
 #[table_name = "executor_processor_bind"]
 
 pub struct ExecutorProcessorBind {
-    id: i64,
+    pub(crate) id: i64,
     name: String,
     group_id: i64,
     executor_id: i64,
@@ -17,7 +17,7 @@ pub struct ExecutorProcessorBind {
 #[table_name = "executor_processor_bind"]
 
 pub struct UpdateExecutorProcessorBind {
-    id: i64,
+    pub(crate) id: i64,
     name: String,
     group_id: i64,
     executor_id: i64,

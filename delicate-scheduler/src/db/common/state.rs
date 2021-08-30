@@ -66,3 +66,45 @@ pub mod executor_group {
         Forbidden = 2,
     }
 }
+
+pub mod operation_log {
+
+    pub enum OperationType {
+        Addition = 1,
+        Modify = 2,
+        Delete = 3,
+        Unknown = 81,
+    }
+
+    impl From<i16> for OperationType {
+        fn from(v: i16) -> OperationType {
+            match v {
+                1 => OperationType::Addition,
+                2 => OperationType::Modify,
+                3 => OperationType::Delete,
+                _ => OperationType::Unknown,
+            }
+        }
+    }
+}
+
+pub mod user_login_log {
+
+    #[allow(dead_code)]
+    pub enum LoginType {
+        Mobile = 1,
+        Email = 2,
+        UserName = 3,
+        Ldap = 4,
+        OtherOAuth = 5,
+        Logout = 81,
+    }
+
+    #[allow(dead_code)]
+    pub enum LoginCommand {
+        LoginSuccess = 1,
+        LogoutSuccess = 2,
+        Loginfailure = 3,
+        Logoutfailure = 4,
+    }
+}
