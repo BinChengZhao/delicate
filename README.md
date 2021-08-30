@@ -40,6 +40,8 @@ https://github.com/BinChengZhao/delicate)
 
 - **Reusability:**  Excutor provides `restful-api` that allows user applications to maintain custom tasks.
 
+- **Permission Management:**  Permission management function based on casbin implementation, continuously optimize the experience.
+
 
 
 The architecture of delicate:

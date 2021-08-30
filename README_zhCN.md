@@ -40,6 +40,8 @@ https://github.com/BinChengZhao/delicate)
 
 - **复用性：**  执行器提供`restful-api` ，可以让用户应用维护自定义任务.
 
+- **权限管理：**  基于casbin实现的权限管理功能，持续优化体验.
+
 
 `Delicate` 架构图:
 
