@@ -1,4 +1,4 @@
-# Version 1.1.0
+# Version 1.1.0 [unreleased]
 
 - More tracking of user behavior, more advancement of auxiliary functions, and better applications etc.
 
@@ -7,6 +7,33 @@
 2. operation logs, login logs, I18N, heartbeat checks, robust event callbacks, related refinements.
 
 3. Permission module (do research and design model in this period).
+All notable changes to this project will be documented in this file.
+
+### Documentation
+
+- Optimize delicate-web's doc.
+
+### Features
+
+- Log detail & task advance .
+- Explore permission-related features.
+- Implement task-log deletion function.
+- Optimize casbin-auth components.
+
+### Fix
+
+- Operation log details id batch assign issue
+
+### Miscellaneous Tasks
+
+- Optimize code & casbin import.
+- Handle some compile error.
+- Optimize code and append auth-conf.
+- Update doc & Optimize code.
+
+### Performance
+
+- Optimize task-log deletion fuction.
 
 
 # Version 1.0.0
