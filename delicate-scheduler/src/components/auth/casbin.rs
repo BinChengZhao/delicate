@@ -109,8 +109,8 @@ where
         let path = req.path().to_string();
         let auth_part = path.split('/').into_iter().collect::<Vec<&str>>();
 
-        let resource = auth_part.get(1).map(|s| s.to_string()).unwrap_or_default();
-        let action = auth_part.get(2).map(|s| s.to_string()).unwrap_or_default();
+        let resource = auth_part.get(2).map(|s| s.to_string()).unwrap_or_default();
+        let action = auth_part.get(3).map(|s| s.to_string()).unwrap_or_default();
         let username = session
             .get::<String>("user_name")
             .unwrap_or_default()

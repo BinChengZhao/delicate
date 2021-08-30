@@ -1,31 +1,61 @@
 # Note: casbin-Vulnerability if A has role B, B has role C, then A has role C. This transitivity is infinite for now.
 
 p, developer, task, create
-p, developer, task, delete, deny
 p, developer, task, list
 p, developer, task, update
 p, developer, task, run
-p, developer, task, suspend, deny
 
-p, task_admin, task, *
-p, task_admin, task_instance, *
-p, task_admin, task_log, *
+# developer can't delete task and suspend task .
 
-p, processor_admin, executor_processor, *
+p, task_admin, task, advance
+p, task_admin, task, list
+p, task_admin, task, update
+p, task_admin, task, delete
+p, task_admin, task, run
+p, task_admin, task, create
+p, task_admin, task, suspend
 
-p, group_admin, executor_group, *
-p, group_admin, executor_processor_bind, *
+p, task_admin, task_instance, kill
+p, task_admin, task_log, delete
+p, task_admin, task_log, list
+p, task_admin, task_log, detail
 
-p, user_admin, user, *
 
-p, log_admin, user_login_log, *
-p, log_admin, operation_log, *
+p, processor_admin, executor_processor, activate
+p, processor_admin, executor_processor, update
+p, processor_admin, executor_processor, delete
+p, processor_admin, executor_processor, list
+p, processor_admin, executor_processor, create
+
+
+p, group_admin, executor_group, update
+p, group_admin, executor_group, delete
+p, group_admin, executor_group, list
+p, group_admin, executor_group, create
+p, group_admin, executor_group, detail
+
+p, group_admin, executor_processor_bind, create
+p, group_admin, executor_processor_bind, update
+p, group_admin, executor_processor_bind, list
+p, group_admin, executor_processor_bind, delete
+
+
+p, user_admin, user, delete
+p, user_admin, user, update
+p, user_admin, user, create
+p, user_admin, user, list
+
+
+p, log_admin, user_login_log, list
+p, log_admin, operation_log, list
+p, log_admin, operation_log, detail
+
 
 # User Role Definition Area
 # g, username, task_admin
 
-g, bincheng, root
-g, bincheng-tester, admin
+g, bincheng, team_leader
+g, bincheng-tester, developer
 
 g, team_leader, task_admin
 g, team_leader, processor_admin
