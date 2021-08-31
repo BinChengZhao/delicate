@@ -1,25 +1,25 @@
 
-- [Executor Group](#ExecutorGroup)
+- [Executor Group](#executorgroup)
     - [Configuration](#configuration-1)
 
-- [Executor Processor](#ExecutorProcessor)
+- [Executor Processor](#executorprocessor)
     - [Configuration](#configuration-2)
 
-- [Executor Processor Bind](#ExecutorProcessorBind)
+- [Executor Processor Bind](#executorprocessorbind)
     - [Configuration](#configuration-3)
 
-- [Task](#Task)
+- [Task](#task)
     - [Configuration](#configuration-4)
 
-- [Task Instance](#TaskInstance)
+- [Task Instance](#taskinstance)
     - [Configuration](#configuration-5)
 
-- [User](#User)
+- [User](#user)
     - [Configuration](#configuration-6)
 
-- [Status Data Aggregation](#StatusDataAggregation)
+- [Status Data Aggregation](#statusdataaggregation)
 
-- [Security](#Security)
+- [Security](#security)
 
 
 ## ExecutorGroup
@@ -27,7 +27,7 @@
 `Executor Group` which corresponds to a service, or a business.
 
 <a href="">
-    <img src="./doc/delicate_logo.png"
+    <img src="./_media/group_create.jpg"
          alt="Executor Group" title="Executor Group"  />
 </a>
 
@@ -49,7 +49,7 @@
 `Executor Processor` which corresponding to a physical machine, or a container.
 
 <a href="">
-    <img src="./doc/delicate_logo.png"
+    <img src="./_media/executor_list.jpg"
          alt="Executor Group" title="Executor Group"  />
 </a>
 
@@ -76,7 +76,7 @@ Tip:
 When there are hundreds of tasks associated with a certain `Executor Processor Bind`, it is easy to switch the machine that executes the task if you want to. Just modify the `Executor Processor` associated with the `Executor Processor Bind`, then hundreds of tasks will be removed from the old machine and executed on the new machine.
 
 <a href="">
-    <img src="./doc/a.png"
+    <img src="./_media/group_inner_bind.jpg"
          alt="Executor Processor Bind" title="Executor Processor Bind"  />
 </a>
 
@@ -98,7 +98,7 @@ When there are hundreds of tasks associated with a certain `Executor Processor B
 `Task` which corresponds to a set of commands given by the user that will be executed on the machine to generate task instances.
 
 <a href="">
-    <img src="./doc/delicate_logo.png"
+    <img src="./_media/task_list.jpg"
          alt="Task" title="Task"  />
 </a>
 
@@ -125,7 +125,7 @@ When there are hundreds of tasks associated with a certain `Executor Processor B
 `Task Instance` which corresponds to an instance of a running task (e.g a running process).
 
 <a href="">
-    <img src="./doc/delicate_logo.png"
+    <img src="./_media/task_log_detail.jpg"
          alt="TaskInstance" title="TaskInstance"  />
 </a>
 
@@ -159,7 +159,7 @@ When there are hundreds of tasks associated with a certain `Executor Processor B
 PS: When the system is first installed, you can set the initial user in `.env`.
 
 <a href="">
-    <img src="./doc/delicate_logo.png"
+    <img src="./_media/user_list.jpg"
          alt="User" title="User"  />
 </a>
 

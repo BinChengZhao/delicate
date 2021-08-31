@@ -43,11 +43,20 @@ pub struct NewUser {
 #[table_name = "user"]
 
 pub struct UpdateUser {
-    id: u64,
+    pub(crate) id: u64,
     user_name: String,
     nick_name: String,
     mobile: String,
     email: String,
+}
+
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+
+pub struct UserChangePassword {
+    pub current_password: String,
+    pub modified_password: String,
+    pub identity_type: u8,
 }
 
 impl From<&QueryNewUser> for NewUser {

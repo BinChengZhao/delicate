@@ -5,7 +5,7 @@ use super::schema::task_bind;
 #[table_name = "task_bind"]
 
 pub struct TaskBind {
-    id: i64,
+    pub(crate) id: i64,
     task_id: i64,
     bind_id: i64,
     created_time: NaiveDateTime,
@@ -20,7 +20,7 @@ pub struct NewTaskBind {
     pub(crate) bind_id: i64,
 }
 
-#[derive(Queryable, Debug, Serialize, Deserialize, Eq, PartialEq, Hash)]
+#[derive(Clone, Queryable, Debug, Serialize, Deserialize, Eq, PartialEq, Hash)]
 pub struct BindProcessor {
     pub(crate) bind_id: i64,
     pub(crate) host: String,

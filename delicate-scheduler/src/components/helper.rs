@@ -2,14 +2,14 @@ use super::prelude::*;
 
 pub(crate) async fn handle_response<T: DeserializeOwned + Trial>(
     request_all: JoinAll<SendClientRequest>,
-) {
+) -> Vec<T> {
     let response_json_all: JoinAll<JsonBody<Decompress<Payload>, T>> = request_all
         .await
         .into_iter()
         .map(|response| match response {
             Ok(mut r) => Some(r.json::<T>()),
             Err(e) => {
-                error!("{}", e);
+                error!("SendRequestError : {}", e);
                 None
             }
         })
@@ -22,14 +22,18 @@ pub(crate) async fn handle_response<T: DeserializeOwned + Trial>(
     response_json_all
         .await
         .into_iter()
-        .map(|json_result| match json_result {
-            Err(e) => {
-                error!("{}", e);
+        .map(|json_result| {
+            match json_result {
+                Err(ref e) => {
+                    error!("Payload errors: {}", e);
+                }
+                Ok(ref json) if json.is_err() => {
+                    error!("Customized error messages: {}", json.get_msg());
+                }
+                _ => {}
             }
-            Ok(json) if json.is_err() => {
-                error!("{}", json.get_msg());
-            }
-            _ => {}
+            json_result
         })
-        .for_each(drop);
+        .filter_map(|r| r.ok())
+        .collect::<Vec<T>>()
 }

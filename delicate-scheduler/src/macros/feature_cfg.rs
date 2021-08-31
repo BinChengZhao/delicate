@@ -23,3 +23,16 @@ macro_rules! cfg_postgres_support {
         )*
     }
 }
+
+#[allow(unused_macros)]
+macro_rules! cfg_auth_casbin {
+    ($($item:item)*) => {
+        $(
+            // As long as the features contains casbin-auth, it will compile.
+            #[cfg(AUTH_CASBIN)]
+            #[allow(dead_code)]
+            $item
+
+        )*
+    }
+}
