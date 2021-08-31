@@ -47,4 +47,4 @@
 | Multiple login protocols     |                                                      | Support multiple login protocols to open up the user system within the enterprise and enhance user experience.                                     |
 | Machine resource panel       |                                                      | Powerful online resource panel with online visualization of machine / task support for multiple user actions.                                      |
 | Failover       |                                                      | Automatically migrate tasks when a node is down.                                      |
-| Upgrade to actix-web 4       |                                                      | Wait for actix-web 4 stable which will support with tokio 1 , So that `scheduler & executor` communication can using RPC  (`tonic ｜ tarpc`).      |
+| Upgrade to `poem`       |                                                      | Using `poem` we can do everything , So that `scheduler & executor` communication can using RPC  (`tonic ｜ tarpc`).      |
