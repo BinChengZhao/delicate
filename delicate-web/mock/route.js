@@ -79,14 +79,6 @@ const database = [
     route: '/operateLogs/:id'
   },
   {
-    id: '42',
-    menuParentId: '4',
-    breadcrumbParentId: '4',
-    name: 'Login Logs',
-    zh: { name: '登陆日志' },
-    route: '/loginLogs'
-  },
-  {
     id: '9',
     breadcrumbParentId: '1',
     name: 'user',
