@@ -20,11 +20,15 @@ export default {
   taskRun: 'POST /task/run',
   taskSuspend: 'POST /task/suspend',
   taskBindList: '/binding/list',
+  taskKill: 'POST /task_instance/kill',
 
-  // 任务日志
+  // 日志相关
   taskLogList: 'POST /task_log/list',
   taskLogDetail: 'POST /task_log/detail',
-  taskKill: 'POST /task_instance/kill',
+  taskLogDelete: 'POST /task_log/delete',
+  optionLogList: 'POST /operation_log/list',
+  optionLogDetail: 'POST /operation_log/detail',
+  loginLogList: 'POST /user_login_log/list',
 
   // 执行调度器
   executorList: 'POST /executor_processor/list',

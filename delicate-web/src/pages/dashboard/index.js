@@ -6,7 +6,7 @@ import { connect } from 'umi'
 import { Page } from 'components'
 import styles from './index.less'
 import { Card } from 'antd'
-import * as u from '../../utils/data'
+
 @connect(({ dashboard, loading }) => ({
   dashboard,
   loading

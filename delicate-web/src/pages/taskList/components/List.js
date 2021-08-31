@@ -112,7 +112,11 @@ class List extends PureComponent {
         title: <Trans>Cron Expression</Trans>,
         dataIndex: 'cron_expression',
         width: 120,
-        key: 'cron_expression'
+        key: 'cron_expression',
+        ellipsis: true,
+        render: (text, row) => {
+          return <Tooltip title={row.cron_expression}>{text} </Tooltip>
+        }
       },
       {
         title: <Trans>Timeout</Trans>,

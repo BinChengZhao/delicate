@@ -37,6 +37,7 @@
     "react-draft-wysiwyg": "^1.13.0",
     "react-helmet": "^6.0.0",
     "react-highcharts": "^16.1.0",
+    "react-json-view": "^1.21.3",
     "react-perfect-scrollbar": "^1.5.0",
     "recharts": "^2.0.0",
     "store": "^2.0.0"

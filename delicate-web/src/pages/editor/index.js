@@ -9,13 +9,13 @@ export default class EditorPage extends Component {
   constructor(props) {
     super(props)
     this.state = {
-      editorContent: null,
+      editorContent: null
     }
   }
 
   onEditorStateChange = (editorContent) => {
     this.setState({
-      editorContent,
+      editorContent
     })
   }
 
@@ -25,15 +25,15 @@ export default class EditorPage extends Component {
       lg: 12,
       md: 24,
       style: {
-        marginBottom: 32,
-      },
+        marginBottom: 32
+      }
     }
     const textareaStyle = {
       minHeight: 496,
       width: '100%',
       background: '#f7f7f7',
       borderColor: '#F1F1F1',
-      padding: '16px 8px',
+      padding: '16px 8px'
     }
 
     return (
@@ -43,10 +43,10 @@ export default class EditorPage extends Component {
             <Card title="Editor" style={{ overflow: 'visible' }}>
               <Editor
                 wrapperStyle={{
-                  minHeight: 500,
+                  minHeight: 500
                 }}
                 editorStyle={{
-                  minHeight: 376,
+                  minHeight: 376
                 }}
                 editorState={editorContent}
                 onEditorStateChange={this.onEditorStateChange}
@@ -54,17 +54,12 @@ export default class EditorPage extends Component {
             </Card>
           </Col>
           <Col {...colProps}>
+            {/* eslint-disable-next-line react/react-in-jsx-scope */}
             <Card title="HTML">
               <textarea
                 style={textareaStyle}
                 disabled
-                value={
-                  editorContent
-                    ? draftToHtml(
-                        convertToRaw(editorContent.getCurrentContent())
-                      )
-                    : ''
-                }
+                value={editorContent ? draftToHtml(convertToRaw(editorContent.getCurrentContent())) : ''}
               />
             </Card>
           </Col>
@@ -73,13 +68,7 @@ export default class EditorPage extends Component {
               <textarea
                 style={textareaStyle}
                 disabled
-                value={
-                  editorContent
-                    ? draftToMarkdown(
-                        convertToRaw(editorContent.getCurrentContent())
-                      )
-                    : ''
-                }
+                value={editorContent ? draftToMarkdown(convertToRaw(editorContent.getCurrentContent())) : ''}
               />
             </Card>
           </Col>
@@ -88,13 +77,7 @@ export default class EditorPage extends Component {
               <textarea
                 style={textareaStyle}
                 disabled
-                value={
-                  editorContent
-                    ? JSON.stringify(
-                        convertToRaw(editorContent.getCurrentContent())
-                      )
-                    : ''
-                }
+                value={editorContent ? JSON.stringify(convertToRaw(editorContent.getCurrentContent())) : ''}
               />
             </Card>
           </Col>
