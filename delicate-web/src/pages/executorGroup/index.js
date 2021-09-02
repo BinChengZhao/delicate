@@ -5,6 +5,7 @@ import PropTypes from 'prop-types'
 import ExecutorGroupModal from './components/Modal'
 import ExecutorGroupList from './components/List'
 import ExecutorGroupFilter from './components/Filter'
+import { t } from '@lingui/macro'
 
 export const NAMESPACE = 'executorGroupModel'
 
@@ -43,10 +44,10 @@ class ExecutorGroup extends PureComponent {
     let title = ''
     switch (modalType) {
       case 'create':
-        title = '创建执行器组'
+        title = t`Create`
         break
       case 'update':
-        title = '编辑执行器组'
+        title = t`Update`
         item = item = { ...currentItem, tag: currentItem.tag.split(',').filter((e) => e !== '') }
         break
     }
@@ -57,8 +58,8 @@ class ExecutorGroup extends PureComponent {
       visible: modalVisible,
       destroyOnClose: true,
       maskClosable: false,
-      cancelText: '取消',
-      okText: '保存',
+      cancelText: t`Cancel`,
+      okText: t`Save`,
       confirmLoading: loading.effects[`${NAMESPACE}/${modalType}`],
       title: title,
       centered: true,

@@ -58,11 +58,11 @@ class TaskModal extends PureComponent {
       .validateFields()
       .then((values) => {
         const count = parseInt(values.frequency.extend.count)
-        values.frequency.extend.count = count ? count : 0
-       
+        values.frequency.extend.count = count || 0
+
         const cron_space_len = values.cron_expression.split(' ').length - 1
-        const cron_str_raw =  values.cron_expression.replaceAll('?', '*')
-        const cron_str =  cron_space_len >= 6 ? cron_str_raw : cron_str_raw + ' *'
+        const cron_str_raw = values.cron_expression.replaceAll('?', '*')
+        const cron_str = cron_space_len >= 6 ? cron_str_raw : cron_str_raw + ' *'
 
         const data = {
           ...item,
@@ -107,27 +107,21 @@ class TaskModal extends PureComponent {
           </FormItem>
           <FormItem
             name="description"
-            rules={[{ required: true, message: '描述必须填写' }]}
+            rules={[{ required: true }]}
             label={t`Description`}
             hasFeedback
             {...formItemLayout}
           >
-            <Input placeholder="这是一条【demo】的命令" />
+            <Input placeholder="this is a command line" />
           </FormItem>
-          <FormItem
-            name="command"
-            label="命令行"
-            rules={[{ required: true, message: '命令行必须填写' }]}
-            hasFeedback
-            {...formItemLayout}
-          >
+          <FormItem name="command" label={t`Command`} rules={[{ required: true }]} hasFeedback {...formItemLayout}>
             <Input placeholder="echo 'hello word';" />
           </FormItem>
 
-          <FormItem label="频率" hasFeedback {...formItemLayout}>
+          <FormItem label={t`Frequency`} hasFeedback {...formItemLayout}>
             <Input.Group compact {...formItemLayout}>
-              <Form.Item name={['frequency', 'mode']} noStyle rules={[{ required: true, message: '模式必须选择' }]}>
-                <Select placeholder="模式" style={{ width: '25%' }}>
+              <Form.Item name={['frequency', 'mode']} noStyle rules={[{ required: true }]}>
+                <Select placeholder={t`Mode`} style={{ width: '25%' }}>
                   <Option key={1} value={1}>
                     Once
                   </Option>
@@ -142,12 +136,8 @@ class TaskModal extends PureComponent {
               <Form.Item name={['frequency', 'extend', 'count']} noStyle>
                 <Input style={{ width: '50%' }} placeholder="运行次数,CountDown模式下有效" />
               </Form.Item>
-              <Form.Item
-                name={['frequency', 'time_zone']}
-                noStyle
-                rules={[{ required: true, message: '时区必须选择' }]}
-              >
-                <Select placeholder="时区" style={{ width: '25%' }}>
+              <Form.Item name={['frequency', 'time_zone']} noStyle rules={[{ required: true }]}>
+                <Select placeholder={t`Time Zone`} style={{ width: '25%' }}>
                   <Option key={1} value={1}>
                     Local
                   </Option>
@@ -160,27 +150,27 @@ class TaskModal extends PureComponent {
           </FormItem>
           <FormItem
             name="cron_expression"
-            label="Cron 表达式"
-            rules={[{ required: true, message: '表达式不能为空' }]}
+            label={t`Cron Expression`}
+            rules={[{ required: true }]}
             hasFeedback
             {...formItemLayout}
           >
             <InputCron lang={'zh-Hans-CN'} type={['second', 'minute', 'hour', 'day', 'month', 'week']} />
           </FormItem>
 
-          <Form.Item label="时间调度" style={{ marginBottom: 0 }} hasFeedback {...formItemLayout}>
+          <Form.Item label={t`Time Scheduling`} style={{ marginBottom: 0 }} hasFeedback {...formItemLayout}>
             <Form.Item
               name="timeout"
-              label={'超时时间'}
-              rules={[{ required: true, message: '未设置超时时间' }]}
+              label={t`Time Out`}
+              rules={[{ required: true }]}
               style={{ display: 'inline-block', width: 'calc(32% - 8px)' }}
             >
               <InputNumber placeholder="单位：秒" min={10} max={10000} />
             </Form.Item>
             <Form.Item
               name="retry_times"
-              label={'重试次数'}
-              rules={[{ required: true, message: '未设置重试次数' }]}
+              label={t`Retry Count`}
+              rules={[{ required: true }]}
               style={{
                 display: 'inline-block',
                 width: 'calc(32% - 8px)',
@@ -191,8 +181,8 @@ class TaskModal extends PureComponent {
             </Form.Item>
             <Form.Item
               name="retry_interval"
-              label={'重试间隔'}
-              rules={[{ required: true, message: '未设置重置间隔' }]}
+              label={t`Retry Interval`}
+              rules={[{ required: true }]}
               style={{
                 display: 'inline-block',
                 width: 'calc(32% - 8px)',
@@ -204,18 +194,18 @@ class TaskModal extends PureComponent {
           </Form.Item>
           <FormItem
             name="maximum_parallel_runnable_num"
-            label="单节点最大并行"
-            rules={[{ required: true, message: '未设置最大并行' }]}
+            label={t`Max Parallel`}
+            rules={[{ required: true }]}
             hasFeedback
             {...formItemLayout}
           >
             <InputNumber min={1} max={10000} />
           </FormItem>
-          <FormItem name="tag" label="任务标签" hasFeedback {...formItemLayout}>
-            <Select mode="tags" allowClear style={{ width: '100%' }} placeholder="支持自定义标签" />
+          <FormItem name="tag" label={t`Task Tag`} hasFeedback {...formItemLayout}>
+            <Select mode="tags" allowClear style={{ width: '100%' }} placeholder={t`Support custom labels`} />
           </FormItem>
-          <FormItem name="binding_ids" label="机器绑定" hasFeedback {...formItemLayout}>
-            <Select mode={'multiple'} placeholder="请选择" onFocus={() => this.bindList()}>
+          <FormItem name="binding_ids" label={t`Binding Node`} hasFeedback {...formItemLayout}>
+            <Select mode={'multiple'} onFocus={() => this.bindList()}>
               {bindList.map((point, i) => {
                 return (
                   <Select.Option key={parseInt(point.id)} value={parseInt(point.id)}>

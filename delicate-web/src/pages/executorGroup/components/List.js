@@ -12,7 +12,7 @@ class ExecutorGroupList extends PureComponent {
   }
 
   cancel() {
-    message.info('取消删除')
+    message.info(t`Cancel Delete`)
   }
 
   render() {
@@ -26,7 +26,7 @@ class ExecutorGroupList extends PureComponent {
         fixed: 'left'
       },
       {
-        title: '执行组名称',
+        title: t`Group Name`,
         dataIndex: 'name',
         key: 'name',
         fixed: 'left',
@@ -50,18 +50,18 @@ class ExecutorGroupList extends PureComponent {
           return (
             <Space split={'|'}>
               <a type={'link'} onClick={() => onEditItem(row)}>
-                编辑
+                {t`Update`}
               </a>
-              <Link to={{ pathname: `executorGroup/${row.id}` }}>组详情</Link>
+              <Link to={{ pathname: `executorGroup/${row.id}` }}>{t`Group Detail`}</Link>
               <Popconfirm
-                title={`确定要删除执行执行组【${row.name}】吗？`}
+                title={t`Are you sure you want to delete the execution group ${row.name}?`}
                 onConfirm={() => this.confirm(row.id)}
                 onCancel={() => this.cancel()}
                 okText="Yes"
                 cancelText="No"
               >
                 <a type={'link'} style={{ color: 'red' }}>
-                  删除
+                  {t`Delete`}
                 </a>
               </Popconfirm>
             </Space>

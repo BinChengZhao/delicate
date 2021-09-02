@@ -5,6 +5,7 @@ import PropTypes from 'prop-types'
 import ExecutorModal from './components/Modal'
 import ExecutorList from './components/List'
 import ExecutorFilter from './components/Filter'
+import { t } from '@lingui/macro'
 
 const NAMESPACE = 'executorModel'
 
@@ -43,14 +44,14 @@ class Executor extends PureComponent {
     let title = ''
     switch (modalType) {
       case 'create':
-        title = '创建执行器'
+        title = t`Create`
         break
       case 'copy':
-        title = '复制执行器'
+        title = t`Copy`
         item = { ...currentItem, id: null, tag: currentItem.tag.split(',') }
         break
       case 'update':
-        title = '编辑执行器'
+        title = t`Update`
         item = item = { ...currentItem, tag: currentItem.tag.split(',') }
         break
     }
@@ -60,8 +61,8 @@ class Executor extends PureComponent {
       visible: modalVisible,
       destroyOnClose: true,
       maskClosable: false,
-      cancelText: '取消',
-      okText: '保存',
+      cancelText: t`Cancel`,
+      okText: t`Save`,
       confirmLoading: loading.effects[`${NAMESPACE}/${modalType}`],
       title: title,
       centered: true,

@@ -62,8 +62,8 @@ class ExecutorModal extends PureComponent {
     return (
       <Modal {...modalProps} onOk={this.handleOk}>
         <Form ref={this.formRef} name="control-ref" layout="horizontal" initialValues={initValues}>
-          <FormItem name="name" label="执行器名称" rules={[{ required: true }]} hasFeedback {...formItemLayout}>
-            <Input placeholder="执行器名称" />
+          <FormItem name="name" label={t`Node Name`} rules={[{ required: true }]} hasFeedback {...formItemLayout}>
+            <Input placeholder={t`Node Name`} />
           </FormItem>
           <FormItem
             name="description"
@@ -72,18 +72,24 @@ class ExecutorModal extends PureComponent {
             hasFeedback
             {...formItemLayout}
           >
-            <Input placeholder="这个执行器的描述" />
+            <Input placeholder={t`Description`} />
           </FormItem>
           <FormItem name="host" label="Host" rules={[{ required: true }]} hasFeedback {...formItemLayout}>
             <Input placeholder="127.0.0.1:8080" />
           </FormItem>
 
-          <FormItem name="machine_id" label="机器Id" rules={[{ required: true }]} hasFeedback {...formItemLayout}>
+          <FormItem
+            name="machine_id"
+            label={t`Machine Id`}
+            rules={[{ required: true }]}
+            hasFeedback
+            {...formItemLayout}
+          >
             <InputNumber max={1024} min={0} />
           </FormItem>
 
-          <FormItem name="tag" label="任务标签" hasFeedback {...formItemLayout}>
-            <Select mode="tags" allowClear style={{ width: '100%' }} placeholder="支持自定义标签" />
+          <FormItem name="tag" label={t`Task Tag`} hasFeedback {...formItemLayout}>
+            <Select mode="tags" allowClear style={{ width: '100%' }} placeholder={t`Support custom labels`} />
           </FormItem>
         </Form>
       </Modal>
