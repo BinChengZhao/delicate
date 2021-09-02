@@ -3,9 +3,9 @@ import { connect } from 'dva'
 import { Page } from '../../../components'
 import ReactJson from 'react-json-view'
 
-const NAMESPACE = 'logs'
+const NAMESPACE = 'operateLogs'
 
-@connect(({ logs }) => ({ logs }))
+@connect(({ operateLogs }) => ({ operateLogs }))
 class LogDetails extends Component {
   constructor(props) {
     super(props)

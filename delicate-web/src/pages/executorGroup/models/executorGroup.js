@@ -1,5 +1,6 @@
 import api from 'api'
 import { message } from 'antd'
+import { t } from '@lingui/macro'
 
 const {
   groupList,
@@ -79,18 +80,18 @@ export default {
 
     *onGroupBindExecutor({ payload }, { call, put }) {
       const data = yield call(groupBindExecutor, payload)
-      if (data.code) message.success('执行器绑定异常')
+      if (data.code) message.success(t`Failed`)
       yield put({ type: 'hideGroupModal' })
     },
 
     *onGroupUpdateExecutor({ payload }, { call, put }) {
       const data = yield call(groupUpdateExecutor, payload)
-      if (data.code) message.success('执行器绑定异常')
+      if (data.code) message.success(t`Failed`)
     },
 
     *groupDeleteExecutor({ payload }, { call, put }) {
       const data = yield call(groupDeleteExecutor, payload)
-      if (!data.code) message.warning('解绑成功')
+      if (!data.code) message.warning(t`Success`)
     }
   },
 

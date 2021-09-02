@@ -3,6 +3,7 @@ import { connect } from 'dva'
 import { Page } from '../../../components'
 import { Button, Descriptions, Form, Input, message, Modal, Popconfirm, Select, Table } from 'antd'
 import styles from '../../taskList/components/List.less'
+import { t } from '@lingui/macro'
 
 const FormItem = Form.Item
 const formItemLayout = {
@@ -52,7 +53,7 @@ class groupDetail extends Component {
   }
 
   cancel() {
-    message.info('取消解绑')
+    message.info(t`Cancel Delete`)
   }
 
   handleOk = () => {
@@ -65,7 +66,7 @@ class groupDetail extends Component {
       .then((values) => {
         const bindParams = {
           group_id: parseInt(groupId),
-          name: this.state.inner.name + '绑定执行器',
+          name: this.state.inner.name + t`Binding Node`,
           weight: 0,
           ...values
         }
@@ -91,7 +92,7 @@ class groupDetail extends Component {
   get createModalProps() {
     return {
       type: 'create',
-      title: '新增绑定执行器',
+      title: t`Create`,
       mode: 'multiple',
       name: 'executor_ids'
     }
@@ -100,7 +101,7 @@ class groupDetail extends Component {
   get updateModalProps() {
     return {
       type: 'update',
-      title: '修改绑定执行器',
+      title: t`Update`,
       mode: null,
       name: 'executor_id'
     }
@@ -116,7 +117,7 @@ class groupDetail extends Component {
 
     const columns = [
       {
-        title: '绑定名称',
+        title: t`Binding Node`,
         dataIndex: 'bingding_name',
         key: 'name',
         width: 120,
@@ -124,29 +125,29 @@ class groupDetail extends Component {
         render: (text, row) => <a>{text}</a>
       },
       {
-        title: '执行器id',
+        title: t`Node Id`,
         dataIndex: 'executor_id',
         width: 200,
         key: 'executor_id'
       },
       {
-        title: '执行器名称',
+        title: t`Node Name`,
         dataIndex: 'executor_name',
         key: 'executor_name',
         width: 150
       },
       {
-        title: '执行器Host',
+        title: t`Host`,
         dataIndex: 'host',
         key: 'host'
       },
       {
-        title: '机器id',
+        title: t`Machine Id`,
         dataIndex: 'machine_id',
         key: 'machine_id'
       },
       {
-        title: '操作',
+        title: t`Operation`,
         key: 'operating',
         render: (text, row) => {
           return (
@@ -159,17 +160,17 @@ class groupDetail extends Component {
                   )
                 }
               >
-                编辑
+                {t`Update`}
               </a>
               <Popconfirm
-                title={`确定要解绑执行器ID:【${row.executor_id}】吗？`}
+                title={t`Are you sure you want to unbind the node ID ${row.executor_id}?`}
                 onConfirm={() => this.confirm(row.bingding_id)}
                 onCancel={() => this.cancel()}
                 okText="Yes"
                 cancelText="No"
               >
                 <Button type={'link'} danger>
-                  解绑
+                  {t`Unbind`}
                 </Button>
               </Popconfirm>
             </div>
@@ -181,7 +182,7 @@ class groupDetail extends Component {
     return (
       <Page inner>
         <Descriptions title={inner.name}>
-          <Descriptions.Item label="描述" span={3}>
+          <Descriptions.Item label={t`Description`} span={3}>
             {inner.description}
           </Descriptions.Item>
         </Descriptions>
@@ -193,7 +194,7 @@ class groupDetail extends Component {
             className="margin-right"
             onClick={() => this.setState({ modalProps: this.createModalProps }, () => this.toggleBindModal())}
           >
-            新增绑定关系
+            {t`Create`}
           </Button>
         </div>
 

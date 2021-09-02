@@ -6,6 +6,7 @@ import { connect } from 'umi'
 import { Page } from 'components'
 import styles from './index.less'
 import { Card } from 'antd'
+import { t } from '@lingui/macro'
 
 @connect(({ dashboard, loading }) => ({
   dashboard,
@@ -51,7 +52,7 @@ class Dashboard extends PureComponent {
     const myChart = echarts.init(chartDom)
     const option = {
       title: {
-        text: '任务状态聚合(最近24小时)'
+        text: t`Task Status Aggregation(Last 24 hours)`
       },
       tooltip: {
         trigger: 'axis',

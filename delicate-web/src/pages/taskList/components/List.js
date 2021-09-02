@@ -15,7 +15,7 @@ class List extends PureComponent {
   }
 
   cancel() {
-    message.info('取消删除')
+    message.info(t`Cancel Delete`)
   }
 
   menu(row) {
@@ -24,26 +24,26 @@ class List extends PureComponent {
     return (
       <Menu>
         <Menu.Item key={1} onClick={() => onTaskRun(row.id)} disabled={row.status === STATUS_ENABLE}>
-          启用任务
+          {t`Enabled Task`}
         </Menu.Item>
         <Menu.Item key={2} onClick={() => onTaskSuspend(row.id)} disabled={row.status !== STATUS_ENABLE}>
-          暂停任务
+          {t`Pause Task`}
         </Menu.Item>
         <Menu.Item key={3} onClick={() => onTaskAdvance(row.id)} disabled={row.status !== STATUS_ENABLE}>
-          立即执行
+          {t`Execution`}
         </Menu.Item>
         <Menu.Item key={4}>
-          <Link to={{ pathname: `taskList/${row.id}`, state: row }}>查看日志</Link>
+          <Link to={{ pathname: `taskList/${row.id}`, state: row }}>{t`View Logs`}</Link>
         </Menu.Item>
         <Popconfirm
-          title={`确定要删除任务【${row.name}】吗？`}
+          title={t`Are you sure you want to delete the task ${row.name}?`}
           onConfirm={() => this.confirm(row.id)}
           onCancel={() => this.cancel()}
           okText="Yes"
           cancelText="No"
         >
           <Menu.Item key={6} danger>
-            删除任务
+            {t`Delete Task`}
           </Menu.Item>
         </Popconfirm>
       </Menu>
@@ -76,7 +76,7 @@ class List extends PureComponent {
         }
       },
       {
-        title: '是否启用',
+        title: t`Enabled State`,
         dataIndex: 'status',
         width: 100,
         key: 'status',
@@ -154,11 +154,12 @@ class List extends PureComponent {
         render: (text, row) => (
           <Space split={'|'}>
             <a type={'link'} onClick={() => onEditItem(row)}>
-              编辑
+              {t`Update`}
             </a>
             <Dropdown overlay={this.menu(row)}>
               <a className="ant-dropdown-link" onClick={(e) => e.preventDefault()}>
-                更多 <DownOutlined />
+                {t`More`}
+                <DownOutlined />
               </a>
             </Dropdown>
           </Space>

@@ -12,26 +12,26 @@ class ExecutorList extends PureComponent {
   }
 
   cancel() {
-    message.info('取消删除')
+    message.info(t`Cancel Delete`)
   }
 
   render() {
     const { onEditItem, onDeleteItem, onActivation, onCopy, ...tableProps } = this.props
 
     const MENU_ITEM_MAP = [
-      { title: '复制节点', method: (r) => onCopy(r) },
-      { title: '激活节点', method: (r) => onActivation(r.id) }
+      { title: t`Copy Node`, method: (r) => onCopy(r) },
+      { title: t`Activate Node`, method: (r) => onActivation(r.id) }
     ]
 
     const columns = [
       {
-        title: <Trans>Sn</Trans>,
+        title: t`Sn`,
         dataIndex: 'id',
         key: 'id',
         fixed: 'left'
       },
       {
-        title: '节点名称',
+        title: t`Node Name`,
         dataIndex: 'name',
         key: 'name',
         fixed: 'left',
@@ -44,33 +44,33 @@ class ExecutorList extends PureComponent {
         }
       },
       {
-        title: '状态',
+        title: t`Status`,
         dataIndex: 'status',
         key: 'status'
       },
       {
-        title: 'Host',
+        title: t`Host`,
         dataIndex: 'host',
         key: 'host'
       },
       {
-        title: '机器节点ID',
+        title: t`Machine Id`,
         dataIndex: 'machine_id',
         key: 'machine_id'
       },
       {
-        title: <Trans>Tag</Trans>,
+        title: t`Tag`,
         dataIndex: 'tag',
         key: 'tag'
       },
       {
-        title: <Trans>Operation</Trans>,
+        title: t`Operation`,
         key: 'operation',
         render: (text, row) => {
           return (
             <Space split={'|'}>
               <a type={'link'} onClick={() => onEditItem(row)}>
-                编辑
+                {t`Update`}
               </a>
               <Dropdown
                 overlay={
@@ -83,19 +83,19 @@ class ExecutorList extends PureComponent {
                       )
                     })}
                     <Popconfirm
-                      title={`确定要删除执行节点【${row.name}】吗？`}
+                      title={t`Are you sure you want to delete the execution node ${row.name}?`}
                       onConfirm={() => this.confirm(row.id)}
                       onCancel={() => this.cancel()}
                       okText="Yes"
                       cancelText="No"
                     >
-                      <Menu.Item danger>删除节点</Menu.Item>
+                      <Menu.Item danger>{t`Delete Node`}</Menu.Item>
                     </Popconfirm>
                   </Menu>
                 }
               >
                 <a className="ant-dropdown-link" onClick={(e) => e.preventDefault()}>
-                  更多 <DownOutlined />
+                  {t`More`} <DownOutlined />
                 </a>
               </Dropdown>
             </Space>

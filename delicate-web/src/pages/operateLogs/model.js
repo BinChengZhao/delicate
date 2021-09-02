@@ -3,7 +3,7 @@ import api from '../../services'
 const { optionLogList, optionLogDetail, loginLogList } = api
 
 export default {
-  namespace: 'logs',
+  namespace: 'operateLogs',
 
   state: {
     queryWhere: {}

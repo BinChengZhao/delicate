@@ -46,7 +46,7 @@ class Filter extends PureComponent {
         <Row gutter={24}>
           <Col xl={{ span: 4 }} md={{ span: 8 }}>
             <Form.Item name="name">
-              <Input placeholder={t`Option Name`} />
+              <Input placeholder={t`Operate Name`} />
             </Form.Item>
           </Col>
           <Col xl={{ span: 4 }} md={{ span: 8 }}>
