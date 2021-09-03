@@ -89,7 +89,7 @@ export default {
         permissions.role = 'admin'
         store.set('routeList', routeList)
         store.set('permissions', permissions)
-        store.set('user', { username: 'admin' })
+        store.set('user', data.data)
         goDashboard()
       } else {
         history.push({ pathname: '/login' })
