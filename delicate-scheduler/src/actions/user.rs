@@ -9,7 +9,8 @@ pub(crate) fn config(cfg: &mut web::ServiceConfig) {
         .service(delete_user)
         .service(login_user)
         .service(logout_user)
-        .service(check_user);
+        .service(check_user)
+        .service(change_password);
 }
 
 #[post("/api/user/create")]
