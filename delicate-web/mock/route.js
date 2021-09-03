@@ -103,6 +103,16 @@ const database = [
       name: '用户详情'
     },
     route: '/user/:id'
+  },
+  {
+    id: '92',
+    menuParentId: '-1',
+    breadcrumbParentId: '9',
+    name: 'Personal center',
+    zh: {
+      name: '个人中心'
+    },
+    route: '/personalCenter'
   }
 ]
 

@@ -3,12 +3,13 @@ import PropTypes from 'prop-types'
 import { Menu, Layout, Avatar, Popover, Badge, List } from 'antd'
 import { Ellipsis } from 'components'
 import { BellOutlined, RightOutlined, MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons'
-import { Trans } from '@lingui/macro'
+import { t, Trans } from '@lingui/macro'
 import { getLocale, setLocale } from 'utils'
 import moment from 'moment'
 import classnames from 'classnames'
 import config from 'config'
 import styles from './Header.less'
+import { Link } from 'umi'
 
 const { SubMenu } = Menu
 
@@ -18,7 +19,7 @@ class Header extends PureComponent {
   }
 
   render() {
-    const { fixed, avatar, username, collapsed, notifications, onCollapseChange, onAllNotificationsRead } = this.props
+    const { fixed, username, collapsed, notifications, onCollapseChange } = this.props
 
     const rightContent = [
       <Menu key="user" mode="horizontal" onClick={this.handleClickMenu}>
@@ -33,6 +34,11 @@ class Header extends PureComponent {
             </Fragment>
           }
         >
+          <Menu.Item key="PersonalCenter">
+            <Link to={{ pathname: `personalCenter` }}>
+              <Trans>Personal Center</Trans>
+            </Link>
+          </Menu.Item>
           <Menu.Item key="SignOut">
             <Trans>Sign out</Trans>
           </Menu.Item>
@@ -73,35 +79,34 @@ class Header extends PureComponent {
         key="notifications"
         overlayClassName={styles.notificationPopover}
         getPopupContainer={() => document.querySelector('#primaryLayout')}
-        content={
-          <div className={styles.notification}>
-            <List
-              itemLayout="horizontal"
-              dataSource={notifications}
-              locale={{
-                emptyText: <Trans>You have viewed all notifications.</Trans>
-              }}
-              renderItem={(item) => (
-                <List.Item className={styles.notificationItem}>
-                  <List.Item.Meta
-                    title={
-                      <Ellipsis tooltip lines={1}>
-                        {item.title}
-                      </Ellipsis>
-                    }
-                    description={moment(item.date).fromNow()}
-                  />
-                  <RightOutlined style={{ fontSize: 10, color: '#ccc' }} />
-                </List.Item>
-              )}
-            />
-            {notifications.length ? (
-              <div onClick={onAllNotificationsRead} className={styles.clearButton}>
-                <Trans>Clear notifications</Trans>
-              </div>
-            ) : null}
-          </div>
-        }
+        content={null}
+        // <div className={styles.notification}>
+        //   <List
+        //     itemLayout="horizontal"
+        //     dataSource={notifications}
+        //     locale={{
+        //       emptyText: <Trans>You have viewed all notifications.</Trans>
+        //     }}
+        //     renderItem={(item) => (
+        //       <List.Item className={styles.notificationItem}>
+        //         <List.Item.Meta
+        //           title={
+        //             <Ellipsis tooltip lines={1}>
+        //               {item.title}
+        //             </Ellipsis>
+        //           }
+        //           description={moment(item.date).fromNow()}
+        //         />
+        //         <RightOutlined style={{ fontSize: 10, color: '#ccc' }} />
+        //       </List.Item>
+        //     )}
+        //   />
+        //   {notifications.length ? (
+        //     <div onClick={onAllNotificationsRead} className={styles.clearButton}>
+        //       <Trans>Clear notifications</Trans>
+        //     </div>
+        //   ) : null}
+        // </div>
       >
         <Badge count={notifications.length} dot offset={[-10, 10]} className={styles.iconButton}>
           <BellOutlined className={styles.iconFont} />

@@ -1,5 +1,3 @@
-/* global window */
-/* global document */
 import React, { PureComponent, Fragment } from 'react'
 import PropTypes from 'prop-types'
 import { withRouter, connect } from 'umi'
@@ -82,8 +80,7 @@ class PrimaryLayout extends PureComponent {
       collapsed,
       notifications,
       onCollapseChange,
-      avatar: user.avatar,
-      username: user.username,
+      username: user.user_name,
       fixed: config.fixedHeader,
       onAllNotificationsRead() {
         dispatch({ type: 'app/allNotificationsRead' })

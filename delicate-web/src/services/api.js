@@ -52,5 +52,6 @@ export default {
   queryUserList: 'POST /user/list',
   createUser: 'POST /user/create',
   updateUser: 'POST /user/update',
-  deleteUser: 'POST /user/delete'
+  deleteUser: 'POST /user/delete',
+  updatePassword: 'POST /user/change_password'
 }
