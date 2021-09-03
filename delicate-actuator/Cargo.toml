@@ -1,0 +1,16 @@
+[package]
+name = "delicate-actuator"
+version = "0.1.0"
+authors = ["BinChengZhao <binchengZhao@outlook.com>"]
+edition = "2018"
+build = "build/build.rs"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tonic = "0.5"
+prost = "0.8"
+tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
+
+[build-dependencies]
+tonic-build = "0.5"
