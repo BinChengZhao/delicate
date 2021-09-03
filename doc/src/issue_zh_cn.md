@@ -61,6 +61,7 @@
 - [x] （优先级-高） 收集用户的登陆日志。
 - [x] （优先级-高） scheduler 对 executor，进行心跳检查。
 - [x] （优先级-高） 二级菜单-登陆日志页面异常，丢失左侧菜单栏（原因: ant-admin的 `layouts` 配置 exclude: [/(\/(en|zh))*\/login/], 会匹配到 `/loginLogs` 导致菜单隐藏）。
+- [ ] （优先级-高） `update_executor_processor_bind`更新时存在bug，只有当绑定的`executor_id`变更时，才应该执行任务迁移。
 - [ ] （优先级-高） 绑定支持修改名称。
 - [ ] （优先级-中） 做一个日志清除功能。
 - [ ] （优先级-中） 搜索的优化。
