@@ -7,6 +7,8 @@ pub mod hello_world {
     tonic::include_proto!("helloworld"); // The string specified here must match the proto package name
 }
 
+// proto3: https://developers.google.com/protocol-buffers/docs/proto3#simple
+// rust-Protocol Buffers: https://github.com/tokio-rs/prost
 // grpcurl -plaintext -import-path ./proto -proto helloworld.proto -d '{"name": "Tonic"}' "[::]:30051" helloworld.Greeter/SayHello
 #[derive(Debug, Default)]
 pub struct MyGreeter {}
