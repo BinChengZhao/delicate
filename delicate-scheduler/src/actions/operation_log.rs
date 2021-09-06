@@ -35,7 +35,8 @@ async fn show_operation_log(
                 Ok(PaginateData::<model::OperationLog>::default()
                     .set_data_source(front_end_operation_log)
                     .set_page_size(per_page)
-                    .set_total(count))
+                    .set_total(count)
+                    .set_state_desc::<state::operation_log::OperationType>())
             })
             .await,
         ));

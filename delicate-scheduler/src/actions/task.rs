@@ -100,7 +100,8 @@ async fn show_tasks(
                             .collect::<Vec<model::FrontEndTask>>(),
                     )
                     .set_page_size(per_page)
-                    .set_total(count))
+                    .set_total(count)
+                    .set_state_desc::<state::task::State>())
             })
             .await,
         ));

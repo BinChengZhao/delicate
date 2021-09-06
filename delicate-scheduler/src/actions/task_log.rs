@@ -97,7 +97,8 @@ async fn show_task_logs(
                 Ok(PaginateData::<model::FrontEndTaskLog>::default()
                     .set_data_source(front_end_task_logs)
                     .set_page_size(per_page)
-                    .set_total(count))
+                    .set_total(count)
+                    .set_state_desc::<state::task_log::State>())
             })
             .await,
         ));
