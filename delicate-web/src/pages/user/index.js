@@ -26,8 +26,9 @@ class User extends PureComponent {
       destroyOnClose: true,
       maskClosable: false,
       confirmLoading: loading.effects[`user/${modalType}`],
-      title: `${modalType === 'create' ? t`Create Task` : t`Update Task`}`,
+      title: `${modalType === 'create' ? t`Create` : t`Update`}`,
       centered: true,
+      modalType,
       onOk: (data) => dispatch({ type: `user/${modalType}`, payload: data }).then(() => this.handleRefresh()),
       onCancel: () => dispatch({ type: 'user/hideModal' })
     }

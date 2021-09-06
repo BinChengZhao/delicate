@@ -1,7 +1,7 @@
 import api from 'api'
 import { message } from 'antd'
 
-const { queryUserList, createUser, updateUser, deleteUser } = api
+const { queryUserList, createUser, updateUser, deleteUser, updatePassword } = api
 
 export default {
   namespace: 'user',
@@ -58,6 +58,14 @@ export default {
       const data = yield call(updateUser, payload)
       if (!data.code) {
         yield put({ type: 'hideModal' })
+      }
+    },
+
+    *updatePassword({ payload }, { select, call, put }) {
+      try {
+        return yield call(updatePassword, payload)
+      } catch (e) {
+        console.error(e)
       }
     }
   },

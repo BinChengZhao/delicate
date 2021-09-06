@@ -75,8 +75,8 @@ class ExecutorGroupModal extends PureComponent {
     return (
       <Modal {...modalProps} onOk={this.handleOk}>
         <Form ref={this.formRef} name="control-ref" layout="horizontal" initialValues={initValues}>
-          <FormItem name="name" label="执行组名称" rules={[{ required: true }]} hasFeedback {...formItemLayout}>
-            <Input placeholder="定义执行组名称" />
+          <FormItem name="name" label={t`Group Name`} rules={[{ required: true }]} hasFeedback {...formItemLayout}>
+            <Input placeholder={t`Group Name`} />
           </FormItem>
           <FormItem
             name="description"
@@ -85,11 +85,11 @@ class ExecutorGroupModal extends PureComponent {
             hasFeedback
             {...formItemLayout}
           >
-            <Input placeholder="这个执行组的描述" />
+            <Input placeholder={t`Description`} />
           </FormItem>
 
-          <FormItem name="tag" label="任务标签" rules={[{ required: true }]} hasFeedback {...formItemLayout}>
-            <Select mode="tags" allowClear style={{ width: '100%' }} placeholder="支持自定义标签" />
+          <FormItem name="tag" label={t`Task Tag`} rules={[{ required: true }]} hasFeedback {...formItemLayout}>
+            <Select mode="tags" allowClear style={{ width: '100%' }} placeholder={t`Support custom labels`} />
           </FormItem>
           {modalType === 'create' ? (
             <FormItem name="executor_ids" label="绑定执行器" hasFeedback {...formItemLayout}>

@@ -52,7 +52,7 @@ class ExeutorGroupFilter extends PureComponent {
           </Col>
           <Col xl={{ span: 4 }} md={{ span: 8 }}>
             <Form.Item name="name">
-              <Input placeholder="节点名称" />
+              <Input placeholder={t`Node Name`} />
             </Form.Item>
           </Col>
           <Button type="primary" htmlType="submit" className="margin-right" onClick={() => this.handleSubmit()}>

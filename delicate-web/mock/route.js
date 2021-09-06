@@ -71,6 +71,14 @@ const database = [
     route: '/operateLogs'
   },
   {
+    id: '42',
+    menuParentId: '4',
+    breadcrumbParentId: '4',
+    name: 'Login Logs',
+    zh: { name: '登陆日志' },
+    route: '/inLogs'
+  },
+  {
     id: '411',
     menuParentId: '-1',
     breadcrumbParentId: '41',
@@ -97,12 +105,14 @@ const database = [
     route: '/user/:id'
   },
   {
-    id: '42',
-    menuParentId: '4',
-    breadcrumbParentId: '4',
-    name: 'Login Logs',
-    zh: { name: '登陆日志' },
-    route: '/loginLogs'
+    id: '92',
+    menuParentId: '-1',
+    breadcrumbParentId: '9',
+    name: 'Personal center',
+    zh: {
+      name: '个人中心'
+    },
+    route: '/personalCenter'
   }
 ]
 

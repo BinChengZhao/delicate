@@ -30,14 +30,13 @@ class UserModal extends PureComponent {
 
   render() {
     const { item = {}, onOk, form, ...modalProps } = this.props
-
     return (
       <Modal {...modalProps} onOk={this.handleOk}>
         <Form ref={this.formRef} name="control-ref" initialValues={{ ...item }} layout="horizontal">
           <FormItem
             name="user_name"
-            rules={[{ required: true, min: 8, max: 20, message: '用户名不得小于8位字符' }]}
-            label={'用户名'}
+            rules={[{ required: true, min: 5, max: 20 }]}
+            label={t`Username`}
             hasFeedback
             {...formItemLayout}
           >
@@ -51,8 +50,7 @@ class UserModal extends PureComponent {
             rules={[
               {
                 required: true,
-                pattern: /^1[34578]\d{9}$/,
-                message: t`The input is not valid phone!`
+                pattern: /^1[34578]\d{9}$/
               }
             ]}
             label={t`Phone`}
@@ -76,15 +74,17 @@ class UserModal extends PureComponent {
           >
             <Input />
           </FormItem>
-          <FormItem
-            name="certificate"
-            rules={[{ required: true, min: 8, max: 20, message: '密码不得小于8位数' }]}
-            label={'密码'}
-            hasFeedback
-            {...formItemLayout}
-          >
-            <Input type={'password'} />
-          </FormItem>
+          {modalProps.modalType !== 'update' ? (
+            <FormItem
+              name="certificate"
+              rules={[{ required: true, min: 8, max: 20 }]}
+              label={t`Password`}
+              hasFeedback
+              {...formItemLayout}
+            >
+              <Input type={'password'} />
+            </FormItem>
+          ) : null}
         </Form>
       </Modal>
     )

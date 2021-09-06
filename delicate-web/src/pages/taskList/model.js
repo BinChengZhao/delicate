@@ -1,5 +1,6 @@
 import api from '../../services'
 import { message } from 'antd'
+import { t } from '@lingui/macro'
 
 const {
   queryTaskList,
@@ -109,7 +110,7 @@ export default {
     *taskLogDelete({ payload }, { call, put }) {
       try {
         const data = yield call(taskLogDelete, payload)
-        if (!data.code) message.success('删除成功')
+        if (!data.code) message.success(t`Success`)
       } catch (e) {
         console.error(e)
       }
@@ -118,7 +119,7 @@ export default {
     *onTaskAdvance({ payload }, { call, put }) {
       try {
         const data = yield call(taskAdvance, payload)
-        if (!data.code) message.success('手动执行操作成功')
+        if (!data.code) message.success(t`Success`)
       } catch (e) {
         console.log(e)
       }
@@ -126,17 +127,17 @@ export default {
     // 启用任务
     *onTaskRun({ payload }, { call, put }) {
       const data = yield call(taskRun, payload)
-      if (!data.code) message.success('启动成功')
+      if (!data.code) message.success(t`Success`)
     },
     // 停用任务
     *onTaskSuspend({ payload }, { call, put }) {
       const data = yield call(taskSuspend, payload)
-      if (!data.code) message.warning('任务已暂停')
+      if (!data.code) message.warning(t`Success`)
     },
     // 杀死任务
     *onTaskKill({ payload }, { call, put }) {
       const data = yield call(taskKill, payload)
-      if (!data.code) message.warning('任务强行结束！')
+      if (!data.code) message.warning(t`Success`)
       return data
     },
     *taskBindList({ payload }, { call, put }) {

@@ -54,12 +54,12 @@ class ExecutorFilter extends PureComponent {
           </Col>
           <Col xl={{ span: 4 }} md={{ span: 8 }}>
             <Form.Item name="name">
-              <Input placeholder="节点名称" />
+              <Input placeholder={t`Node Name`} />
             </Form.Item>
           </Col>
           <Col xl={{ span: 4 }} md={{ span: 8 }}>
             <Form.Item name="machine_id">
-              <Input placeholder="机器 ID" />
+              <Input placeholder={t`Match ID`} />
             </Form.Item>
           </Col>
           <Button type="primary" htmlType="submit" className="margin-right" onClick={() => this.handleSubmit()}>

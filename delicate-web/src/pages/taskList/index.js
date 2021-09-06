@@ -7,6 +7,7 @@ import _ from 'lodash'
 import Filter from './components/Filter'
 import List from './components/List'
 import TaskModal from './components/Modal'
+import { t } from '@lingui/macro'
 
 const NAMESPACE = 'taskModel'
 
@@ -43,13 +44,13 @@ class Task extends PureComponent {
     let title = ''
     switch (modalType) {
       case 'create':
-        title = '创建任务'
+        title = t`Create`
         break
       case 'copy':
-        title = '复制任务'
+        title = t`Copy`
         break
       case 'update':
-        title = '编辑执行器'
+        title = t`Update`
         item = currentItem
         break
     }
@@ -59,8 +60,8 @@ class Task extends PureComponent {
       visible: modalVisible,
       destroyOnClose: true,
       maskClosable: false,
-      cancelText: '取消',
-      okText: '保存',
+      cancelText: t`Cancel`,
+      okText: t`Save`,
       confirmLoading: loading.effects[`${NAMESPACE}/${modalType}`],
       title: title,
       centered: true,

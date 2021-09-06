@@ -1,6 +1,8 @@
+// @ts-ignore
 import React from 'react'
 import { FrownOutlined } from '@ant-design/icons'
-import { Page } from 'components'
+import { Page } from '../components'
+// @ts-ignore
 import styles from './404.less'
 
 const Error = () => (

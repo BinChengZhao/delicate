@@ -95,7 +95,7 @@ class TaskLog extends PureComponent {
   }
 
   cancel() {
-    message.info('取消中断')
+    message.info(t`Cancel`)
   }
 
   taskLogDetail(recordId) {
@@ -229,7 +229,7 @@ class TaskLog extends PureComponent {
         key: 'tag'
       },
       {
-        title: '操作',
+        title: t`Operation`,
         fixed: 'right',
         key: 'operating',
         render: (text, row) => {
@@ -260,7 +260,7 @@ class TaskLog extends PureComponent {
     return (
       <Page inner>
         <Descriptions title={state.name}>
-          <Descriptions.Item label="描述" span={3}>
+          <Descriptions.Item label={t`Description`} span={3}>
             {state.description}
           </Descriptions.Item>
         </Descriptions>
@@ -279,7 +279,7 @@ class TaskLog extends PureComponent {
             </Col>
             <Col xl={{ span: 4 }} md={{ span: 8 }}>
               <Form.Item name="executor_processor_id">
-                <Input placeholder="机器节点id" />
+                <Input placeholder={t`Machine Id`} />
               </Form.Item>
             </Col>
             <Col xl={{ span: 8 }} md={{ span: 8 }}>
