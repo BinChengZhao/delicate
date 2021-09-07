@@ -22,7 +22,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fix
 
-- Operation log details id batch assign issue
+- Operation log details id batch assign issue.
+- Update executor-process-bind task mess error.
 
 ### Miscellaneous Tasks
 
@@ -30,6 +31,7 @@ All notable changes to this project will be documented in this file.
 - Handle some compile error.
 - Optimize code and append auth-conf.
 - Update doc & Optimize code.
+- Optimize state-desc in API-Response.
 
 ### Performance
 
