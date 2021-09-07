@@ -1,33 +1,6 @@
 #[allow(unused_imports)]
 pub use crate::prelude::*;
 
-pub trait DescribeState: Into<&'static str> {
-    fn state_name() -> &'static str;
-
-    fn desc() -> HashMap<usize, &'static str>;
-}
-
-macro_rules! impl_state_desc_unify{
-    ($($target:ty => $name:expr),+) => {
-        $(impl DescribeState for $target {
-
-            fn state_name() -> &'static str
-            {
-                $name
-            }
-
-            fn desc() -> HashMap<usize, &'static str> {
-                <$target>::iter()
-                    .map(|state| (state as usize, state.into()))
-                    .collect()
-            }
-        }
-        )+
-    }
-}
-
-impl_state_desc_unify!(task::State=>"task", task_log::State=>"task_log", user::State=>"user", user_auth::State=>"user_auth", executor_processor::State=>"executor_processor", executor_group::State=>"executor_group", operation_log::OperationType=>"operation_type", user_login_log::LoginType=>"user_login_type", user_login_log::LoginCommand=>"user_login_command");
-
 pub mod task {
 
     use super::*;
@@ -160,3 +133,30 @@ pub mod user_login_log {
         Logoutfailure = 4,
     }
 }
+
+pub trait DescribeState: Into<&'static str> {
+    fn state_name() -> &'static str;
+
+    fn desc() -> HashMap<usize, &'static str>;
+}
+
+macro_rules! impl_state_desc_unify{
+    ($($target:ty => $name:expr),+) => {
+        $(impl DescribeState for $target {
+
+            fn state_name() -> &'static str
+            {
+                $name
+            }
+
+            fn desc() -> HashMap<usize, &'static str> {
+                <$target>::iter()
+                    .map(|state| (state as usize, state.into()))
+                    .collect()
+            }
+        }
+        )+
+    }
+}
+
+impl_state_desc_unify!(task::State=>"task", task_log::State=>"taskLog", user::State=>"user", user_auth::State=>"userAuth", executor_processor::State=>"executorProcessor", executor_group::State=>"executorGroup", operation_log::OperationType=>"operationType", user_login_log::LoginType=>"userLoginType", user_login_log::LoginCommand=>"userLoginCommand");
