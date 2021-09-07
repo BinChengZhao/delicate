@@ -105,6 +105,9 @@ async fn pre_update_executor_processor_bind(
     use state::task::State;
 
     let conn = pool.get()?;
+    let executor_processor_bind_id = executor_processor_bind.id;
+    let executor_processor_bind_executor_id = executor_processor_bind.executor_id;
+
     let operation_log_pair_option = generate_operation_executor_processor_bind_modify_log(
         &req.get_session(),
         &executor_processor_bind,
@@ -112,12 +115,38 @@ async fn pre_update_executor_processor_bind(
     .ok();
     send_option_operation_log_pair(operation_log_pair_option).await;
 
+    let (older_executor_id, older_executor_host, older_executor_token) =
+        web::block::<_, _, diesel::result::Error>(move || {
+            let older_executor = executor_processor_bind::table
+                .inner_join(executor_processor::table)
+                .filter(executor_processor_bind::id.eq(executor_processor_bind.id))
+                .select((
+                    executor_processor_bind::executor_id,
+                    executor_processor::host,
+                    executor_processor::token,
+                ))
+                .first::<(i64, String, String)>(&conn)?;
+
+            diesel::update(&executor_processor_bind)
+                .set(&executor_processor_bind)
+                .execute(&conn)?;
+            Ok(older_executor)
+        })
+        .await?;
+
+    if older_executor_id == executor_processor_bind_executor_id {
+        return Ok(());
+    }
+
+    // Task migration needs to be performed only when `executor_id` is modified.
+    let conn = pool.get()?;
     let task_packages: Vec<(TaskPackage, (String, String))> =
         web::block::<_, _, diesel::result::Error>(move || {
             let task_packages: Vec<(TaskPackage, (String, String))> = task_bind::table
                 .inner_join(executor_processor_bind::table.inner_join(executor_processor::table))
                 .inner_join(task::table)
                 .filter(task::status.eq(State::Enabled as i16))
+                .filter(executor_processor_bind::id.eq(executor_processor_bind_id))
                 .select((
                     (
                         task::id,
@@ -131,22 +160,20 @@ async fn pre_update_executor_processor_bind(
                 ))
                 .load::<(TaskPackage, (String, String))>(&conn)?;
 
-            diesel::update(&executor_processor_bind)
-                .set(&executor_processor_bind)
-                .execute(&conn)?;
-
             Ok(task_packages)
         })
         .await?;
 
-    let remove_task_units: JoinAll<_> = task_packages
-        .iter()
-        .filter_map(|&(ref t, (ref host, ref token))| {
-            let executor_host = "http://".to_string() + (host.deref()) + "/api/task/remove";
+    let task_ids = task_packages.iter().map(|&(ref t, _)| t.id);
+
+    let remove_task_units: JoinAll<_> = task_ids
+        .filter_map(|task_id| {
+            let executor_host =
+                "http://".to_string() + (older_executor_host.deref()) + "/api/task/remove";
             TaskUnit::default()
-                .set_task_id(t.id)
+                .set_task_id(task_id)
                 .set_time(get_timestamp())
-                .sign(Some(token))
+                .sign(Some(older_executor_token.deref()))
                 .map(|t| (t, executor_host))
                 .ok()
         })
@@ -155,8 +182,6 @@ async fn pre_update_executor_processor_bind(
                 .post(executor_host)
                 .send_json(&signed_task_unit)
         })
-        .collect::<Vec<_>>()
-        .into_iter()
         .collect();
 
     let create_task_packages: JoinAll<_> = task_packages
@@ -170,11 +195,13 @@ async fn pre_update_executor_processor_bind(
                 .post(executor_host)
                 .send_json(&signed_task_package)
         })
-        .collect::<Vec<_>>()
-        .into_iter()
         .collect();
 
-    join(remove_task_units, create_task_packages).await;
+    join(
+        handle_response::<UnifiedResponseMessages<()>>(remove_task_units),
+        handle_response::<UnifiedResponseMessages<()>>(create_task_packages),
+    )
+    .await;
     Ok(())
 }
 #[post("/api/executor_processor_bind/delete")]

@@ -61,7 +61,8 @@ async fn show_executor_processors(
                 Ok(PaginateData::<model::ExecutorProcessor>::default()
                     .set_data_source(executor_processors)
                     .set_page_size(per_page)
-                    .set_total(count))
+                    .set_total(count)
+                    .set_state_desc::<state::executor_processor::State>())
             })
             .await,
         ));

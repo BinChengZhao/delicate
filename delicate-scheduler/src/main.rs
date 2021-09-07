@@ -76,7 +76,7 @@ async fn main() -> AnyResut<()> {
             .app_data(shared_delay_timer.clone())
             .app_data(shared_connection_pool.clone())
             .app_data(shared_scheduler_meta_info.clone());
-            
+
         #[cfg(AUTH_CASBIN)]
         let app = app.wrap(CasbinService);
 

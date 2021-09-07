@@ -34,7 +34,9 @@ async fn show_user_login_log(
                 Ok(PaginateData::<model::UserLoginLog>::default()
                     .set_data_source(front_end_user_login_log)
                     .set_page_size(per_page)
-                    .set_total(count))
+                    .set_total(count)
+                    .set_state_desc::<state::user_login_log::LoginCommand>()
+                    .set_state_desc::<state::user_login_log::LoginType>())
             })
             .await,
         ));

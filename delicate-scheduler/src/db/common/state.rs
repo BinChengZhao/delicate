@@ -1,5 +1,11 @@
+#[allow(unused_imports)]
+pub use crate::prelude::*;
+
 pub mod task {
+
+    use super::*;
     #[allow(dead_code)]
+    #[derive(Copy, Clone, StrumToString, Debug, EnumIter, AsRefStr, IntoStaticStr)]
     pub enum State {
         NotEnabled = 1,
         Enabled = 2,
@@ -8,8 +14,10 @@ pub mod task {
 }
 
 pub mod task_log {
+    use super::*;
 
     #[allow(dead_code)]
+    #[derive(Copy, Clone, StrumToString, Debug, EnumIter, AsRefStr, IntoStaticStr)]
     pub enum State {
         Running = 1,
         NormalEnding = 2,
@@ -34,8 +42,10 @@ pub mod task_log {
 }
 
 pub mod user {
+    use super::*;
 
     #[allow(dead_code)]
+    #[derive(Copy, Clone, StrumToString, Debug, EnumIter, AsRefStr, IntoStaticStr)]
     pub enum State {
         Health = 1,
         Forbidden = 2,
@@ -43,7 +53,10 @@ pub mod user {
 }
 
 pub mod user_auth {
+    use super::*;
+
     #[allow(dead_code)]
+    #[derive(Copy, Clone, StrumToString, Debug, EnumIter, AsRefStr, IntoStaticStr)]
     pub enum State {
         Health = 1,
         Forbidden = 2,
@@ -51,7 +64,10 @@ pub mod user_auth {
 }
 
 pub mod executor_processor {
+    use super::*;
+
     #[allow(dead_code)]
+    #[derive(Copy, Clone, StrumToString, Debug, EnumIter, AsRefStr, IntoStaticStr)]
     pub enum State {
         NotEnabled = 1,
         Enabled = 2,
@@ -60,7 +76,10 @@ pub mod executor_processor {
 }
 
 pub mod executor_group {
+    use super::*;
+
     #[allow(dead_code)]
+    #[derive(Copy, Clone, StrumToString, Debug, EnumIter, AsRefStr, IntoStaticStr)]
     pub enum State {
         Health = 1,
         Forbidden = 2,
@@ -68,6 +87,9 @@ pub mod executor_group {
 }
 
 pub mod operation_log {
+    use super::*;
+
+    #[derive(Copy, Clone, StrumToString, Debug, EnumIter, AsRefStr, IntoStaticStr)]
 
     pub enum OperationType {
         Addition = 1,
@@ -89,8 +111,10 @@ pub mod operation_log {
 }
 
 pub mod user_login_log {
+    use super::*;
 
     #[allow(dead_code)]
+    #[derive(Copy, Clone, StrumToString, Debug, EnumIter, AsRefStr, IntoStaticStr)]
     pub enum LoginType {
         Mobile = 1,
         Email = 2,
@@ -101,6 +125,7 @@ pub mod user_login_log {
     }
 
     #[allow(dead_code)]
+    #[derive(Copy, Clone, StrumToString, Debug, EnumIter, AsRefStr, IntoStaticStr)]
     pub enum LoginCommand {
         LoginSuccess = 1,
         LogoutSuccess = 2,
@@ -108,3 +133,30 @@ pub mod user_login_log {
         Logoutfailure = 4,
     }
 }
+
+pub trait DescribeState: Into<&'static str> {
+    fn state_name() -> &'static str;
+
+    fn desc() -> HashMap<usize, &'static str>;
+}
+
+macro_rules! impl_state_desc_unify{
+    ($($target:ty => $name:expr),+) => {
+        $(impl DescribeState for $target {
+
+            fn state_name() -> &'static str
+            {
+                $name
+            }
+
+            fn desc() -> HashMap<usize, &'static str> {
+                <$target>::iter()
+                    .map(|state| (state as usize, state.into()))
+                    .collect()
+            }
+        }
+        )+
+    }
+}
+
+impl_state_desc_unify!(task::State=>"task", task_log::State=>"taskLog", user::State=>"user", user_auth::State=>"userAuth", executor_processor::State=>"executorProcessor", executor_group::State=>"executorGroup", operation_log::OperationType=>"operationType", user_login_log::LoginType=>"userLoginType", user_login_log::LoginCommand=>"userLoginCommand");
