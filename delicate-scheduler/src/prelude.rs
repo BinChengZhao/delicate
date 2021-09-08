@@ -21,7 +21,7 @@ pub(crate) use delicate_utils::consensus_message::{
     health_check as delicate_utils_health_check, task as delicate_utils_task,
     task_log as delicate_utils_task_log,
 };
-pub(crate) use delicate_utils::error::CommonError;
+pub(crate) use delicate_utils::error::{AuthServiceError, CommonError};
 pub(crate) use delicate_utils::prelude::*;
 pub(crate) use delicate_utils::uniform_data::*;
 
@@ -55,6 +55,7 @@ pub(crate) use diesel::prelude::*;
 pub(crate) use diesel::query_builder::{AsQuery, AstPass, Query, QueryFragment};
 pub(crate) use diesel::query_dsl::methods::LoadQuery;
 pub(crate) use diesel::r2d2::CustomizeConnection;
+pub(crate) use diesel::result::Error as DieselError;
 pub(crate) use diesel::sql_types;
 
 pub(crate) use actix_cors::Cors;
@@ -95,3 +96,5 @@ pub(crate) use validator::{Validate, ValidationErrors};
 // The public middleware output type.
 pub(crate) type MiddlewareFuture<T, E> =
     std::pin::Pin<Box<dyn std::future::Future<Output = Result<T, E>>>>;
+
+pub(crate) type AuthServiceResult<T> = Result<T, AuthServiceError>;

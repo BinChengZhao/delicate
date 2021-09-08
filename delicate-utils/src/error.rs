@@ -28,6 +28,20 @@ pub enum CommonError {
     DisPass(String),
     #[error("The errors reported by the framework cannot be ignored.")]
     DisAccept(#[from] ActixWebError),
+    #[error("The errors reported by the auth-service cannot be ignored.")]
+    DisAuth(#[from] AuthServiceError),
+}
+
+#[derive(ThisError, Debug)]
+pub enum AuthServiceError {
+    #[error("db connect fail.")]
+    DisConn(#[from] PoolError),
+    #[error("data query fail.")]
+    DisQuery(#[from] diesel::result::Error),
+    #[error("data blocking-query fail.")]
+    DisBlockingQuery(#[from] BlockingError<diesel::result::Error>),
+    #[error("The errors reported by the casbin is Authentication-related errors.")]
+    DisAuthCasbin(#[from] casbin::error::Error),
 }
 
 #[derive(ThisError, Debug)]

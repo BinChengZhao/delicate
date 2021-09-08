@@ -130,8 +130,8 @@ See [reference](./doc/src/reference.md) for more information.
 
 
 ## To Do List
-- [ ] I18n.
-- [ ] Permission Management.
+- [x] I18n (English & Chinese).
+- [x] Permission Management.
 - [ ] Multiple login protocols, LDAP CAS .
 - [ ] Machine resource panel, online view of processes, memory, cpu, etc.
 - [ ] Database back-end support Postgres.

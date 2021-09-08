@@ -10,6 +10,13 @@ lazy_static! {
 
     // TODO: Can be listened to by `hotwatch` for changes.
     // TODO: `redis` based publish-subscribe, do real-time permission information synchronization.
+    
+    // TODO: Adjustments for permissions, like the operation log consumer, have a unique channel that
+    // TODO: holds information about the operation and controls the flow of consumption.
+
+    // TODO: Permissions editing is optional and
+    // TODO: By default only supports initialization from the file once and does not support editing if it is not selected.
+
     pub static ref CASBIN_POLICY_CONF_PATH: String = {
             env::var("CASBIN_POLICY_CONF").expect("CASBIN_POLICY_CONF must be set")
     };
