@@ -40,7 +40,6 @@ pub(crate) use std::time::Duration;
 pub(crate) use std::time::SystemTime;
 pub(crate) use std::vec::IntoIter;
 
-pub(crate) use futures::executor::block_on as futures_block_on;
 pub(crate) use futures::future::{join, join3, ok, JoinAll, Ready};
 
 pub(crate) use cached::proc_macro::cached;
@@ -77,7 +76,7 @@ pub(crate) use awc::{JsonBody, SendClientRequest};
 
 pub(crate) use anyhow::Result as AnyResut;
 pub(crate) use async_channel::{Receiver as AsyncReceiver, Sender as AsyncSender};
-pub(crate) use async_lock::{RwLock, RwLockReadGuard, RwLockWriteGuard};
+pub(crate) use async_lock::RwLock;
 pub(crate) use delay_timer::prelude::*;
 pub(crate) use diesel::query_dsl::RunQueryDsl;
 pub(crate) use dotenv::dotenv;

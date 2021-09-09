@@ -1,6 +1,6 @@
 use super::schema::casbin_rule;
 
-#[derive(Queryable, Identifiable)]
+#[derive(Queryable, Identifiable, Clone, Debug, Serialize, Deserialize, Default)]
 #[table_name = "casbin_rule"]
 pub(crate) struct CasbinRule {
     pub id: i32,
@@ -13,7 +13,7 @@ pub(crate) struct CasbinRule {
     pub v5: String,
 }
 
-#[derive(Insertable, Clone)]
+#[derive(Insertable, Clone, Debug, Serialize, Deserialize, Default)]
 #[table_name = "casbin_rule"]
 pub(crate) struct NewCasbinRule {
     pub ptype: String,
