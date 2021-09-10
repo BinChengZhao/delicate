@@ -22,6 +22,7 @@ pub(crate) use delicate_utils::consensus_message::{
     task_log as delicate_utils_task_log,
 };
 pub(crate) use delicate_utils::error::{AuthServiceError, CommonError};
+pub(crate) use delicate_utils::helper_utils::get_unique_id_string;
 pub(crate) use delicate_utils::prelude::*;
 pub(crate) use delicate_utils::uniform_data::*;
 
@@ -80,7 +81,7 @@ pub(crate) use async_lock::RwLock;
 pub(crate) use delay_timer::prelude::*;
 pub(crate) use diesel::query_dsl::RunQueryDsl;
 pub(crate) use dotenv::dotenv;
-pub(crate) use tracing::{error, info, span, Level};
+pub(crate) use tracing::{debug, error, info, span, Level};
 pub(crate) use tracing_subscriber::FmtSubscriber;
 
 pub(crate) use ring::digest::{digest, SHA256};

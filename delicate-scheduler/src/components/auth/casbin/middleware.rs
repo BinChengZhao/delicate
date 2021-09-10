@@ -32,6 +32,7 @@ lazy_static! {
 
 }
 
+#[allow(dead_code)]
 pub(crate) async fn get_casbin_enforcer(pool: ShareData<db::ConnectionPool>) -> Enforcer {
     let adapter = DieselAdapter::new(pool);
     Enforcer::new(get_casbin_model_conf_path(), adapter)
@@ -39,6 +40,7 @@ pub(crate) async fn get_casbin_enforcer(pool: ShareData<db::ConnectionPool>) -> 
         .expect("Casbin's enforcer initialization error.")
 }
 
+#[allow(dead_code)]
 pub(crate) fn get_casbin_model_conf_path() -> &'static str {
     CASBIN_MODEL_CONF_PATH.deref().deref()
 }

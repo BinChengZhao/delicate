@@ -23,7 +23,7 @@
             "environment": [],
             "externalConsole": false,
             "MIMode": "lldb",
-            "miDebuggerPath" : "/Users/sht/.vscode/extensions/ms-vscode.cpptools-1.5.1/debugAdapters/lldb-mi/bin/lldb-mi",
+            "miDebuggerPath" : "/Users/sht/.vscode/extensions/ms-vscode.cpptools-1.6.0/debugAdapters/lldb-mi/bin/lldb-mi",
             "logging": {
                 "trace": true,
                 "engineLogging": true,
@@ -48,7 +48,7 @@
             "environment": [],
             "externalConsole": false,
             "MIMode": "lldb",
-            "miDebuggerPath" : "/Users/sht/.vscode/extensions/ms-vscode.cpptools-1.5.1/debugAdapters/lldb-mi/bin/lldb-mi",
+            "miDebuggerPath" : "/Users/sht/.vscode/extensions/ms-vscode.cpptools-1.6.0/debugAdapters/lldb-mi/bin/lldb-mi",
             "logging": {
                 "trace": true,
                 "engineLogging": true,

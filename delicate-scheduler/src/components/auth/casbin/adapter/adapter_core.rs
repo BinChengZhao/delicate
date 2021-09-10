@@ -11,6 +11,7 @@ pub struct DieselAdapter {
 }
 
 impl DieselAdapter {
+    #[allow(dead_code)]
     pub fn new(pool: ShareData<db::ConnectionPool>) -> Self {
         Self {
             pool,

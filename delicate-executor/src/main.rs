@@ -232,9 +232,13 @@ async fn main() -> AnyResult<()> {
     // Loads environment variables.
     dotenv().ok();
 
+    let log_level: Level =
+        FromStr::from_str(&env::var("LOG_LEVEL").unwrap_or_else(|_| String::from("info")))
+            .expect("Log level acquired fail.");
+
     FmtSubscriber::builder()
         // will be written to stdout.
-        .with_max_level(Level::INFO)
+        .with_max_level(log_level)
         .with_thread_names(true)
         // completes the builder.
         .init();
@@ -285,6 +289,13 @@ fn launch_status_reporter(
             let mut scheduler: Option<BindRequest> = None;
 
             loop {
+                let _span_ = span!(
+                    Level::INFO,
+                    "status-reporter",
+                    log_id = get_unique_id_string().deref()
+                )
+                .entered();
+
                 {
                     let scheduler_token = shared_security_conf.get_bind_scheduler_token_ref().await;
                     if scheduler_token.as_ref() != token.as_ref() {
@@ -338,7 +349,12 @@ fn launch_status_reporter(
                     if let Ok(executor_event_collection) =
                         Into::<ExecutorEventCollection>::into(events).sign(token.as_deref())
                     {
-                        RequestClient::new()
+                        debug!(
+                            "Event collection - {:?}",
+                            &executor_event_collection.event_collection
+                        );
+
+                        if let Ok(mut response) = RequestClient::new()
                             .post(&scheduler_ref.scheduler_host)
                             .send_json(&executor_event_collection)
                             .await
@@ -348,7 +364,9 @@ fn launch_status_reporter(
                                     e, &scheduler_ref, &executor_event_collection.event_collection
                                 )
                             })
-                            .ok();
+                        {
+                            debug!("delicate-schduler response: {:?}", response.body().await)
+                        }
                     }
                 }
             }

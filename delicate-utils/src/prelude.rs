@@ -4,7 +4,7 @@ pub use crate::consensus_message::security::{
     self, make_signature, verify_signature_by_raw_data, SecurityLevel,
 };
 pub use crate::consensus_message::service_binding;
-pub use crate::helper_structure::*;
+pub use crate::helper_utils::*;
 
 pub(crate) use crate::error::*;
 
@@ -31,6 +31,8 @@ pub(crate) use thiserror::Error as ThisError;
 pub(crate) use rsa::{
     errors as ras_error, hash, pem, Hash, PaddingScheme, PublicKey, RSAPrivateKey, RSAPublicKey,
 };
+
+pub(crate) use uuid::Uuid;
 
 pub(crate) use std::collections::HashMap;
 pub(crate) use std::convert::{TryFrom, TryInto};

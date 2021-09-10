@@ -36,9 +36,13 @@ async fn main() -> AnyResut<()> {
     let scheduler_front_end_domain: String = env::var("SCHEDULER_FRONT_END_DOMAIN")
         .expect("Without `SCHEDULER_FRONT_END_DOMAIN` set in .env");
 
+    let log_level: Level =
+        FromStr::from_str(&env::var("LOG_LEVEL").unwrap_or_else(|_| String::from("info")))
+            .expect("Log level acquired fail.");
+
     FmtSubscriber::builder()
         // will be written to stdout.
-        .with_max_level(Level::INFO)
+        .with_max_level(log_level)
         .with_thread_names(true)
         // completes the builder.
         .init();

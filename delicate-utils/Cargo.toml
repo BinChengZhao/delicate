@@ -21,6 +21,7 @@ actix-session = "0.4.1"
 serde_json = "^1.0.62"
 sysinfo = "^0.16.5"
 derive_more = "^0.99.14"
+uuid = {version = "^0.8.2", features = ["v4"]}
 hex = {version = "^0.4", features = ["serde"]}
 serde = { version = "^1.0", features = ["derive"] }
 delay_timer = {version = "^0.8.0", features = ["full"]}
