@@ -18,7 +18,8 @@ import {
   BoxPlotOutlined,
   CheckCircleOutlined,
   StopOutlined,
-  ReadOutlined
+  ReadOutlined,
+  WarningOutlined
 } from '@ant-design/icons'
 
 export default {
@@ -34,6 +35,7 @@ export default {
   'executor-o': <BoxPlotOutlined />,
   'sure-o': <CheckCircleOutlined />,
   'deny-o': <StopOutlined />,
+  'warning-o': <WarningOutlined />,
   message: <MessageOutlined />,
   team: <TeamOutlined />,
   dashboard: <DashboardOutlined />,

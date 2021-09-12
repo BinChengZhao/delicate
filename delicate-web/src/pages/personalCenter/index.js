@@ -1,7 +1,7 @@
 import React, { PureComponent } from 'react'
 import { connect } from 'react-redux'
 import { Page } from '../../components'
-import { Descriptions, Form, Input, Modal, Select } from 'antd'
+import { Descriptions, Form, Input, message, Modal } from 'antd'
 import store from 'store'
 import { t } from '@lingui/macro'
 
@@ -39,8 +39,12 @@ class personalCenter extends PureComponent {
     const { dispatch } = this.props
     const values = this.formRef.current.getFieldsValue()
     values.identity_type = 3
+    values.confirmPassword = null
     dispatch({ type: `user/updatePassword`, payload: values }).then((ret) => {
-      if (!ret.code) this.toggleModal()
+      if (!ret.code) {
+        message.warning(t`Success`)
+        this.toggleModal()
+      }
     })
   }
 
