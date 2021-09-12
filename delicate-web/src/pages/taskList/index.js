@@ -48,6 +48,7 @@ class Task extends PureComponent {
         break
       case 'copy':
         title = t`Copy`
+        item = currentItem
         break
       case 'update':
         title = t`Update`
@@ -91,13 +92,13 @@ class Task extends PureComponent {
           payload: { task_id: id }
         }).then(() => this.handleRefresh())
       },
-      onEditItem: (item) => {
+      onEditItem: (item, modalType = 'update') => {
         const frequency = JSON.parse(item.frequency)
         const status = item.status ? 2 : 1
         const tag = _.isEmpty(item.tag) ? [] : item.tag.split(',')
         dispatch({
           type: `${NAMESPACE}/showModal`,
-          payload: { modalType: 'update', currentItem: { ...item, frequency, status, tag } }
+          payload: { modalType, currentItem: { ...item, frequency, status, tag } }
         })
       },
       onTaskRun: (id) => {

@@ -1,9 +1,9 @@
-import React, { PureComponent, Fragment } from 'react'
+import React, { Fragment, PureComponent } from 'react'
 import PropTypes from 'prop-types'
 import { connect } from 'umi'
-import { Button, Row, Input, Form } from 'antd'
+import { Button, Form, Input, Row } from 'antd'
 import { GlobalFooter } from 'components'
-import { GithubOutlined } from '@ant-design/icons'
+import { GithubOutlined, KeyOutlined, UserOutlined } from '@ant-design/icons'
 import { t, Trans } from '@lingui/macro'
 
 import { setLocale } from 'utils'
@@ -48,10 +48,10 @@ class Login extends PureComponent {
           </div>
           <Form onFinish={handleOk}>
             <FormItem name="account" rules={[{ required: true }]} hasFeedback>
-              <Input placeholder={t`Username`} />
+              <Input prefix={<UserOutlined />} placeholder={t`Username`} />
             </FormItem>
             <FormItem name="password" rules={[{ required: true }]} hasFeedback>
-              <Input type="password" placeholder={t`Password`} />
+              <Input prefix={<KeyOutlined />} type="password" placeholder={t`Password`} />
             </FormItem>
             <Row>
               <Button type="primary" htmlType="submit" loading={loading.effects.login}>

@@ -103,6 +103,7 @@
   "Machine Id": "机器节点ID",
   "Delete Node": "删除节点",
   "Copy Node":"复制节点",
+  "Copy Task":"复制任务",
   "Activate Node": "激活节点",
   "Node Name":"节点名称",
   "Node Id": "节点ID",

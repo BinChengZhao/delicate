@@ -19,6 +19,7 @@ import { t, Trans } from '@lingui/macro'
 import { connect } from 'umi'
 import PropTypes from 'prop-types'
 import moment from 'moment'
+import * as u from '../../../utils/data'
 
 const { Option } = Select
 const STATUS_RUN_ING = 1
@@ -58,14 +59,7 @@ class TaskLog extends PureComponent {
     }
     const initFlitter = this.initFilter()
     const taskId = location.state.id || null
-    const timeRange = {
-      start_time: null,
-      end_time: null
-    }
-    if (values.time_range) {
-      timeRange.start_time = parseInt(moment(values.time_range[0]._d).valueOf() / 1000)
-      timeRange.end_time = parseInt(moment(values.time_range[1]._d).valueOf() / 1000)
-    }
+    const timeRange = u.getDatePikerRange(values.time_range)
     delete values.time_range
     dispatch({
       type: `taskModel/taskLogList`,
