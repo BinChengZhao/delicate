@@ -46,7 +46,7 @@ class operateLogs extends PureComponent {
       },
       {
         title: t`Operate Type`,
-        dataIndex: 'operation_type'
+        dataIndex: 'operation_type_desc'
       },
       {
         title: t`Table Id`,

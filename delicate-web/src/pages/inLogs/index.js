@@ -48,11 +48,11 @@ class loginLogs extends PureComponent {
       },
       {
         title: t`Login Type`,
-        dataIndex: 'login_type'
+        dataIndex: 'login_type_desc'
       },
       {
         title: t`Login Status`,
-        dataIndex: 'command'
+        dataIndex: 'command_desc'
       },
       {
         title: t`Last Ip`,
