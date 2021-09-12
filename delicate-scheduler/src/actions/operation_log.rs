@@ -12,7 +12,7 @@ async fn show_operation_log(
 ) -> HttpResponse {
     if let Ok(conn) = pool.get() {
         return HttpResponse::Ok().json(Into::<
-            UnifiedResponseMessages<PaginateData<model::OperationLog>>,
+            UnifiedResponseMessages<PaginateData<model::FrontEndOperationLog>>,
         >::into(
             web::block::<_, _, diesel::result::Error>(move || {
                 let query_builder = model::OperationLogQueryBuilder::query_all_columns();
@@ -30,9 +30,9 @@ async fn show_operation_log(
                     .query_filter(count_builder)
                     .get_result::<i64>(&conn)?;
 
-                let front_end_operation_log: Vec<model::OperationLog> =
-                    operation_log.into_iter().collect();
-                Ok(PaginateData::<model::OperationLog>::default()
+                let front_end_operation_log: Vec<model::FrontEndOperationLog> =
+                    operation_log.into_iter().map(|log| log.into()).collect();
+                Ok(PaginateData::<model::FrontEndOperationLog>::default()
                     .set_data_source(front_end_operation_log)
                     .set_page_size(per_page)
                     .set_total(count)
@@ -42,7 +42,9 @@ async fn show_operation_log(
         ));
     }
 
-    HttpResponse::Ok().json(UnifiedResponseMessages::<PaginateData<model::OperationLog>>::error())
+    HttpResponse::Ok().json(UnifiedResponseMessages::<
+        PaginateData<model::FrontEndOperationLog>,
+    >::error())
 }
 
 #[post("/api/operation_log/detail")]

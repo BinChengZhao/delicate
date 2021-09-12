@@ -12,8 +12,42 @@ pub struct UserLoginLog {
     lastip: String,
     created_time: NaiveDateTime,
     user_name: String,
-
 }
+
+#[derive(Debug, Clone, Serialize)]
+
+pub struct FrontEndUserLoginLog {
+    id: i64,
+    user_id: u64,
+    login_type: u8,
+    login_type_desc: &'static str,
+    command: u8,
+    command_desc: &'static str,
+    lastip: String,
+    created_time: NaiveDateTime,
+    user_name: String,
+}
+
+impl From<UserLoginLog> for FrontEndUserLoginLog{
+    fn from(log: UserLoginLog) -> Self {
+        let UserLoginLog{id, user_id, login_type, command, lastip, created_time, user_name} = log;
+        let login_type_desc = Into::<state::user_login_log::LoginType>::into(login_type as i16).into();
+        let command_desc = Into::<state::user_login_log::LoginCommand>::into(command as i16).into();
+
+        FrontEndUserLoginLog {
+            id,
+            user_id,
+            login_type,
+            login_type_desc,
+            command,
+            command_desc,
+            lastip,
+            created_time,
+            user_name,
+        }
+    }
+}
+
 
 #[derive(Insertable, Debug, Default, Serialize, Deserialize)]
 #[table_name = "user_login_log"]
