@@ -11,7 +11,7 @@ async fn show_user_login_log(
 ) -> HttpResponse {
     if let Ok(conn) = pool.get() {
         return HttpResponse::Ok().json(Into::<
-            UnifiedResponseMessages<PaginateData<model::UserLoginLog>>,
+            UnifiedResponseMessages<PaginateData<model::FrontEndUserLoginLog>>,
         >::into(
             web::block::<_, _, diesel::result::Error>(move || {
                 let query_builder = model::UserLoginLogQueryBuilder::query_all_columns();
@@ -29,9 +29,10 @@ async fn show_user_login_log(
                     .query_filter(count_builder)
                     .get_result::<i64>(&conn)?;
 
-                let front_end_user_login_log: Vec<model::UserLoginLog> =
-                    user_login_log.into_iter().collect();
-                Ok(PaginateData::<model::UserLoginLog>::default()
+                let front_end_user_login_log: Vec<model::FrontEndUserLoginLog> =
+                    user_login_log.into_iter().map(|log| log.into()).collect();
+
+                Ok(PaginateData::<model::FrontEndUserLoginLog>::default()
                     .set_data_source(front_end_user_login_log)
                     .set_page_size(per_page)
                     .set_total(count)
@@ -42,5 +43,7 @@ async fn show_user_login_log(
         ));
     }
 
-    HttpResponse::Ok().json(UnifiedResponseMessages::<PaginateData<model::UserLoginLog>>::error())
+    HttpResponse::Ok().json(UnifiedResponseMessages::<
+        PaginateData<model::FrontEndUserLoginLog>,
+    >::error())
 }
