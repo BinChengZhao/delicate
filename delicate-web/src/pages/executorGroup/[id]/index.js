@@ -209,22 +209,20 @@ class groupDetail extends Component {
 
         <Modal title={modalProps.title} visible={visible} onOk={this.handleOk} onCancel={() => this.toggleBindModal()}>
           <Form ref={this.formRef} name="control-ref" layout="horizontal">
-            <FormItem name={modalProps.name} label="绑定执行器" hasFeedback {...formItemLayout}>
-              <Select
-                mode={modalProps.mode}
-                placeholder="请选择执行器ID"
-                rules={[{ required: true }]}
-                onFocus={() => this.getGroupBindList()}
-              >
+            {modalProps.type === 'update' ? (
+              <FormItem name="name" label={t`Node Name`} hasFeedback {...formItemLayout}>
+                <Input />
+              </FormItem>
+            ) : null}
+            <FormItem name={modalProps.name} label={t`Binding Node`} hasFeedback {...formItemLayout}>
+              <Select mode={modalProps.mode} rules={[{ required: true }]} onFocus={() => this.getGroupBindList()}>
                 {/* eslint-disable-next-line array-callback-return */}
                 {bindList.map((point, i) => {
-                  if (bindings.find((bind) => bind.executor_id === point.id) === undefined) {
-                    return (
-                      <Select.Option key={parseInt(point.id)} value={parseInt(point.id)}>
-                        {point.title}
-                      </Select.Option>
-                    )
-                  }
+                  return (
+                    <Select.Option key={parseInt(point.id)} value={parseInt(point.id)}>
+                      {point.title}
+                    </Select.Option>
+                  )
                 })}
               </Select>
             </FormItem>
