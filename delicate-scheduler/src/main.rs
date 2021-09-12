@@ -40,6 +40,11 @@ async fn main() -> AnyResut<()> {
         FromStr::from_str(&env::var("LOG_LEVEL").unwrap_or_else(|_| String::from("info")))
             .expect("Log level acquired fail.");
 
+    // TODO: Prepare to use `flexi_logger` to handle the tracing logs.
+    // https://docs.rs/flexi_logger/0.19.3/flexi_logger/trc/index.html
+    // https://docs.rs/flexi_logger/0.19.3/flexi_logger/code_examples/index.html
+    // Boost `tracing` in the project and request the associated request ID.
+    // https://crates.io/crates/flexi_logger, Re-read the documentation.
     FmtSubscriber::builder()
         // will be written to stdout.
         .with_max_level(log_level)
