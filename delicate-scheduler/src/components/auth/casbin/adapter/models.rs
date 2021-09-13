@@ -1,9 +1,9 @@
-use super::schema::casbin_rule;
+use crate::db::schema::casbin_auth;
 
 #[derive(Queryable, Identifiable, Clone, Debug, Serialize, Deserialize, Default)]
-#[table_name = "casbin_rule"]
+#[table_name = "casbin_auth"]
 pub(crate) struct CasbinRule {
-    pub id: i32,
+    pub id: u64,
     pub ptype: String,
     pub v0: String,
     pub v1: String,
@@ -14,7 +14,7 @@ pub(crate) struct CasbinRule {
 }
 
 #[derive(Insertable, Clone, Debug, Serialize, Deserialize, Default)]
-#[table_name = "casbin_rule"]
+#[table_name = "casbin_auth"]
 pub(crate) struct NewCasbinRule {
     pub ptype: String,
     pub v0: String,
