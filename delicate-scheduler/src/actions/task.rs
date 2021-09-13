@@ -156,7 +156,6 @@ pub async fn pre_update_task_row(
 > {
     use db::schema::{executor_processor, executor_processor_bind, task_bind};
     use model::BindProcessor;
-    use std::collections::HashSet;
 
     let task_binds_pair = web::block::<_, _, diesel::result::Error>(move || {
         conn.transaction(|| {

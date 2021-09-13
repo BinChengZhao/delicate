@@ -27,7 +27,7 @@ pub(crate) use delicate_utils::prelude::*;
 pub(crate) use delicate_utils::uniform_data::*;
 
 pub(crate) use std::cell::RefCell;
-pub(crate) use std::collections::HashMap;
+pub(crate) use std::collections::{HashMap, HashSet};
 pub(crate) use std::convert::{AsRef, TryFrom};
 pub(crate) use std::env;
 pub(crate) use std::fmt::Debug;

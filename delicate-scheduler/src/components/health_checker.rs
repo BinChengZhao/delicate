@@ -18,17 +18,24 @@ pub(crate) async fn loop_health_check(pool: ShareData<db::ConnectionPool>) {
 }
 
 async fn health_check(conn: db::PoolConnection) -> Result<(), CommonError> {
-    let executor_packages = web::block::<_, _, diesel::result::Error>(move || {
-        executor_processor::table
-            .select((executor_processor::host, executor_processor::token))
+    let (executor_packages, conn) = web::block::<_, _, diesel::result::Error>(move || {
+        let executors = executor_processor::table
+            .select((
+                executor_processor::id,
+                executor_processor::host,
+                executor_processor::token,
+            ))
             .filter(executor_processor::status.eq(state::executor_processor::State::Enabled as i16))
-            .load::<(String, String)>(&conn)
+            .load::<(i64, String, String)>(&conn)?;
+
+        Ok((executors, conn))
     })
-    .await?
-    .into_iter();
+    .await?;
+    let all_executor_ids: HashSet<i64> = executor_packages.iter().map(|(id, _, _)| *id).collect();
 
     let request_all: JoinAll<SendClientRequest> = executor_packages
-        .filter_map(|(executor_host, executor_token)| {
+        .into_iter()
+        .filter_map(|(_, executor_host, executor_token)| {
             let message = delicate_utils_executor_processor::HealthScreenUnit::default();
 
             let executor_host =
@@ -50,9 +57,33 @@ async fn health_check(conn: db::PoolConnection) -> Result<(), CommonError> {
         .collect();
 
     let _span_ = span!(Level::INFO, "health-check").entered();
-    handle_response::<UnifiedResponseMessages<delicate_utils_health_check::HealthCheckPackage>>(
-        request_all,
-    )
+
+    let health_check_packages = handle_response::<
+        UnifiedResponseMessages<delicate_utils_health_check::HealthCheckPackage>,
+    >(request_all)
     .await;
+
+    let health_processors: HashSet<i64> = health_check_packages
+        .iter()
+        .map(|e| e.get_data_ref().bind_request.executor_processor_id)
+        .collect();
+
+    let abnormal_processor: Vec<i64> = all_executor_ids
+        .difference(&health_processors)
+        .copied()
+        .collect();
+
+    if !abnormal_processor.is_empty() {
+        web::block::<_, _, diesel::result::Error>(move || {
+            diesel::update(
+                executor_processor::table
+                    .filter(executor_processor::id.eq_any(&abnormal_processor[..])),
+            )
+            .set(executor_processor::status.eq(state::executor_processor::State::Abnormal as i16))
+            .execute(&conn)
+        })
+        .await?;
+    }
+
     Ok(())
 }
