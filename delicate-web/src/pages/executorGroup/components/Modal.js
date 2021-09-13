@@ -92,8 +92,8 @@ class ExecutorGroupModal extends PureComponent {
             <Select mode="tags" allowClear style={{ width: '100%' }} placeholder={t`Support custom labels`} />
           </FormItem>
           {modalType === 'create' ? (
-            <FormItem name="executor_ids" label="绑定执行器" hasFeedback {...formItemLayout}>
-              <Select mode={'multiple'} placeholder="请选择执行器ID" onFocus={() => this.getGroupBindList()}>
+            <FormItem name="executor_ids" label={t`Binding Node`} hasFeedback {...formItemLayout}>
+              <Select mode={'multiple'} onFocus={() => this.getGroupBindList()}>
                 {bindList.map((point, i) => {
                   return (
                     <Select.Option key={parseInt(point.id)} value={parseInt(point.id)}>

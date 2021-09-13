@@ -19,7 +19,7 @@ class List extends PureComponent {
   }
 
   menu(row) {
-    const { onTaskRun, onTaskSuspend, onTaskAdvance } = this.props
+    const { onTaskRun, onTaskSuspend, onTaskAdvance, onEditItem } = this.props
 
     return (
       <Menu>
@@ -46,6 +46,7 @@ class List extends PureComponent {
             {t`Delete Task`}
           </Menu.Item>
         </Popconfirm>
+        <Menu.Item key={7} onClick={() => onEditItem(row, 'copy')}>{t`Copy Task`}</Menu.Item>
       </Menu>
     )
   }
@@ -81,11 +82,12 @@ class List extends PureComponent {
         width: 100,
         key: 'status',
         render: (text) => {
-          return text === STATUS_ENABLE ? (
-            <CheckCircleOutlined style={{ color: 'green', fontSize: '18px' }} />
-          ) : (
-            <StopOutlined style={{ color: 'red', fontSize: '18px' }} />
-          )
+          switch (text) {
+            case 1:
+              return <StopOutlined style={{ color: 'red', fontSize: '18px' }} />
+            case 2:
+              return <CheckCircleOutlined style={{ color: 'green', fontSize: '18px' }} />
+          }
         }
       },
       {
