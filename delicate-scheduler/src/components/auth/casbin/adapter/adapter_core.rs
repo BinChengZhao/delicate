@@ -1,4 +1,5 @@
-use super::{actions as adapter, models::*};
+use super::actions as adapter;
+use crate::db::model::casbin_rule::*;
 use crate::prelude::*;
 
 use actix_web::web::block as spawn_blocking;
@@ -50,20 +51,20 @@ pub(crate) fn save_policy_line(ptype: &str, rule: &[String]) -> Option<NewCasbin
     Some(new_rule)
 }
 
-pub(crate) fn load_policy_line(casbin_auth: &CasbinRule) -> Option<Vec<String>> {
-    if casbin_auth.ptype.chars().next().is_some() {
-        return normalize_policy(casbin_auth);
+pub(crate) fn load_policy_line(casbin_rule: &CasbinRule) -> Option<Vec<String>> {
+    if casbin_rule.ptype.chars().next().is_some() {
+        return normalize_policy(casbin_rule);
     }
 
     None
 }
 
 pub(crate) fn load_filtered_policy_line(
-    casbin_auth: &CasbinRule,
+    casbin_rule: &CasbinRule,
     f: &Filter<'_>,
 ) -> Option<(bool, Vec<String>)> {
-    if let Some(sec) = casbin_auth.ptype.chars().next() {
-        if let Some(policy) = normalize_policy(casbin_auth) {
+    if let Some(sec) = casbin_rule.ptype.chars().next() {
+        if let Some(policy) = normalize_policy(casbin_rule) {
             let mut is_filtered = true;
             if sec == 'p' {
                 for (i, rule) in f.p.iter().enumerate() {
@@ -87,14 +88,14 @@ pub(crate) fn load_filtered_policy_line(
     None
 }
 
-fn normalize_policy(casbin_auth: &CasbinRule) -> Option<Vec<String>> {
+fn normalize_policy(casbin_rule: &CasbinRule) -> Option<Vec<String>> {
     let mut auth_service_result = vec![
-        &casbin_auth.v0,
-        &casbin_auth.v1,
-        &casbin_auth.v2,
-        &casbin_auth.v3,
-        &casbin_auth.v4,
-        &casbin_auth.v5,
+        &casbin_rule.v0,
+        &casbin_rule.v1,
+        &casbin_rule.v2,
+        &casbin_rule.v3,
+        &casbin_rule.v4,
+        &casbin_rule.v5,
     ];
 
     while let Some(last) = auth_service_result.last() {
@@ -124,12 +125,12 @@ impl Adapter for DieselAdapter {
             .await
             .map_err(|e| casbin::error::AdapterError(Box::new(e)))?;
 
-        for casbin_auth in &rules {
-            let rule = load_policy_line(casbin_auth);
+        for casbin_rule in &rules {
+            let rule = load_policy_line(casbin_rule);
 
-            if let Some(ref sec) = casbin_auth.ptype.chars().next().map(|x| x.to_string()) {
+            if let Some(ref sec) = casbin_rule.ptype.chars().next().map(|x| x.to_string()) {
                 if let Some(t1) = m.get_mut_model().get_mut(sec) {
-                    if let Some(t2) = t1.get_mut(&casbin_auth.ptype) {
+                    if let Some(t2) = t1.get_mut(&casbin_rule.ptype) {
                         if let Some(rule) = rule {
                             t2.get_mut_policy().insert(rule);
                         }
@@ -166,15 +167,15 @@ impl Adapter for DieselAdapter {
             .await
             .map_err(|e| casbin::error::AdapterError(Box::new(e)))?;
 
-        for casbin_auth in &rules {
-            let rule = load_filtered_policy_line(casbin_auth, &f);
+        for casbin_rule in &rules {
+            let rule = load_filtered_policy_line(casbin_rule, &f);
 
             if let Some((is_filtered, rule)) = rule {
                 if is_filtered {
                     self.is_filtered = is_filtered;
-                    if let Some(ref sec) = casbin_auth.ptype.chars().next().map(|x| x.to_string()) {
+                    if let Some(ref sec) = casbin_rule.ptype.chars().next().map(|x| x.to_string()) {
                         if let Some(t1) = m.get_mut_model().get_mut(sec) {
-                            if let Some(t2) = t1.get_mut(&casbin_auth.ptype) {
+                            if let Some(t2) = t1.get_mut(&casbin_rule.ptype) {
                                 t2.get_mut_policy().insert(rule);
                             }
                         }

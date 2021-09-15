@@ -36,7 +36,8 @@ diesel = { version = "^1.4.6", features = ["postgres", "mysql", "extras", "r2d2"
 dotenv = "^0.15.0"
 futures = "^0.3.14"
 lazy_static = "1.4.0"
-redis = { version = "0.21.2", features = ["r2d2", "connection-manager", "tokio-comp"] }
+# TODO: This(redis-version) must be changed when upgrading to actix-web4.
+redis = { version = "= 0.17.0", features = ["connection-manager", "tokio-comp"] }
 ring = "^0.16.20"
 rsa = { version = "^0.4.0", features = ["std", "pem" ,"serde"] }
 sysinfo = "^0.16.5"

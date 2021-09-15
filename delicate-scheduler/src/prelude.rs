@@ -1,6 +1,7 @@
 #[allow(unused_imports)]
 pub(crate) use super::components::auth::casbin::*;
 pub(crate) use super::components::base::{SchedulerMetaInfo, SharedSchedulerMetaInfo};
+pub(crate) use super::components::auth::casbin::casbin_rule_consumer::handle_event_for_watcher;
 pub(crate) use super::components::health_checker::loop_health_check;
 pub(crate) use super::components::helper::handle_response;
 pub(crate) use super::components::operation_log_consumer::{
@@ -46,7 +47,9 @@ pub(crate) use futures::future::{join, join3, ok, JoinAll, Ready};
 pub(crate) use cached::proc_macro::cached;
 pub(crate) use cached::TimedSizedCache;
 pub(crate) use casbin::prelude::*;
-pub(crate) use casbin::Enforcer;
+pub(crate) use casbin::{
+    Enforcer, EventData as CasbinEventData, RbacApi, Watcher as CasbinWatcher,
+};
 
 pub(crate) use chrono::{DateTime, Duration as ChronoDuration, Local, NaiveDateTime, Timelike};
 

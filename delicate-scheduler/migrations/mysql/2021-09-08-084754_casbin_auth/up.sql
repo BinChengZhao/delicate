@@ -1,6 +1,6 @@
 -- Your SQL goes here
 
-CREATE TABLE casbin_auth (
+CREATE TABLE casbin_rule (
 `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'Self-incrementing id',
 `ptype` varchar(12) NOT NULL DEFAULT '' COMMENT 'ptype for casbin',
 `v0` varchar(12) NOT NULL DEFAULT '' COMMENT 'Dynamic fields for casbin, adapted to the model',

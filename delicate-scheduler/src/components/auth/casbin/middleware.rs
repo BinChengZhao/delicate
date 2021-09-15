@@ -32,12 +32,29 @@ lazy_static! {
 
 }
 
+pub(crate) struct CasbinGuard;
+
+impl CasbinWatcher for CasbinGuard {
+    fn set_update_callback(&mut self, _cb: Box<dyn FnMut() + Send + Sync>) {
+        error!(target:"set_update_callback", "unreachable.");
+    }
+
+    fn update(&mut self, d: EventData) {
+        info!("CasbinGuard: {}", &d);
+        handle_event_for_watcher(d);
+    }
+}
+
 #[allow(dead_code)]
 pub(crate) async fn get_casbin_enforcer(pool: ShareData<db::ConnectionPool>) -> Enforcer {
     let adapter = DieselAdapter::new(pool);
-    Enforcer::new(get_casbin_model_conf_path(), adapter)
+    let mut enforcer = Enforcer::new(get_casbin_model_conf_path(), adapter)
         .await
-        .expect("Casbin's enforcer initialization error.")
+        .expect("Casbin's enforcer initialization error.");
+
+    enforcer.set_watcher(Box::new(CasbinGuard));
+
+    enforcer
 }
 
 #[allow(dead_code)]
