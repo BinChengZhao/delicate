@@ -92,7 +92,7 @@ pub struct CasbinAuthMiddleware<S> {
     service: Rc<RefCell<S>>,
 }
 
-const WHITE_LIST: [&str; 8] = [
+const WHITE_LIST: [&str; 9] = [
     "/api/tasks_state/one_day",
     "/api/user/login",
     "/api/user/logout",
@@ -101,6 +101,7 @@ const WHITE_LIST: [&str; 8] = [
     "/api/executor/list",
     "/api/user/change_password",
     "/api/task_logs/event_trigger",
+    "/api/casbin/test",
 ];
 
 impl<S, B> Service for CasbinAuthMiddleware<S>

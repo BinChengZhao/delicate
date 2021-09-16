@@ -66,7 +66,12 @@ async fn main() -> AnyResut<()> {
     let shared_enforcer = ShareData::new(RwLock::new(enforcer));
 
     // All ready work when the delicate-application starts.
-    launch_ready_operation(shared_connection_pool.clone()).await;
+    launch_ready_operation(
+        shared_connection_pool.clone(),
+        #[cfg(AUTH_CASBIN)]
+        shared_enforcer.clone(),
+    )
+    .await;
 
     let result = HttpServer::new(move || {
         let cors = Cors::default()
@@ -107,9 +112,18 @@ async fn main() -> AnyResut<()> {
 }
 
 // All ready work when the delicate-application starts.
-async fn launch_ready_operation(pool: ShareData<db::ConnectionPool>) {
+async fn launch_ready_operation(
+    pool: ShareData<db::ConnectionPool>,
+    #[cfg(AUTH_CASBIN)] enforcer: ShareData<RwLock<Enforcer>>,
+) {
     launch_health_check(pool.clone());
     launch_operation_log_consumer(pool);
+
+    // When the delicate starts, it checks if the resource acquisition is normal.
+    let redis_url = env::var("REDIS_URL").expect("The redis url could not be acquired.");
+    let redis_client = redis::Client::open(redis_url)
+        .expect("The redis client resource could not be initialized.");
+    launch_casbin_rule_events_consumer(redis_client, enforcer);
 }
 
 // Heartbeat checker
