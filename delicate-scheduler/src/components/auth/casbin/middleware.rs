@@ -40,7 +40,7 @@ impl CasbinWatcher for CasbinGuard {
     }
 
     fn update(&mut self, d: EventData) {
-        info!("CasbinGuard: {}", &d);
+        debug!("CasbinGuard: {}", &d);
         handle_event_for_watcher(d);
     }
 }

@@ -98,6 +98,22 @@ async fn casbin_test(
                 .await
                 .expect("");
         }
+
+        5 => {
+            let roles = enforcer.write().await.get_roles_for_user(&name, None);
+
+            dbg!(roles);
+        }
+
+        6 => {
+            let users = enforcer
+                .write()
+                .await
+                .get_users_for_role(&(role.expect("")), None);
+
+            dbg!(users);
+        }
+
         _ => {}
     }
 

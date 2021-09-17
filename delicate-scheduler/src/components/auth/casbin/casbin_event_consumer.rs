@@ -17,20 +17,75 @@ lazy_static! {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub(crate) struct DelicateAuthRuleEvent {
-    auth_adapter: AuthAdapter,
-    username: String,
     auth_adapter_event: AuthAdapterEventModel,
 }
 
 impl DelicateAuthRuleEvent {
-    pub(crate) fn casbin(username: String, casbin_adapter_event: CasbinEventModel) -> Self {
-        let auth_adapter = AuthAdapter::Casbin;
+    pub(crate) fn casbin_event(casbin_adapter_event: CasbinEventModel) -> Self {
         let auth_adapter_event = AuthAdapterEventModel::Casbin(casbin_adapter_event);
-        DelicateAuthRuleEvent {
-            auth_adapter,
-            username,
-            auth_adapter_event,
+        DelicateAuthRuleEvent { auth_adapter_event }
+    }
+
+    pub(crate) async fn consume_by_consumer(self, consumer: &mut Enforcer) {
+        match self.auth_adapter_event {
+            AuthAdapterEventModel::Casbin(casbin_event) => {
+                Self::consume_by_casbin_consumer(casbin_event, consumer).await
+            }
         }
+    }
+
+    pub(crate) async fn consume_by_casbin_consumer(
+        CasbinEventModel {
+            operation,
+            sec,
+            ptype,
+            dynamic_fields,
+        }: CasbinEventModel,
+        consumer: &mut Enforcer,
+    ) {
+        // When the rest of the machines receive the notification,
+        // They need to turn off `enable_auto_notify_watcher`
+        // Before consuming casbin-event's data to
+        // Avoid re-publish the same data over and over again.
+        // And avoid re-save in db over and over again.
+
+        consumer.enable_auto_notify_watcher(false);
+        consumer.enable_auto_save(false);
+
+        match operation {
+            AuthAdapterEventOperation::AddPolicy => match dynamic_fields {
+                CasbinDynamicField::Singlelayer(dynamic_fields) => {
+                    consumer
+                        .add_policy_internal(&sec, &ptype, dynamic_fields)
+                        .await
+                }
+
+                CasbinDynamicField::MultiLayer(dynamic_fields) => {
+                    consumer
+                        .add_policies_internal(&sec, &ptype, dynamic_fields)
+                        .await
+                }
+            },
+            AuthAdapterEventOperation::RemovePolicy => match dynamic_fields {
+                CasbinDynamicField::Singlelayer(dynamic_fields) => {
+                    consumer
+                        .remove_policy_internal(&sec, &ptype, dynamic_fields)
+                        .await
+                }
+
+                CasbinDynamicField::MultiLayer(dynamic_fields) => {
+                    consumer
+                        .remove_policies_internal(&sec, &ptype, dynamic_fields)
+                        .await
+                }
+            },
+        }
+        .map_err(|e| error!("consume_by_casbin_consumer:fail: {}", e))
+        .ok();
+
+        // Restore `enable_auto_notify_watcher`.
+        consumer.enable_auto_notify_watcher(true);
+        consumer.enable_auto_save(true);
     }
 }
 
@@ -55,33 +110,62 @@ pub(crate) struct CasbinEventModel {
     operation: AuthAdapterEventOperation,
     sec: String,
     ptype: String,
-    dynamic_fields: Vec<String>,
+    dynamic_fields: CasbinDynamicField,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub(crate) enum CasbinDynamicField {
+    Singlelayer(Vec<String>),
+    MultiLayer(Vec<Vec<String>>),
 }
 #[allow(dead_code)]
 #[inline(always)]
 pub(crate) fn handle_event_for_watcher(event: CasbinEventData) {
     let delicate_auth_rule_event = match event {
-        EventData::AddPolicy(sec, ptype, mut dynamic_fields) => {
+        EventData::AddPolicy(sec, ptype, dynamic_fields) => {
             let operation = AuthAdapterEventOperation::AddPolicy;
-            let username = dynamic_fields.remove(0);
+            let dynamic_fields = CasbinDynamicField::Singlelayer(dynamic_fields);
             let casbin_event_model = CasbinEventModel {
                 operation,
                 sec,
                 ptype,
                 dynamic_fields,
             };
-            DelicateAuthRuleEvent::casbin(username, casbin_event_model)
+            DelicateAuthRuleEvent::casbin_event(casbin_event_model)
         }
-        EventData::RemovePolicy(sec, ptype, mut dynamic_fields) => {
+        EventData::RemovePolicy(sec, ptype, dynamic_fields) => {
             let operation = AuthAdapterEventOperation::RemovePolicy;
-            let username = dynamic_fields.remove(0);
+            let dynamic_fields = CasbinDynamicField::Singlelayer(dynamic_fields);
             let casbin_event_model = CasbinEventModel {
                 operation,
                 sec,
                 ptype,
                 dynamic_fields,
             };
-            DelicateAuthRuleEvent::casbin(username, casbin_event_model)
+            DelicateAuthRuleEvent::casbin_event(casbin_event_model)
+        }
+        EventData::AddPolicies(sec, ptype, dynamic_fields) => {
+            let operation = AuthAdapterEventOperation::AddPolicy;
+            let dynamic_fields = CasbinDynamicField::MultiLayer(dynamic_fields);
+
+            let casbin_event_model = CasbinEventModel {
+                operation,
+                sec,
+                ptype,
+                dynamic_fields,
+            };
+            DelicateAuthRuleEvent::casbin_event(casbin_event_model)
+        }
+        EventData::RemovePolicies(sec, ptype, dynamic_fields) => {
+            let operation = AuthAdapterEventOperation::RemovePolicy;
+            let dynamic_fields = CasbinDynamicField::MultiLayer(dynamic_fields);
+            let casbin_event_model = CasbinEventModel {
+                operation,
+                sec,
+                ptype,
+                dynamic_fields,
+            };
+            DelicateAuthRuleEvent::casbin_event(casbin_event_model)
         }
         _ => {
             return;
@@ -161,7 +245,7 @@ pub(crate) async fn loop_subscribe_casbin_rule_events(
 pub(crate) async fn subscribe_casbin_rule_events(
     conn: Connection,
     enforcer: ShareData<RwLock<Enforcer>>,
-) -> RedisResult<()> {
+) -> Result<(), CommonError> {
     let mut pubsub_conn = conn.into_pubsub();
 
     pubsub_conn
@@ -173,34 +257,11 @@ pub(crate) async fn subscribe_casbin_rule_events(
     while let Some(pubsub_msg) = pubsub_stream.next().await {
         // Deserialize the msg ,then deal with it.
         let msg: String = pubsub_msg.get_payload()?;
+        debug!("subscribe_casbin_rule_events: {}", &msg);
 
+        let auth_rule_event: DelicateAuthRuleEvent = from_json_str(&msg)?;
         let mut enforcer = enforcer.write().await;
-
-        // When the rest of the machines receive the notification,
-        // They need to turn off `enable_auto_notify_watcher`
-        // Before consuming casbin-event's data to
-        // Avoid re-publish the same data over and over again.
-        // And avoid re-save in db over and over again.
-
-        enforcer.enable_auto_notify_watcher(false);
-        enforcer.enable_auto_save(false);
-
-        enforcer
-            .add_policy(Vec::new())
-            .await
-            .map_err(|e| {
-                error!(
-                    "subscribe_casbin_rule_events:add_permission_for_user:fail: {}",
-                    e
-                )
-            })
-            .ok();
-
-        //FIXME: Remove dbg!;
-        dbg!(msg);
-        // Restore `enable_auto_notify_watcher`.
-        enforcer.enable_auto_notify_watcher(true);
-        enforcer.enable_auto_save(true);
+        auth_rule_event.consume_by_consumer(&mut enforcer).await;
     }
 
     Ok(())

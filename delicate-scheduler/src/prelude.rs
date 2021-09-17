@@ -96,7 +96,7 @@ pub(crate) use ring::digest::{digest, SHA256};
 pub(crate) use rsa::RSAPrivateKey;
 pub(crate) use serde::de::DeserializeOwned;
 pub(crate) use serde::{Deserialize, Serialize};
-pub(crate) use serde_json::to_string as to_json_string;
+pub(crate) use serde_json::{from_str as from_json_str, to_string as to_json_string};
 pub(crate) use strum::IntoEnumIterator;
 pub(crate) use strum_macros::{AsRefStr, EnumIter, IntoStaticStr, ToString as StrumToString};
 pub(crate) use validator::{Validate, ValidationErrors};

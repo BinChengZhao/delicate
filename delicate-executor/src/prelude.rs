@@ -23,11 +23,8 @@ pub(crate) use delicate_utils::consensus_message::health_check::*;
 pub(crate) use delicate_utils::consensus_message::task::*;
 pub(crate) use delicate_utils::consensus_message::task_log::*;
 pub(crate) use delicate_utils::helper_utils::get_unique_id_string;
-
-#[allow(unused_imports)]
 pub(crate) use delicate_utils::prelude::*;
 
-pub(crate) use delicate_utils::error::*;
 pub(crate) use delicate_utils::uniform_data::UnifiedResponseMessages;
 
 pub(crate) use actix_web::middleware::Logger as MiddlewareLogger;

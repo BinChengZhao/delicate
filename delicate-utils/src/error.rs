@@ -1,13 +1,15 @@
 use crate::prelude::*;
 use actix_web::client::JsonPayloadError;
-pub(crate) use actix_web::client::SendRequestError as ClientSendRequestError;
+use actix_web::client::SendRequestError as ClientSendRequestError;
 use actix_web::error::{BlockingError, Error as ActixWebError};
 use diesel::r2d2::PoolError;
 
 #[derive(ThisError, Debug)]
 pub enum CommonError {
     #[error("db connect fail.")]
-    DisConn(#[from] PoolError),
+    DisConnDb(#[from] PoolError),
+    #[error("redis connect fail.")]
+    DisConnRedis(#[from] redis::RedisError),
     #[error("data query fail.")]
     DisQuery(#[from] diesel::result::Error),
     #[error("data blocking-query fail.")]
@@ -35,7 +37,7 @@ pub enum CommonError {
 #[derive(ThisError, Debug)]
 pub enum AuthServiceError {
     #[error("db connect fail.")]
-    DisConn(#[from] PoolError),
+    DisConnDb(#[from] PoolError),
     #[error("data query fail.")]
     DisQuery(#[from] diesel::result::Error),
     #[error("data blocking-query fail.")]
