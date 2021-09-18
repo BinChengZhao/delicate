@@ -24,3 +24,8 @@ pub(crate) struct NewCasbinRule {
     pub v4: String,
     pub v5: String,
 }
+
+#[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
+pub struct RoleName{
+   pub role_name:String
+}

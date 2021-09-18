@@ -97,7 +97,10 @@ async fn main() -> AnyResut<()> {
             .app_data(shared_scheduler_meta_info.clone());
 
         #[cfg(AUTH_CASBIN)]
-        let app = app.wrap(CasbinService).app_data(shared_enforcer.clone());
+        let app = app
+            .configure(actions::role::config)
+            .wrap(CasbinService)
+            .app_data(shared_enforcer.clone());
 
         app.wrap(components::session::auth_middleware())
             .wrap(components::session::session_middleware())

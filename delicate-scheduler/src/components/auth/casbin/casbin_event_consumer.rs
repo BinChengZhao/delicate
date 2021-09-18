@@ -90,11 +90,6 @@ impl DelicateAuthRuleEvent {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub(crate) enum AuthAdapter {
-    Casbin,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub(crate) enum AuthAdapterEventModel {
     Casbin(CasbinEventModel),
 }

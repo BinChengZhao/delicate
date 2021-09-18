@@ -1,11 +1,12 @@
-// Front-end component api.
+// Front-end components api.
 
 use super::prelude::*;
 
 pub(crate) fn config(cfg: &mut web::ServiceConfig) {
     cfg.service(binding_list)
         .service(executor_list)
-        .service(casbin_test);
+        .service(casbin_test)
+        .service(permission_list);
 }
 
 #[get("/api/binding/list")]
@@ -118,4 +119,23 @@ async fn casbin_test(
     }
 
     HttpResponse::Ok().json(UnifiedResponseMessages::<()>::success())
+}
+
+#[get("/api/permission/list")]
+async fn permission_list() -> HttpResponse {
+    lazy_static! {
+
+        // TODO: Complete the permission list.
+        static ref PERMISSION_MAP: HashMap<&'static str, Vec<&'static str>> = {
+            let mut m = HashMap::new();
+            m.insert("foo", vec!["foo"]);
+            m.insert("bar", vec!["bar"]);
+            m.insert("bar", vec!["baz"]);
+            m
+        };
+    }
+
+    HttpResponse::Ok().json(UnifiedResponseMessages::<
+        HashMap<&'static str, Vec<&'static str>>,
+    >::success_with_data(PERMISSION_MAP.deref().clone()))
 }

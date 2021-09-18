@@ -213,3 +213,42 @@ impl QueryParamsUser {
         statement_builder.order(user::id.desc())
     }
 }
+
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+
+pub struct UserName {
+    pub user_name: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+
+pub struct UserAndRole {
+    pub user_name: String,
+    pub operate_role: String,
+}
+
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+
+pub struct UserAndRoles {
+    pub user_name: String,
+    pub operate_roles: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+
+pub struct UserAndPermission {
+    pub user_name: String,
+    pub operate_permission: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+
+pub struct UserAndPermissions {
+    pub user_name: String,
+    pub operate_permissions: Vec<Vec<String>>,
+}
+
+
+
