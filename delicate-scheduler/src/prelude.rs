@@ -106,3 +106,13 @@ pub(crate) type MiddlewareFuture<T, E> =
     std::pin::Pin<Box<dyn std::future::Future<Output = Result<T, E>>>>;
 
 pub(crate) type AuthServiceResult<T> = Result<T, AuthServiceError>;
+
+pub(crate) const ROLES: [&str; 7] = [
+    "developer",
+    "task_admin",
+    "processor_admin",
+    "group_admin",
+    "user_admin",
+    "log_admin",
+    "team_leader",
+];

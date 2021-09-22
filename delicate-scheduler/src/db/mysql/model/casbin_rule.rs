@@ -26,6 +26,6 @@ pub(crate) struct NewCasbinRule {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
-pub struct RoleName{
-   pub role_name:String
+pub struct RoleId{
+   pub role_id:usize
 }

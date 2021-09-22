@@ -122,20 +122,32 @@ async fn casbin_test(
 }
 
 #[get("/api/permission/list")]
-async fn permission_list() -> HttpResponse {
-    lazy_static! {
+async fn permission_list(pool: ShareData<db::ConnectionPool>) -> HttpResponse {
+    use db::schema::casbin_rule;
 
-        // TODO: Complete the permission list.
-        static ref PERMISSION_MAP: HashMap<&'static str, Vec<&'static str>> = {
-            let mut m = HashMap::new();
-            m.insert("foo", vec!["foo"]);
-            m.insert("bar", vec!["bar"]);
-            m.insert("bar", vec!["baz"]);
-            m
-        };
+    // TODO: Awaiting follow-up adjustment.
+    if let Ok(conn) = pool.get() {
+        let permissions = web::block::<_, _, diesel::result::Error>(move || {
+            casbin_rule::table
+                .select((casbin_rule::v1, casbin_rule::v2))
+                .filter(casbin_rule::ptype.eq("p"))
+                .filter(casbin_rule::v1.eq_any(&[
+                    "task_admin",
+                    "processor_admin",
+                    "group_admin",
+                    "user_admin",
+                    "log_admin",
+                ]))
+                .load::<(String, String)>(&conn)
+        })
+        .await;
+
+        let response_permissions: UnifiedResponseMessages<Vec<(String, String)>> =
+            permissions.into();
+
+        return HttpResponse::Ok().json(UnifiedResponseMessages::success_with_data(
+            response_permissions,
+        ));
     }
-
-    HttpResponse::Ok().json(UnifiedResponseMessages::<
-        HashMap<&'static str, Vec<&'static str>>,
-    >::success_with_data(PERMISSION_MAP.deref().clone()))
+    HttpResponse::Ok().json(UnifiedResponseMessages::<()>::error())
 }

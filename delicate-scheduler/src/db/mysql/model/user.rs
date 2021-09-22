@@ -221,19 +221,12 @@ pub struct UserName {
     pub user_name: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-
-pub struct UserAndRole {
-    pub user_name: String,
-    pub operate_role: String,
-}
-
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 
 pub struct UserAndRoles {
     pub user_name: String,
-    pub operate_roles: Vec<String>,
+    pub operate_roles: Vec<usize>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
