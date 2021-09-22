@@ -1,8 +1,7 @@
 use super::prelude::*;
 use model::schema::{user, user_auth, user_login_log};
 use model::user::{
-    get_encrypted_certificate_by_raw_certificate, UserAndPermission, UserAndPermissions,
-    UserAndRoles, UserName,
+    get_encrypted_certificate_by_raw_certificate, UserAndPermissions, UserAndRoles, UserName,
 };
 
 pub(crate) fn config(cfg: &mut web::ServiceConfig) {
@@ -453,22 +452,28 @@ async fn append_permission(
 async fn delete_permission(
     req: HttpRequest,
     enforcer: ShareData<RwLock<Enforcer>>,
-    web::Json(user_and_permission): web::Json<UserAndPermission>,
+    web::Json(user_and_permissions): web::Json<UserAndPermissions>,
 ) -> HttpResponse {
     let operation_log_pair_option =
-        generate_operation_user_permission_delete_log(&req.get_session(), &user_and_permission)
+        generate_operation_user_permission_delete_log(&req.get_session(), &user_and_permissions)
             .ok();
     send_option_operation_log_pair(operation_log_pair_option).await;
 
-    let UserAndPermission {
+    let UserAndPermissions {
         user_name,
-        operate_permission,
-    } = user_and_permission;
+        operate_permissions,
+    } = user_and_permissions;
 
     let mut enforcer_guard = enforcer.write().await;
-    let operated_result = enforcer_guard
-        .delete_permission_for_user(&user_name, operate_permission)
-        .await;
-    let msg = Into::<UnifiedResponseMessages<bool>>::into(operated_result);
+
+    for operate_permission in operate_permissions {
+        enforcer_guard
+            .delete_permission_for_user(&user_name, operate_permission)
+            .await
+            .map_err(|e| error!("error: {}", e))
+            .unwrap_or_default();
+    }
+
+    let msg = UnifiedResponseMessages::<()>::success();
     HttpResponse::Ok().json(msg)
 }

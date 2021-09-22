@@ -231,13 +231,6 @@ pub struct UserAndRoles {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 
-pub struct UserAndPermission {
-    pub user_name: String,
-    pub operate_permission: Vec<String>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-
 pub struct UserAndPermissions {
     pub user_name: String,
     pub operate_permissions: Vec<Vec<String>>,
