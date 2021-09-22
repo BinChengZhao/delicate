@@ -352,12 +352,19 @@ async fn permissions(
 
 #[post("/api/user/append_role")]
 async fn append_role(
+    req: HttpRequest,
     enforcer: ShareData<RwLock<Enforcer>>,
-    web::Json(UserAndRoles {
+    web::Json(user_and_roles): web::Json<UserAndRoles>,
+) -> HttpResponse {
+    let operation_log_pair_option =
+        generate_operation_user_role_addtion_log(&req.get_session(), &user_and_roles).ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
+
+    let UserAndRoles {
         user_name,
         mut operate_roles,
-    }): web::Json<UserAndRoles>,
-) -> HttpResponse {
+    } = user_and_roles;
+
     operate_roles.sort_unstable();
     operate_roles.dedup();
     let append_roles: Vec<String> = operate_roles
@@ -380,12 +387,19 @@ async fn append_role(
 
 #[post("/api/user/delete_role")]
 async fn delete_role(
+    req: HttpRequest,
     enforcer: ShareData<RwLock<Enforcer>>,
-    web::Json(UserAndRoles {
+    web::Json(user_and_roles): web::Json<UserAndRoles>,
+) -> HttpResponse {
+    let operation_log_pair_option =
+        generate_operation_user_role_delete_log(&req.get_session(), &user_and_roles).ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
+
+    let UserAndRoles {
         user_name,
         mut operate_roles,
-    }): web::Json<UserAndRoles>,
-) -> HttpResponse {
+    } = user_and_roles;
+
     operate_roles.sort_unstable();
     operate_roles.dedup();
 
@@ -413,12 +427,20 @@ async fn delete_role(
 
 #[post("/api/user/append_permission")]
 async fn append_permission(
+    req: HttpRequest,
     enforcer: ShareData<RwLock<Enforcer>>,
-    web::Json(UserAndPermissions {
+    web::Json(user_and_permissions): web::Json<UserAndPermissions>,
+) -> HttpResponse {
+    let operation_log_pair_option =
+        generate_operation_user_permission_addtion_log(&req.get_session(), &user_and_permissions)
+            .ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
+
+    let UserAndPermissions {
         user_name,
         operate_permissions,
-    }): web::Json<UserAndPermissions>,
-) -> HttpResponse {
+    } = user_and_permissions;
+
     let mut enforcer_guard = enforcer.write().await;
     let operated_result = enforcer_guard
         .add_permissions_for_user(&user_name, operate_permissions)
@@ -429,12 +451,20 @@ async fn append_permission(
 
 #[post("/api/user/delete_permission")]
 async fn delete_permission(
+    req: HttpRequest,
     enforcer: ShareData<RwLock<Enforcer>>,
-    web::Json(UserAndPermission {
+    web::Json(user_and_permission): web::Json<UserAndPermission>,
+) -> HttpResponse {
+    let operation_log_pair_option =
+        generate_operation_user_permission_delete_log(&req.get_session(), &user_and_permission)
+            .ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
+
+    let UserAndPermission {
         user_name,
         operate_permission,
-    }): web::Json<UserAndPermission>,
-) -> HttpResponse {
+    } = user_and_permission;
+
     let mut enforcer_guard = enforcer.write().await;
     let operated_result = enforcer_guard
         .delete_permission_for_user(&user_name, operate_permission)
