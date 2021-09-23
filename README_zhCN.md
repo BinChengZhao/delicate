@@ -73,6 +73,16 @@ https://github.com/BinChengZhao/delicate)
 ## Benchmark
 每次调度耗时 6,424 ns (+/- 52) 在 CentOS Linux release 7.6.1810 (Core) (不同系统/硬件会有不同的结果).
 
+系统：CentOS Linux release 7.6.1810 (Core) - 4核/8G：
+单节点: delicate-executor 
+
+任务创建，峰值cpu消耗 3%，qps：17000+
+任务取消，峰值cpu消耗 3%，qps：18000+
+任务手动调度，峰值cpu消耗 3.5%，qps：14000+
+任务移除，峰值cpu消耗 3%，qps：14000+
+健康检查，峰值cpu消耗 4%，qps：2600+
+峰值的内存消耗都在60M之内。
+
 其它的指标等待压测.
 
 ## Get Started

@@ -72,6 +72,17 @@ The architecture of delicate:
 ## Benchmark
 Task take about 6,424 ns (+/- 52) per scheduling on CentOS Linux release 7.6.1810 (Core)  (varies by OS/hardware).
 
+System: CentOS Linux release 7.6.1810 (Core) - 4cores/8G.
+Single node: delicate-executor 
+
+Task creation, peak cpu consumption 3%, qps: 17000+
+Task cancellation, peak cpu consumption 3%, qps: 18000+
+Task manual scheduling, peak cpu consumption 3.5%, qps: 14000+
+Task removal, peak cpu consumption 3%, qps: 14000+
+health_check, peak cpu consumption 4%, qps: 2600+
+
+The peak memory consumption is all within 60M (varies by OS/hardware).
+
 The rest of the overall indicators await bench.
 
 ## Get Started
