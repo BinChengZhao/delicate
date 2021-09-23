@@ -81,6 +81,9 @@ async fn main() -> AnyResut<()> {
             .supports_credentials()
             .max_age(3600);
 
+        #[cfg(APP_DEBUG_MODE)]
+        let cors = cors.allow_any_origin();
+
         let app = App::new()
             .configure(actions::task::config)
             .configure(actions::user::config)

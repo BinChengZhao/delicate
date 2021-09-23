@@ -145,6 +145,11 @@ where
                 return service.call(req).await;
             }
 
+            #[cfg(APP_DEBUG_MODE)]
+            {
+                return service.call(req).await;
+            }
+
             let auther = enforcer.read().await;
 
             if username.is_empty() || resource.is_empty() || action.is_empty() {

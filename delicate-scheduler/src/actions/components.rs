@@ -131,7 +131,7 @@ async fn permission_list(pool: ShareData<db::ConnectionPool>) -> HttpResponse {
             casbin_rule::table
                 .select((casbin_rule::v1, casbin_rule::v2))
                 .filter(casbin_rule::ptype.eq("p"))
-                .filter(casbin_rule::v1.eq_any(&[
+                .filter(casbin_rule::v0.eq_any(&[
                     "task_admin",
                     "processor_admin",
                     "group_admin",

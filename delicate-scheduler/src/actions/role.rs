@@ -23,7 +23,7 @@ async fn permission_detail(
         let permissions = enforcer
             .read()
             .await
-            .get_filtered_grouping_policy(0, vec![role_name.to_string()]);
+            .get_filtered_policy(0, vec![role_name.to_string()]);
         return HttpResponse::Ok()
             .json(UnifiedResponseMessages::<Vec<Vec<String>>>::success_with_data(permissions));
     }
