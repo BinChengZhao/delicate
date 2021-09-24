@@ -32,6 +32,7 @@ diesel = { version = "^1.4.6", features = ["postgres", "mysql", "extras", "r2d2"
 dotenv = "^0.15.0"
 futures = "^0.3.14"
 lazy_static = "1.4.0"
+regex = "^1.5.4"
 ring = "^0.16.20"
 rsa = { version = "^0.4.0", features = ["std", "pem" ,"serde"] }
 sysinfo = "^0.16.5"

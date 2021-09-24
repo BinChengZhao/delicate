@@ -92,6 +92,7 @@ pub(crate) use dotenv::dotenv;
 pub(crate) use tracing::{debug, error, info, span, Level};
 pub(crate) use tracing_subscriber::FmtSubscriber;
 
+pub(crate) use regex::Regex;
 pub(crate) use ring::digest::{digest, SHA256};
 pub(crate) use rsa::RSAPrivateKey;
 pub(crate) use serde::de::DeserializeOwned;
