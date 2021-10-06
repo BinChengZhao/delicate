@@ -24,7 +24,7 @@ derive_more = "^0.99.14"
 uuid = {version = "^0.8.2", features = ["v4"]}
 hex = {version = "^0.4", features = ["serde"]}
 serde = { version = "^1.0", features = ["derive"] }
-delay_timer = {version = "^0.8.0", features = ["full"]}
+delay_timer = {version = "^0.9.0", features = ["full"]}
 rsa = { version = "^0.4.0", features = ["std", "pem" ,"serde"] }
 diesel = { version = "^1.4.6", features = ["postgres", "mysql", "extras", "r2d2", "chrono"] }
 # TODO: This(casbin-version) must be changed when upgrading to actix-web4.

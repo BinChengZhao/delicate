@@ -44,24 +44,6 @@ pub struct FrequencyModel<'a> {
     pub cron_expression: &'a str,
 }
 
-impl<'a> TryFrom<FrequencyModel<'a>> for Frequency<'a> {
-    type Error = CommonError;
-    fn try_from(value: FrequencyModel<'a>) -> Result<Frequency<'a>, Self::Error> {
-        // FrequencyModelType
-        let frequency = match value.metadata.mode {
-            1 => Frequency::Once(value.cron_expression),
-            2 => Frequency::CountDown(value.metadata.extend.count, value.cron_expression),
-            3 => Frequency::Repeated(value.cron_expression),
-            _ => {
-                return Err(CommonError::DisPass(String::from(
-                    "Ineffective frequency mode.",
-                )));
-            }
-        };
-
-        Ok(frequency)
-    }
-}
 #[derive(Copy, Clone, Debug, Default, Serialize, Deserialize)]
 pub struct FrequencyObject {
     pub mode: i8,
@@ -71,7 +53,7 @@ pub struct FrequencyObject {
 
 #[derive(Copy, Clone, Debug, Default, Serialize, Deserialize)]
 pub struct FrequencyExtend {
-    pub count: u32,
+    pub count: u64,
 }
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
 
@@ -185,16 +167,43 @@ impl TryFrom<TaskPackage> for Task {
 
         let metadata: FrequencyObject = json_from_slice(frequency.as_bytes())?;
         let cron_expression = &cron_expression;
-        let frequency_model: FrequencyModel = FrequencyModel {
-            metadata,
-            cron_expression,
+
+        let time_zone: ScheduleIteratorTimeZone = match metadata.time_zone {
+            1 => ScheduleIteratorTimeZone::Utc,
+
+            2 => ScheduleIteratorTimeZone::Local,
+
+            _ => {
+                return Err(CommonError::DisPass(String::from(
+                    "Ineffective time-zone mode.",
+                )))
+            }
         };
-        let frequency: Frequency = frequency_model.try_into()?;
 
         let mut task_builder = TaskBuilder::default();
+
+        task_builder.set_task_id(id as u64);
+
+        match metadata.mode {
+            1 => {
+                task_builder.set_frequency_once_by_cron_str(cron_expression);
+            }
+            2 => {
+                task_builder
+                    .set_frequency_count_down_by_cron_str(cron_expression, metadata.extend.count);
+            }
+            3 => {
+                task_builder.set_frequency_repeated_by_cron_str(cron_expression);
+            }
+            _ => {
+                return Err(CommonError::DisPass(String::from(
+                    "Ineffective frequency mode.",
+                )));
+            }
+        }
+
         let task = task_builder
-            .set_task_id(id as u64)
-            .set_frequency(frequency)
+            .set_schedule_iterator_time_zone(time_zone)
             .set_maximum_running_time(timeout as u64)
             .set_maximum_parallel_runnable_num(maximum_parallel_runnable_num as u64)
             .spawn(unblock_process_task_fn(command))?;
