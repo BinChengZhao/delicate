@@ -3,6 +3,7 @@ mod prelude;
 use prelude::*;
 
 #[post("/api/task/create")]
+#[instrument]
 async fn create_task(
     web::Json(signed_task_package): web::Json<SignedTaskPackage>,
     shared_delay_timer: SharedDelayTimer,
@@ -30,6 +31,7 @@ pub async fn pre_create_task(
 }
 
 #[post("/api/task/update")]
+#[instrument]
 async fn update_task(
     web::Json(signed_task_package): web::Json<SignedTaskPackage>,
     shared_delay_timer: SharedDelayTimer,
@@ -57,6 +59,7 @@ pub async fn pre_update_task(
 }
 
 #[post("/api/task/remove")]
+#[instrument]
 async fn remove_task(
     web::Json(signed_task_unit): web::Json<SignedTaskUnit>,
     shared_delay_timer: SharedDelayTimer,
@@ -83,6 +86,7 @@ pub async fn pre_remove_task(
 }
 
 #[post("/api/task/advance")]
+#[instrument]
 async fn advance_task(
     web::Json(signed_task_unit): web::Json<SignedTaskUnit>,
     shared_delay_timer: SharedDelayTimer,
@@ -108,6 +112,7 @@ pub async fn pre_advance_task(
 }
 
 #[post("/api/task_instance/kill")]
+#[instrument]
 async fn cancel_task(
     web::Json(signed_cancel_task_record): web::Json<SignedCancelTaskRecord>,
     shared_delay_timer: SharedDelayTimer,
@@ -147,6 +152,7 @@ async fn maintenance(shared_delay_timer: SharedDelayTimer) -> impl Responder {
 // Health Screening
 
 #[post("/api/executor/health_screen")]
+#[instrument]
 async fn health_screen(
     req: HttpRequest,
     web::Json(signed_health_screen_unit): web::Json<SignedHealthScreenUnit>,
@@ -185,6 +191,7 @@ async fn health_screen(
 }
 
 #[post("/api/executor/bind")]
+#[instrument]
 // Or set security level, no authentication at level 0, public and private keys required at level 1.
 async fn bind_executor(
     web::Json(request_bind_scheduler): web::Json<SignedBindRequest>,

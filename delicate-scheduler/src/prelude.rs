@@ -89,7 +89,7 @@ pub(crate) use async_lock::RwLock;
 pub(crate) use delay_timer::prelude::*;
 pub(crate) use diesel::query_dsl::RunQueryDsl;
 pub(crate) use dotenv::dotenv;
-pub(crate) use tracing::{debug, error, info, span, Level};
+pub(crate) use tracing::{debug, error, info, info_span, span, Instrument, Level};
 pub(crate) use tracing_subscriber::FmtSubscriber;
 
 pub(crate) use regex::Regex;

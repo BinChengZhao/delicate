@@ -28,7 +28,7 @@ pub(crate) use delicate_utils::prelude::*;
 pub(crate) use delicate_utils::uniform_data::UnifiedResponseMessages;
 
 pub(crate) use actix_web::middleware::Logger as MiddlewareLogger;
-pub(crate) use tracing::{debug, error, info, span, Level};
+pub(crate) use tracing::{debug, error, info, instrument, span, Level};
 pub(crate) use tracing_subscriber::FmtSubscriber;
 
 pub(crate) use std::convert::{Into, TryInto};

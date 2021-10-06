@@ -109,6 +109,17 @@ async fn main() -> AnyResut<()> {
             .wrap(components::session::session_middleware())
             .wrap(cors)
             .wrap(MiddlewareLogger::default())
+            .wrap_fn(|req, srv| {
+                let unique_id = get_unique_id_string();
+                let unique_id_str = unique_id.deref();
+                let fut = srv
+                    .call(req)
+                    .instrument(info_span!("log-id: ", unique_id_str));
+                async {
+                    let res = fut.await?;
+                    Ok(res)
+                }
+            })
     })
     .bind(scheduler_listening_address)?
     .run()
