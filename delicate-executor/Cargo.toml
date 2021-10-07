@@ -18,5 +18,3 @@ anyhow = "^1.0.38"
 async-lock = "^2.3.0"
 dotenv = "^0.15.0"
 delicate-utils = { path = "../delicate-utils" }
-tracing = "0.1.26"
-tracing-subscriber = "0.2.19"

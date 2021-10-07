@@ -40,15 +40,25 @@ async fn main() -> AnyResut<()> {
         FromStr::from_str(&env::var("LOG_LEVEL").unwrap_or_else(|_| String::from("info")))
             .expect("Log level acquired fail.");
 
-    // TODO: Prepare to use `flexi_logger` to handle the tracing logs.
-    // https://docs.rs/flexi_logger/0.19.3/flexi_logger/trc/index.html
-    // https://docs.rs/flexi_logger/0.19.3/flexi_logger/code_examples/index.html
-    // Boost `tracing` in the project and request the associated request ID.
-    // https://crates.io/crates/flexi_logger, Re-read the documentation.
+    // Prepare a `FileLogWriter` and a handle to it, and keep the handle alive
+    // until the program ends (it will flush and shutdown the `FileLogWriter` when dropped).
+    // For the `FileLogWriter`, use the settings that fit your needs
+    let (file_writer, _fw_handle) = FileLogWriter::builder(FileSpec::default())
+        .rotate(
+            // If the program runs long enough,
+            Criterion::Age(Age::Day),  // - create a new file every day
+            Naming::Timestamps,        // - let the rotated files have a timestamp in their name
+            Cleanup::KeepLogFiles(15), // - keep at most seven log files
+        )
+        .write_mode(WriteMode::Async)
+        .try_build_with_handle()
+        .expect("flexi_logger init failed");
+
     FmtSubscriber::builder()
-        // will be written to stdout.
+        // will be written to file_writer.
         .with_max_level(log_level)
         .with_thread_names(true)
+        .with_writer(move || file_writer.clone())
         // completes the builder.
         .init();
 

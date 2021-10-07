@@ -14,21 +14,22 @@ async fn create_task_logs(
     web::Json(events_collection): web::Json<delicate_utils_task_log::SignedExecutorEventCollection>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
-    let _span_ = span!(
+    let r = async {
+        debug!(
+            "Event collection - {:?}",
+            &events_collection.event_collection
+        );
+
+        pre_create_task_logs(events_collection, pool).await
+    }
+    .instrument(span!(
         Level::INFO,
         "status-reporter",
         log_id = get_unique_id_string().deref()
-    )
-    .entered();
+    ))
+    .await;
 
-    debug!(
-        "Event collection - {:?}",
-        &events_collection.event_collection
-    );
-
-    let response = Into::<UnifiedResponseMessages<usize>>::into(
-        pre_create_task_logs(events_collection, pool).await,
-    );
+    let response = Into::<UnifiedResponseMessages<usize>>::into(r);
     HttpResponse::Ok().json(response)
 }
 

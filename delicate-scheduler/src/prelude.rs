@@ -92,6 +92,12 @@ pub(crate) use dotenv::dotenv;
 pub(crate) use tracing::{debug, error, info, info_span, span, Instrument, Level};
 pub(crate) use tracing_subscriber::FmtSubscriber;
 
+pub(crate) use flexi_logger::trc::{
+    subscribe_to_specfile, BasicLogSpecSubscriber, LogSpecAsFilter,
+};
+pub(crate) use flexi_logger::{
+    writers::FileLogWriter, Age, Cleanup, Criterion, FileSpec, LogSpecification, Naming, WriteMode,
+};
 pub(crate) use regex::Regex;
 pub(crate) use ring::digest::{digest, SHA256};
 pub(crate) use rsa::RSAPrivateKey;

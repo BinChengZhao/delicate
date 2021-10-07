@@ -56,11 +56,10 @@ async fn health_check(conn: db::PoolConnection) -> Result<(), CommonError> {
         .into_iter()
         .collect();
 
-    let _span_ = span!(Level::INFO, "health-check").entered();
-
     let health_check_packages = handle_response::<
         UnifiedResponseMessages<delicate_utils_health_check::HealthCheckPackage>,
     >(request_all)
+    .instrument(span!(Level::INFO, "health-check"))
     .await;
 
     let health_processors: HashSet<i64> = health_check_packages
