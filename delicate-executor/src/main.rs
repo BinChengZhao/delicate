@@ -3,7 +3,7 @@ mod prelude;
 use prelude::*;
 
 #[post("/api/task/create")]
-#[instrument]
+#[instrument(skip(executor_conf, shared_delay_timer, signed_task_package), fields(task_package = signed_task_package.task_package.id))]
 async fn create_task(
     web::Json(signed_task_package): web::Json<SignedTaskPackage>,
     shared_delay_timer: SharedDelayTimer,
@@ -31,7 +31,7 @@ pub async fn pre_create_task(
 }
 
 #[post("/api/task/update")]
-#[instrument]
+#[instrument(skip(executor_conf, shared_delay_timer, signed_task_package), fields(task_package = signed_task_package.task_package.id))]
 async fn update_task(
     web::Json(signed_task_package): web::Json<SignedTaskPackage>,
     shared_delay_timer: SharedDelayTimer,
@@ -59,7 +59,7 @@ pub async fn pre_update_task(
 }
 
 #[post("/api/task/remove")]
-#[instrument]
+#[instrument(skip(executor_conf, shared_delay_timer, signed_task_unit), fields(task_id = signed_task_unit.task_unit.task_id))]
 async fn remove_task(
     web::Json(signed_task_unit): web::Json<SignedTaskUnit>,
     shared_delay_timer: SharedDelayTimer,
@@ -86,7 +86,7 @@ pub async fn pre_remove_task(
 }
 
 #[post("/api/task/advance")]
-#[instrument]
+#[instrument(skip(executor_conf, shared_delay_timer, signed_task_unit), fields(task_id = signed_task_unit.task_unit.task_id))]
 async fn advance_task(
     web::Json(signed_task_unit): web::Json<SignedTaskUnit>,
     shared_delay_timer: SharedDelayTimer,
@@ -112,7 +112,7 @@ pub async fn pre_advance_task(
 }
 
 #[post("/api/task_instance/kill")]
-#[instrument]
+#[instrument(skip(executor_conf, shared_delay_timer, signed_cancel_task_record), fields(cancel_task_record = signed_cancel_task_record.cancel_task_record.to_string().deref()))]
 async fn cancel_task(
     web::Json(signed_cancel_task_record): web::Json<SignedCancelTaskRecord>,
     shared_delay_timer: SharedDelayTimer,
@@ -152,7 +152,7 @@ async fn maintenance(shared_delay_timer: SharedDelayTimer) -> impl Responder {
 // Health Screening
 
 #[post("/api/executor/health_screen")]
-#[instrument]
+#[instrument(skip(req, signed_health_screen_unit, executor_conf, system_mirror), fields(time = signed_health_screen_unit.health_screen_unit.time))]
 async fn health_screen(
     req: HttpRequest,
     web::Json(signed_health_screen_unit): web::Json<SignedHealthScreenUnit>,
@@ -191,7 +191,7 @@ async fn health_screen(
 }
 
 #[post("/api/executor/bind")]
-#[instrument]
+#[instrument(skip(request_bind_scheduler, security_conf, shared_delay_timer), fields(bind_scheduler = request_bind_scheduler.bind_request.to_string().deref()))]
 // Or set security level, no authentication at level 0, public and private keys required at level 1.
 async fn bind_executor(
     web::Json(request_bind_scheduler): web::Json<SignedBindRequest>,

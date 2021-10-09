@@ -13,7 +13,7 @@ pub struct CancelTaskRecord {
 #[display(fmt = "cancel-task-record:{} ", cancel_task_record)]
 
 pub struct SignedCancelTaskRecord {
-    cancel_task_record: CancelTaskRecord,
+    pub cancel_task_record: CancelTaskRecord,
     #[serde(with = "hex")]
     pub signature: Vec<u8>,
 }

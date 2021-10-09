@@ -14,7 +14,7 @@ pub use crate::error::*;
 pub use crate::helper_utils::*;
 
 pub(crate) use delay_timer::prelude::*;
-pub(crate) use delay_timer::utils::status_report::{PublicFinishOutput, StatusReporter};
+pub(crate) use delay_timer::utils::status_report::PublicFinishOutput;
 pub(crate) use log::error;
 
 pub(crate) use async_lock::{RwLock, RwLockReadGuard, RwLockWriteGuard};
