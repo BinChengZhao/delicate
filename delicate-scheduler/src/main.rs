@@ -146,11 +146,14 @@ async fn launch_ready_operation(
     launch_health_check(pool.clone());
     launch_operation_log_consumer(pool);
 
-    // When the delicate starts, it checks if the resource acquisition is normal.
-    let redis_url = env::var("REDIS_URL").expect("The redis url could not be acquired.");
-    let redis_client = redis::Client::open(redis_url)
-        .expect("The redis client resource could not be initialized.");
-    launch_casbin_rule_events_consumer(redis_client, enforcer);
+    #[cfg(AUTH_CASBIN)]
+    {
+        // When the delicate starts, it checks if the resource acquisition is normal.
+        let redis_url = env::var("REDIS_URL").expect("The redis url could not be acquired.");
+        let redis_client = redis::Client::open(redis_url)
+            .expect("The redis client resource could not be initialized.");
+        launch_casbin_rule_events_consumer(redis_client, enforcer);
+    }
 }
 
 // Heartbeat checker
