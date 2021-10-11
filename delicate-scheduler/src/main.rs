@@ -24,6 +24,13 @@ pub(crate) mod prelude;
 pub(crate) use prelude::*;
 
 #[actix_web::main]
+// TODO:
+
+// Objectives.
+
+// 1. migrate to poem.
+// 2. Implement the actuator, via tonic.
+// 3. Prioritize minimalist implementations, supporting only single machines at first, with subsequent support for slicing or various rules.
 async fn main() -> AnyResut<()> {
     // Loads environment variables.
     dotenv().ok();
