@@ -71,6 +71,11 @@ impl<T: UniformData> UnifiedResponseMessages<T> {
     pub fn get_data(self) -> T {
         self.data
     }
+
+    #[inline(always)]
+    pub fn get_data_ref(&self) -> &T {
+        &self.data
+    }
 }
 
 impl<T: UniformData + Default> UnifiedResponseMessages<T> {

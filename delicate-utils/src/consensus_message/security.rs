@@ -41,7 +41,7 @@ impl Default for SchedulerSecurityConf {
                 "{}",
                 rsa_private_key
                     .err()
-                    .map(|e| "Initialization failed because: ".to_owned() + &e.to_string())
+                    .map(|e| "Initialization failed because: ".to_owned() + (e.to_string().as_ref()))
                     .unwrap_or_default()
             );
             unreachable!("When the security level is Normal, the initialization `delicate-scheduler` must contain the secret key (DELICATE_SECURITY_PRIVATE_KEY)");
@@ -112,7 +112,7 @@ impl Default for ExecutorSecurityConf {
                 "{}",
                 rsa_public_key
                     .err()
-                    .map(|e| "Initialization failed because: ".to_owned() + &e.to_string())
+                    .map(|e| "Initialization failed because: ".to_owned() + (e.to_string().as_ref()))
                     .unwrap_or_default()
             );
             unreachable!("When the security level is Normal, the initialization `delicate-executor` must contain the secret key (DELICATE_SECURITY_PUBLIC_KEY)");

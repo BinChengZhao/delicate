@@ -67,6 +67,14 @@ where
     }
 
     fn call(&mut self, req: ServiceRequest) -> Self::Future {
+        #[cfg(APP_DEBUG_MODE)]
+        {
+            let fut = self.service.call(req);
+            return Box::pin(async move {
+                let res = fut.await?;
+                Ok(res)
+            });
+        }
         let session = req.get_session();
         let uri = req.uri();
         let path = uri.path();

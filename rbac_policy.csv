@@ -44,6 +44,17 @@ p, user_admin, user, delete
 p, user_admin, user, update
 p, user_admin, user, create
 p, user_admin, user, list
+p, user_admin, user, append_role
+p, user_admin, user, delete_role
+p, user_admin, user, append_permission
+p, user_admin, user, delete_permission
+p, user_admin, user, roles
+p, user_admin, user, permissions
+
+p, user_admin, permission, list
+p, user_admin, role, list
+p, user_admin, role, permission_detail
+p, user_admin, role, users
 
 
 p, log_admin, user_login_log, list

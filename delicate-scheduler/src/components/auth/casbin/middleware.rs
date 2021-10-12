@@ -1,7 +1,15 @@
 #![allow(unused_imports)]
 use crate::prelude::*;
+use adapter::adapter_core::DieselAdapter;
 
 lazy_static! {
+
+      // Because casbin(`Enforcer::new`) requires that the `&str` type must satisfy static.
+      // And the String read by environment variable does not satisfy this condition after passing deref.
+      // Two ways to solve it.
+      // 1. Active memory leak.
+      // 2. Assign the value read by environment variable to static variable,
+      // Then the reference of static variable can satisfy the static restriction.
 
     pub static ref CASBIN_MODEL_CONF_PATH: String = {
             env::var("CASBIN_MODEL_CONF").expect("CASBIN_MODEL_CONF must be set")
@@ -10,38 +18,48 @@ lazy_static! {
 
     // TODO: Can be listened to by `hotwatch` for changes.
     // TODO: `redis` based publish-subscribe, do real-time permission information synchronization.
+
+    // TODO: Adjustments for permissions, like the operation log consumer, have a unique channel that
+    // TODO: holds information about the operation and controls the flow of consumption.
+
+    // TODO: Permissions editing is optional and
+    // TODO: By default only supports initialization from the file once and does not support editing if it is not selected.
+
     pub static ref CASBIN_POLICY_CONF_PATH: String = {
             env::var("CASBIN_POLICY_CONF").expect("CASBIN_POLICY_CONF must be set")
     };
 
-      // Because casbin requires that the `&str` type must satisfy static.
-      // And the String read by environment variable does not satisfy this condition after passing deref.
-      // Two ways to solve it.
-      // 1. Active memory leak.
-      // 2. Assign the value read by environment variable to static variable,
-      // Then the reference of static variable can satisfy the static restriction.
-    pub static ref AUTHER: RwLock<Enforcer> = {
-
-        let e = futures_block_on(Enforcer::new((&CASBIN_MODEL_CONF_PATH).deref().deref(), (&CASBIN_POLICY_CONF_PATH).deref().deref()))
-            .expect("Unable to read permission file.");
-        RwLock::new(e)
-    };
 
 }
 
-#[allow(dead_code)]
-pub(crate) async fn warm_up_auther() {
-    AUTHER.write().await.enable_log(true);
+pub(crate) struct CasbinGuard;
+
+impl CasbinWatcher for CasbinGuard {
+    fn set_update_callback(&mut self, _cb: Box<dyn FnMut() + Send + Sync>) {
+        error!(target:"set_update_callback", "unreachable.");
+    }
+
+    fn update(&mut self, d: EventData) {
+        debug!("CasbinGuard: {}", &d);
+        handle_event_for_watcher(d);
+    }
 }
 
 #[allow(dead_code)]
-pub(crate) async fn get_auther_read_guard() -> RwLockReadGuard<'static, Enforcer> {
-    AUTHER.read().await
+pub(crate) async fn get_casbin_enforcer(pool: ShareData<db::ConnectionPool>) -> Enforcer {
+    let adapter = DieselAdapter::new(pool);
+    let mut enforcer = Enforcer::new(get_casbin_model_conf_path(), adapter)
+        .await
+        .expect("Casbin's enforcer initialization error.");
+
+    enforcer.set_watcher(Box::new(CasbinGuard));
+
+    enforcer
 }
 
 #[allow(dead_code)]
-pub(crate) async fn get_auther_write_guard() -> RwLockWriteGuard<'static, Enforcer> {
-    AUTHER.write().await
+pub(crate) fn get_casbin_model_conf_path() -> &'static str {
+    CASBIN_MODEL_CONF_PATH.deref().deref()
 }
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize)]
@@ -74,7 +92,7 @@ pub struct CasbinAuthMiddleware<S> {
     service: Rc<RefCell<S>>,
 }
 
-const WHITE_LIST: [&str; 8] = [
+const WHITE_LIST: [&str; 9] = [
     "/api/tasks_state/one_day",
     "/api/user/login",
     "/api/user/logout",
@@ -83,6 +101,7 @@ const WHITE_LIST: [&str; 8] = [
     "/api/executor/list",
     "/api/user/change_password",
     "/api/task_logs/event_trigger",
+    "/api/casbin/test",
 ];
 
 impl<S, B> Service for CasbinAuthMiddleware<S>
@@ -104,6 +123,10 @@ where
     }
 
     fn call(&mut self, req: ServiceRequest) -> Self::Future {
+        let enforcer = req
+            .app_data::<ShareData<RwLock<Enforcer>>>()
+            .expect("Casbin's enforcer acquisition failed")
+            .clone();
         let mut service = self.service.clone();
         let session = req.get_session();
         let path = req.path().to_string();
@@ -122,7 +145,12 @@ where
                 return service.call(req).await;
             }
 
-            let auther = get_auther_read_guard().await;
+            #[cfg(APP_DEBUG_MODE)]
+            {
+                return service.call(req).await;
+            }
+
+            let auther = enforcer.read().await;
 
             if username.is_empty() || resource.is_empty() || action.is_empty() {
                 return Ok(req.error_response(

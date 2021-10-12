@@ -117,10 +117,10 @@ async fn update_task(
     web::Json(update_task_body): web::Json<model::UpdateTaskBody>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
-    let _span_ = span!(Level::INFO, "update-task").entered();
-
-    let respose: UnifiedResponseMessages<()> =
-        pre_update_task(req, update_task_body, pool).await.into();
+    let respose: UnifiedResponseMessages<()> = pre_update_task(req, update_task_body, pool)
+        .instrument(span!(Level::INFO, "update-task"))
+        .await
+        .into();
     HttpResponse::Ok().json(respose)
 }
 
@@ -157,7 +157,6 @@ pub async fn pre_update_task_row(
 > {
     use db::schema::{executor_processor, executor_processor_bind, task_bind};
     use model::BindProcessor;
-    use std::collections::HashSet;
 
     let task_binds_pair = web::block::<_, _, diesel::result::Error>(move || {
         conn.transaction(|| {
@@ -404,9 +403,11 @@ async fn run_task(
     web::Json(model::TaskId { task_id }): web::Json<model::TaskId>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
-    let _span_ = span!(Level::INFO, "run-task").entered();
-
-    let result: UnifiedResponseMessages<()> = Into::into(pre_run_task(req, task_id, pool).await);
+    let result: UnifiedResponseMessages<()> = Into::into(
+        pre_run_task(req, task_id, pool)
+            .instrument(span!(Level::INFO, "run-task"))
+            .await,
+    );
 
     HttpResponse::Ok().json(result)
 }
@@ -417,10 +418,10 @@ async fn suspend_task(
     web::Json(model::TaskId { task_id }): web::Json<model::TaskId>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
-    let _span_ = span!(Level::INFO, "Suspend", task_id).entered();
-
     let result: UnifiedResponseMessages<()> = Into::into(
-        pre_operate_task(req, pool.clone(), (task_id, "/api/task/remove", "Suspend")).await,
+        pre_operate_task(req, pool.clone(), (task_id, "/api/task/remove", "Suspend"))
+            .instrument(span!(Level::INFO, "Suspend", task_id))
+            .await,
     );
 
     HttpResponse::Ok().json(result)
@@ -432,10 +433,11 @@ async fn advance_task(
     web::Json(model::TaskId { task_id }): web::Json<model::TaskId>,
     pool: ShareData<db::ConnectionPool>,
 ) -> HttpResponse {
-    let _span_ = span!(Level::INFO, "Advance", task_id).entered();
-
-    let result: UnifiedResponseMessages<()> =
-        Into::into(pre_operate_task(req, pool, (task_id, "/api/task/advance", "Advance")).await);
+    let result: UnifiedResponseMessages<()> = Into::into(
+        pre_operate_task(req, pool, (task_id, "/api/task/advance", "Advance"))
+            .instrument(span!(Level::INFO, "Advance", task_id))
+            .await,
+    );
 
     HttpResponse::Ok().json(result)
 }

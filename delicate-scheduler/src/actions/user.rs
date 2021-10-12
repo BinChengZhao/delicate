@@ -1,6 +1,8 @@
 use super::prelude::*;
 use model::schema::{user, user_auth, user_login_log};
-use model::user::get_encrypted_certificate_by_raw_certificate;
+use model::user::{
+    get_encrypted_certificate_by_raw_certificate, UserAndPermissions, UserAndRoles, UserName,
+};
 
 pub(crate) fn config(cfg: &mut web::ServiceConfig) {
     cfg.service(create_user)
@@ -10,7 +12,13 @@ pub(crate) fn config(cfg: &mut web::ServiceConfig) {
         .service(login_user)
         .service(logout_user)
         .service(check_user)
-        .service(change_password);
+        .service(change_password)
+        .service(roles)
+        .service(permissions)
+        .service(append_permission)
+        .service(delete_permission)
+        .service(append_role)
+        .service(delete_role);
 }
 
 #[post("/api/user/create")]
@@ -309,4 +317,163 @@ async fn logout_user(session: Session) -> HttpResponse {
         session.clear();
         UnifiedResponseMessages::<()>::success()
     })
+}
+
+#[post("/api/user/roles")]
+async fn roles(
+    enforcer: ShareData<RwLock<Enforcer>>,
+    web::Json(UserName { user_name }): web::Json<UserName>,
+) -> HttpResponse {
+    let mut enforcer_guard = enforcer.write().await;
+    let mut roles = enforcer_guard.get_roles_for_user(&user_name, None);
+    let implicit_roles = enforcer_guard.get_implicit_roles_for_user(&user_name, None);
+    roles.extend(implicit_roles.into_iter());
+
+    HttpResponse::Ok().json(UnifiedResponseMessages::<Vec<String>>::success_with_data(
+        roles,
+    ))
+}
+
+#[post("/api/user/permissions")]
+async fn permissions(
+    enforcer: ShareData<RwLock<Enforcer>>,
+    web::Json(UserName { user_name }): web::Json<UserName>,
+) -> HttpResponse {
+    let mut enforcer_guard = enforcer.write().await;
+
+    let mut permissions = enforcer_guard.get_permissions_for_user(&user_name, None);
+    let implicit_permissions = enforcer_guard.get_implicit_permissions_for_user(&user_name, None);
+    permissions.extend(implicit_permissions.into_iter());
+
+    HttpResponse::Ok()
+        .json(UnifiedResponseMessages::<Vec<Vec<String>>>::success_with_data(permissions))
+}
+
+#[post("/api/user/append_role")]
+async fn append_role(
+    req: HttpRequest,
+    enforcer: ShareData<RwLock<Enforcer>>,
+    web::Json(user_and_roles): web::Json<UserAndRoles>,
+) -> HttpResponse {
+    let operation_log_pair_option =
+        generate_operation_user_role_addtion_log(&req.get_session(), &user_and_roles).ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
+
+    let UserAndRoles {
+        user_name,
+        mut operate_roles,
+    } = user_and_roles;
+
+    operate_roles.sort_unstable();
+    operate_roles.dedup();
+    let append_roles: Vec<String> = operate_roles
+        .iter()
+        .filter_map(|role_id| ROLES.get(*role_id).map(|role_name| role_name.to_string()))
+        .collect();
+
+    if append_roles.is_empty() {
+        return HttpResponse::Ok().json(UnifiedResponseMessages::<bool>::error());
+    }
+
+    let mut enforcer_guard = enforcer.write().await;
+    let operated_result = enforcer_guard
+        .add_roles_for_user(&user_name, append_roles, None)
+        .await;
+
+    let msg = Into::<UnifiedResponseMessages<bool>>::into(operated_result);
+    HttpResponse::Ok().json(msg)
+}
+
+#[post("/api/user/delete_role")]
+async fn delete_role(
+    req: HttpRequest,
+    enforcer: ShareData<RwLock<Enforcer>>,
+    web::Json(user_and_roles): web::Json<UserAndRoles>,
+) -> HttpResponse {
+    let operation_log_pair_option =
+        generate_operation_user_role_delete_log(&req.get_session(), &user_and_roles).ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
+
+    let UserAndRoles {
+        user_name,
+        mut operate_roles,
+    } = user_and_roles;
+
+    operate_roles.sort_unstable();
+    operate_roles.dedup();
+
+    let delete_roles: Vec<&str> = operate_roles
+        .iter()
+        .filter_map(|role_id| ROLES.get(*role_id).copied())
+        .collect();
+
+    if delete_roles.is_empty() {
+        return HttpResponse::Ok().json(UnifiedResponseMessages::<bool>::error());
+    }
+
+    let mut enforcer_guard = enforcer.write().await;
+
+    for role in delete_roles {
+        enforcer_guard
+            .delete_role_for_user(&user_name, role, None)
+            .await
+            .map_err(|e| error!("role: {}, error: {}", role, e))
+            .unwrap_or_default();
+    }
+
+    HttpResponse::Ok().json(UnifiedResponseMessages::<()>::success())
+}
+
+#[post("/api/user/append_permission")]
+async fn append_permission(
+    req: HttpRequest,
+    enforcer: ShareData<RwLock<Enforcer>>,
+    web::Json(user_and_permissions): web::Json<UserAndPermissions>,
+) -> HttpResponse {
+    let operation_log_pair_option =
+        generate_operation_user_permission_addtion_log(&req.get_session(), &user_and_permissions)
+            .ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
+
+    let UserAndPermissions {
+        user_name,
+        operate_permissions,
+    } = user_and_permissions;
+
+    let mut enforcer_guard = enforcer.write().await;
+    let operated_result = enforcer_guard
+        .add_permissions_for_user(&user_name, operate_permissions)
+        .await;
+    let msg = Into::<UnifiedResponseMessages<bool>>::into(operated_result);
+    HttpResponse::Ok().json(msg)
+}
+
+#[post("/api/user/delete_permission")]
+async fn delete_permission(
+    req: HttpRequest,
+    enforcer: ShareData<RwLock<Enforcer>>,
+    web::Json(user_and_permissions): web::Json<UserAndPermissions>,
+) -> HttpResponse {
+    let operation_log_pair_option =
+        generate_operation_user_permission_delete_log(&req.get_session(), &user_and_permissions)
+            .ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
+
+    let UserAndPermissions {
+        user_name,
+        operate_permissions,
+    } = user_and_permissions;
+
+    let mut enforcer_guard = enforcer.write().await;
+
+    for operate_permission in operate_permissions {
+        enforcer_guard
+            .delete_permission_for_user(&user_name, operate_permission)
+            .await
+            .map_err(|e| error!("error: {}", e))
+            .unwrap_or_default();
+    }
+
+    let msg = UnifiedResponseMessages::<()>::success();
+    HttpResponse::Ok().json(msg)
 }

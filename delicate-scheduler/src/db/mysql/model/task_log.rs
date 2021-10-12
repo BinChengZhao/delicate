@@ -55,6 +55,7 @@ impl From<ExecutorEvent> for NewTaskLog {
     }
 }
 
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct SupplyTaskLogTuple(pub SupplyTaskLog, pub SupplyTaskLogExtend);
 impl From<ExecutorEvent> for SupplyTaskLogTuple {
     fn from(
@@ -223,7 +224,7 @@ pub struct NewTaskLog {
     executor_processor_host: String,
 }
 
-#[derive(Queryable, Identifiable, AsChangeset, Debug, Clone, Serialize, Deserialize)]
+#[derive(Queryable, Identifiable, Default, AsChangeset, Debug, Clone, Serialize, Deserialize)]
 #[table_name = "task_log"]
 pub struct SupplyTaskLog {
     id: i64,
@@ -231,7 +232,7 @@ pub struct SupplyTaskLog {
 }
 
 #[derive(
-    Insertable, Queryable, Identifiable, AsChangeset, Debug, Clone, Serialize, Deserialize,
+    Insertable, Queryable, Default, Identifiable, AsChangeset, Debug, Clone, Serialize, Deserialize,
 )]
 #[table_name = "task_log_extend"]
 pub struct SupplyTaskLogExtend {

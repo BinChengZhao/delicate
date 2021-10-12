@@ -1,13 +1,20 @@
 use super::prelude::*;
 use super::schema::{user, user_auth};
 
+lazy_static! {
+    static ref RE_USER_NAME: Regex = Regex::new(r"[a-zA-Z][a-zA-Z0-9_]{5,32}$").unwrap();
+}
+
+lazy_static! {
+    static ref RE_MOBILE: Regex = Regex::new(r"\d{11}$").unwrap();
+}
 #[derive(Debug, Clone, Validate, Serialize, Deserialize)]
 pub struct QueryNewUser {
-    #[validate(length(min = 8))]
+    #[validate(regex = "RE_USER_NAME")]
     pub(crate) user_name: String,
-    #[validate(length(min = 1))]
+    #[validate(length(min = 5))]
     pub(crate) nick_name: String,
-    #[validate(length(max = 11))]
+    #[validate(regex = "RE_MOBILE")]
     pub(crate) mobile: String,
     #[validate(email)]
     pub(crate) email: String,
@@ -213,3 +220,28 @@ impl QueryParamsUser {
         statement_builder.order(user::id.desc())
     }
 }
+
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+
+pub struct UserName {
+    pub user_name: String,
+}
+
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+
+pub struct UserAndRoles {
+    pub user_name: String,
+    pub operate_roles: Vec<usize>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+
+pub struct UserAndPermissions {
+    pub user_name: String,
+    pub operate_permissions: Vec<Vec<String>>,
+}
+
+
+

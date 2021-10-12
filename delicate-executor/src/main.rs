@@ -1,8 +1,10 @@
+#![allow(clippy::async_yields_async)]
 mod component;
 mod prelude;
 use prelude::*;
 
 #[post("/api/task/create")]
+#[instrument(skip(executor_conf, shared_delay_timer, signed_task_package), fields(task_package = signed_task_package.task_package.id))]
 async fn create_task(
     web::Json(signed_task_package): web::Json<SignedTaskPackage>,
     shared_delay_timer: SharedDelayTimer,
@@ -30,6 +32,7 @@ pub async fn pre_create_task(
 }
 
 #[post("/api/task/update")]
+#[instrument(skip(executor_conf, shared_delay_timer, signed_task_package), fields(task_package = signed_task_package.task_package.id))]
 async fn update_task(
     web::Json(signed_task_package): web::Json<SignedTaskPackage>,
     shared_delay_timer: SharedDelayTimer,
@@ -57,6 +60,7 @@ pub async fn pre_update_task(
 }
 
 #[post("/api/task/remove")]
+#[instrument(skip(executor_conf, shared_delay_timer, signed_task_unit), fields(task_id = signed_task_unit.task_unit.task_id))]
 async fn remove_task(
     web::Json(signed_task_unit): web::Json<SignedTaskUnit>,
     shared_delay_timer: SharedDelayTimer,
@@ -83,6 +87,7 @@ pub async fn pre_remove_task(
 }
 
 #[post("/api/task/advance")]
+#[instrument(skip(executor_conf, shared_delay_timer, signed_task_unit), fields(task_id = signed_task_unit.task_unit.task_id))]
 async fn advance_task(
     web::Json(signed_task_unit): web::Json<SignedTaskUnit>,
     shared_delay_timer: SharedDelayTimer,
@@ -108,6 +113,7 @@ pub async fn pre_advance_task(
 }
 
 #[post("/api/task_instance/kill")]
+#[instrument(skip(executor_conf, shared_delay_timer, signed_cancel_task_record), fields(cancel_task_record = signed_cancel_task_record.cancel_task_record.to_string().deref()))]
 async fn cancel_task(
     web::Json(signed_cancel_task_record): web::Json<SignedCancelTaskRecord>,
     shared_delay_timer: SharedDelayTimer,
@@ -147,6 +153,7 @@ async fn maintenance(shared_delay_timer: SharedDelayTimer) -> impl Responder {
 // Health Screening
 
 #[post("/api/executor/health_screen")]
+#[instrument(skip(req, signed_health_screen_unit, executor_conf, system_mirror), fields(time = signed_health_screen_unit.health_screen_unit.time))]
 async fn health_screen(
     req: HttpRequest,
     web::Json(signed_health_screen_unit): web::Json<SignedHealthScreenUnit>,
@@ -185,6 +192,7 @@ async fn health_screen(
 }
 
 #[post("/api/executor/bind")]
+#[instrument(skip(request_bind_scheduler, security_conf, shared_delay_timer), fields(bind_scheduler = request_bind_scheduler.bind_request.to_string().deref()))]
 // Or set security level, no authentication at level 0, public and private keys required at level 1.
 async fn bind_executor(
     web::Json(request_bind_scheduler): web::Json<SignedBindRequest>,
@@ -232,9 +240,13 @@ async fn main() -> AnyResult<()> {
     // Loads environment variables.
     dotenv().ok();
 
+    let log_level: Level =
+        FromStr::from_str(&env::var("LOG_LEVEL").unwrap_or_else(|_| String::from("info")))
+            .expect("Log level acquired fail.");
+
     FmtSubscriber::builder()
         // will be written to stdout.
-        .with_max_level(Level::INFO)
+        .with_max_level(log_level)
         .with_thread_names(true)
         // completes the builder.
         .init();
@@ -285,74 +297,120 @@ fn launch_status_reporter(
             let mut scheduler: Option<BindRequest> = None;
 
             loop {
-                {
-                    let scheduler_token = shared_security_conf.get_bind_scheduler_token_ref().await;
-                    if scheduler_token.as_ref() != token.as_ref() {
-                        token.clone_from(&scheduler_token);
+                let f = async {
+                    fresh_scheduler_conf(&shared_security_conf, &mut token, &mut scheduler).await;
+
+                    let events = collect_events(&status_reporter, scheduler.as_ref()).await?;
+
+                    if !events.is_empty() {
+                        send_event_collection(
+                            scheduler.as_ref(),
+                            Into::<ExecutorEventCollection>::into(events).sign(token.as_deref()),
+                        )
+                        .await;
                     }
-                }
 
-                {
-                    let fresh_scheduler = shared_security_conf.get_bind_scheduler_inner_ref().await;
-                    let fresh_scheduler_time = fresh_scheduler.as_ref().map(|s| s.time);
-                    let scheduler_time = scheduler.as_ref().map(|s| s.time);
+                    Ok(())
+                };
+                let f_result: Result<(), CommonError> = f
+                    .instrument(span!(
+                        Level::INFO,
+                        "status-reporter",
+                        log_id = get_unique_id_string().deref()
+                    ))
+                    .await;
 
-                    if fresh_scheduler_time != scheduler_time {
-                        scheduler.clone_from(&fresh_scheduler);
-
-                        // Adjust the internal host to avoid the need to clone String when calling RequestClient::post.
-                        //+ "/api/task_logs/event_trigger"
-                        if let Some(scheduler_mut_ref) = scheduler.as_mut() {
-                            scheduler_mut_ref.scheduler_host += "/api/task_logs/event_trigger";
-                        }
-                    }
-                }
-
-                let mut events: Vec<ExecutorEvent> = Vec::new();
-                'event_collection: for _i in 0..10 {
-                    let event_future: RtTimeout<_> = rt_timeout(
-                        Duration::from_secs(3),
-                        status_reporter.next_public_event_with_async_wait(),
-                    );
-
-                    match event_future.await {
-                        // No new events and timeout.
-                        Err(_) => break 'event_collection,
-                        // Internal runtime exception.
-                        Ok(Err(_)) => {
-                            return;
-                        }
-                        Ok(Ok(event)) => {
-                            scheduler
-                                .as_ref()
-                                .map(|conf| convert_event(event, conf).map(|e| events.push(e)));
-                        }
-                    }
-                }
-
-                if events.is_empty() {
-                    continue;
-                }
-
-                if let Some(scheduler_ref) = scheduler.as_ref() {
-                    if let Ok(executor_event_collection) =
-                        Into::<ExecutorEventCollection>::into(events).sign(token.as_deref())
-                    {
-                        RequestClient::new()
-                            .post(&scheduler_ref.scheduler_host)
-                            .send_json(&executor_event_collection)
-                            .await
-                            .map_err(|e| {
-                                error!(
-                                    "Failed to send the event collection: {} - {} - {:?}",
-                                    e, &scheduler_ref, &executor_event_collection.event_collection
-                                )
-                            })
-                            .ok();
-                    }
+                if let Err(e) = f_result {
+                    error!("{}", e);
+                    return;
                 }
             }
         })
+    }
+}
+async fn fresh_scheduler_conf(
+    shared_security_conf: &SharedExecutorSecurityConf,
+    token: &mut Option<String>,
+    scheduler: &mut Option<BindRequest>,
+) {
+    {
+        let scheduler_token = shared_security_conf.get_bind_scheduler_token_ref().await;
+        if scheduler_token.as_ref() != token.as_ref() {
+            token.clone_from(&scheduler_token);
+        }
+    }
+
+    {
+        let fresh_scheduler = shared_security_conf.get_bind_scheduler_inner_ref().await;
+        let fresh_scheduler_time = fresh_scheduler.as_ref().map(|s| s.time);
+        let scheduler_time = scheduler.as_ref().map(|s| s.time);
+
+        if fresh_scheduler_time != scheduler_time {
+            scheduler.clone_from(&fresh_scheduler);
+
+            // Adjust the internal host to avoid the need to clone String when calling RequestClient::post.
+            //+ "/api/task_logs/event_trigger"
+            if let Some(scheduler_mut_ref) = scheduler.as_mut() {
+                scheduler_mut_ref.scheduler_host += "/api/task_logs/event_trigger";
+            }
+        }
+    }
+}
+
+async fn collect_events(
+    status_reporter: &StatusReporter,
+    scheduler: Option<&BindRequest>,
+) -> Result<Vec<ExecutorEvent>, CommonError> {
+    let mut events: Vec<ExecutorEvent> = Vec::new();
+    for _i in 0..10 {
+        let event_future: RtTimeout<_> = rt_timeout(
+            Duration::from_secs(3),
+            status_reporter.next_public_event_with_async_wait(),
+        );
+
+        match event_future.await {
+            // No new events and timeout.
+            Err(_) => break,
+            // Internal runtime exception.
+            Ok(Err(_)) => {
+                return Err(CommonError::DisPass(
+                    "Internal runtime exception".to_string(),
+                ));
+            }
+            Ok(Ok(event)) => {
+                scheduler.map(|conf| convert_event(event, conf).map(|e| events.push(e)));
+            }
+        }
+    }
+
+    Ok(events)
+}
+
+async fn send_event_collection(
+    scheduler: Option<&BindRequest>,
+    executor_event_collection_result: Result<SignedExecutorEventCollection, CommonError>,
+) {
+    if let Some(scheduler_ref) = scheduler.as_ref() {
+        if let Ok(executor_event_collection) = executor_event_collection_result {
+            debug!(
+                "Event collection - {:?}",
+                &executor_event_collection.event_collection
+            );
+
+            if let Ok(mut response) = RequestClient::new()
+                .post(&scheduler_ref.scheduler_host)
+                .send_json(&executor_event_collection)
+                .await
+                .map_err(|e| {
+                    error!(
+                        "Failed to send the event collection: {} - {} - {:?}",
+                        e, &scheduler_ref, &executor_event_collection.event_collection
+                    )
+                })
+            {
+                debug!("delicate-schduler response: {:?}", response.body().await)
+            }
+        }
     }
 }
 

@@ -36,10 +36,29 @@ async fn main() -> AnyResut<()> {
     let scheduler_front_end_domain: String = env::var("SCHEDULER_FRONT_END_DOMAIN")
         .expect("Without `SCHEDULER_FRONT_END_DOMAIN` set in .env");
 
+    let log_level: Level =
+        FromStr::from_str(&env::var("LOG_LEVEL").unwrap_or_else(|_| String::from("info")))
+            .expect("Log level acquired fail.");
+
+    // Prepare a `FileLogWriter` and a handle to it, and keep the handle alive
+    // until the program ends (it will flush and shutdown the `FileLogWriter` when dropped).
+    // For the `FileLogWriter`, use the settings that fit your needs
+    let (file_writer, _fw_handle) = FileLogWriter::builder(FileSpec::default())
+        .rotate(
+            // If the program runs long enough,
+            Criterion::Age(Age::Day),  // - create a new file every day
+            Naming::Timestamps,        // - let the rotated files have a timestamp in their name
+            Cleanup::KeepLogFiles(15), // - keep at most seven log files
+        )
+        .write_mode(WriteMode::Async)
+        .try_build_with_handle()
+        .expect("flexi_logger init failed");
+
     FmtSubscriber::builder()
-        // will be written to stdout.
-        .with_max_level(Level::INFO)
+        // will be written to file_writer.
+        .with_max_level(log_level)
         .with_thread_names(true)
+        .with_writer(move || file_writer.clone())
         // completes the builder.
         .init();
 
@@ -51,8 +70,18 @@ async fn main() -> AnyResut<()> {
     let shared_scheduler_meta_info: SharedSchedulerMetaInfo =
         ShareData::new(SchedulerMetaInfo::default());
 
+    #[cfg(AUTH_CASBIN)]
+    let enforcer = get_casbin_enforcer(shared_connection_pool.clone()).await;
+    #[cfg(AUTH_CASBIN)]
+    let shared_enforcer = ShareData::new(RwLock::new(enforcer));
+
     // All ready work when the delicate-application starts.
-    launch_ready_operation(shared_connection_pool.clone()).await;
+    launch_ready_operation(
+        shared_connection_pool.clone(),
+        #[cfg(AUTH_CASBIN)]
+        shared_enforcer.clone(),
+    )
+    .await;
 
     let result = HttpServer::new(move || {
         let cors = Cors::default()
@@ -61,6 +90,9 @@ async fn main() -> AnyResut<()> {
             .allow_any_header()
             .supports_credentials()
             .max_age(3600);
+
+        #[cfg(APP_DEBUG_MODE)]
+        let cors = cors.allow_any_origin();
 
         let app = App::new()
             .configure(actions::task::config)
@@ -78,12 +110,26 @@ async fn main() -> AnyResut<()> {
             .app_data(shared_scheduler_meta_info.clone());
 
         #[cfg(AUTH_CASBIN)]
-        let app = app.wrap(CasbinService);
+        let app = app
+            .configure(actions::role::config)
+            .wrap(CasbinService)
+            .app_data(shared_enforcer.clone());
 
         app.wrap(components::session::auth_middleware())
             .wrap(components::session::session_middleware())
             .wrap(cors)
             .wrap(MiddlewareLogger::default())
+            .wrap_fn(|req, srv| {
+                let unique_id = get_unique_id_string();
+                let unique_id_str = unique_id.deref();
+                let fut = srv
+                    .call(req)
+                    .instrument(info_span!("log-id: ", unique_id_str));
+                async {
+                    let res = fut.await?;
+                    Ok(res)
+                }
+            })
     })
     .bind(scheduler_listening_address)?
     .run()
@@ -93,10 +139,21 @@ async fn main() -> AnyResut<()> {
 }
 
 // All ready work when the delicate-application starts.
-async fn launch_ready_operation(pool: ShareData<db::ConnectionPool>) {
+async fn launch_ready_operation(
+    pool: ShareData<db::ConnectionPool>,
+    #[cfg(AUTH_CASBIN)] enforcer: ShareData<RwLock<Enforcer>>,
+) {
     launch_health_check(pool.clone());
-    launch_operation_log_consumer(pool.clone());
-    launch_cache_warm_up().await;
+    launch_operation_log_consumer(pool);
+
+    #[cfg(AUTH_CASBIN)]
+    {
+        // When the delicate starts, it checks if the resource acquisition is normal.
+        let redis_url = env::var("REDIS_URL").expect("The redis url could not be acquired.");
+        let redis_client = redis::Client::open(redis_url)
+            .expect("The redis client resource could not be initialized.");
+        launch_casbin_rule_events_consumer(redis_client, enforcer);
+    }
 }
 
 // Heartbeat checker
@@ -112,10 +169,4 @@ fn launch_health_check(pool: ShareData<db::ConnectionPool>) {
 // These logs go through the channel with the asynchronous state machine to consume.
 fn launch_operation_log_consumer(pool: ShareData<db::ConnectionPool>) {
     rt_spawn(loop_operate_logs(pool));
-}
-
-// Application cache warmup.
-async fn launch_cache_warm_up() {
-    #[cfg(AUTH_CASBIN)]
-    warm_up_auther().await;
 }
