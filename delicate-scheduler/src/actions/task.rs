@@ -92,13 +92,14 @@ async fn show_tasks(
                     .query_filter(count_builder)
                     .get_result::<i64>(&conn)?;
 
+                let mut front_end_task = tasks
+                    .into_iter()
+                    .map(|(_, t)| t)
+                    .collect::<Vec<model::FrontEndTask>>();
+
+                front_end_task.sort_by(|a, b| a.id.cmp(&b.id));
                 Ok(PaginateData::<model::FrontEndTask>::default()
-                    .set_data_source(
-                        tasks
-                            .into_iter()
-                            .map(|(_, t)| t)
-                            .collect::<Vec<model::FrontEndTask>>(),
-                    )
+                    .set_data_source(front_end_task)
                     .set_page_size(per_page)
                     .set_total(count)
                     .set_state_desc::<state::task::State>())

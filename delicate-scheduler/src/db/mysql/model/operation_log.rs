@@ -14,6 +14,29 @@ pub struct OperationLog {
     operation_time: NaiveDateTime,
 }
 
+#[derive(Debug, Clone, Serialize)]
+pub struct FrontEndOperationLog {
+    id: u64,
+    name: String,
+    table_id: u64,
+    operation_type: i8,
+    operation_type_desc: &'static str,
+    user_id: u64,
+    user_name: String,
+    operation_time: NaiveDateTime,
+}
+
+impl From<OperationLog> for FrontEndOperationLog{
+    fn from(log: OperationLog) -> Self {
+        let OperationLog{id, name,table_id, operation_type, user_id, user_name, operation_time} = log;
+        let operation_type_desc = Into::<state::operation_log::OperationType>::into(operation_type as i16).into();
+
+        Self {
+            id, name,table_id, operation_type, operation_type_desc, user_id, user_name, operation_time
+        }
+    }
+}
+
 #[derive(Queryable, Identifiable, AsChangeset, Debug, Clone, Serialize, Deserialize)]
 #[table_name = "operation_log_detail"]
 

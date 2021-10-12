@@ -128,7 +128,7 @@ pub struct TaskLog {
 }
 
 // The front-end int64 is not convenient to be compatible, and the server side helps to handle it.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct FrontEndTaskLog {
     id: FrontEndRecordId,
     task_id: i64,
@@ -140,6 +140,7 @@ pub struct FrontEndTaskLog {
     maximum_parallel_runnable_num: i16,
     tag: String,
     status: i16,
+    status_desc: &'static str,
     created_time: NaiveDateTime,
     updated_time: NaiveDateTime,
     executor_processor_id: i64,
@@ -169,6 +170,7 @@ impl From<TaskLog> for FrontEndTaskLog {
         } = log;
 
         let id = FrontEndRecordId(id);
+        let status_desc = Into::<state::task_log::State>::into(status as i16).into();
 
         FrontEndTaskLog {
             id,
@@ -181,6 +183,7 @@ impl From<TaskLog> for FrontEndTaskLog {
             maximum_parallel_runnable_num,
             tag,
             status,
+            status_desc,
             created_time,
             updated_time,
             executor_processor_id,

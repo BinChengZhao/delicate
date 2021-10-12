@@ -10,6 +10,18 @@ pub mod task {
         NotEnabled = 1,
         Enabled = 2,
         Deleted = 3,
+        Unknown = 81,
+    }
+
+    impl From<i16> for State {
+        fn from(v: i16) -> State {
+            match v {
+                1 => State::NotEnabled,
+                2 => State::Enabled,
+                3 => State::Deleted,
+                _ => State::Unknown,
+            }
+        }
     }
 }
 
@@ -49,6 +61,17 @@ pub mod user {
     pub enum State {
         Health = 1,
         Forbidden = 2,
+        Unknown = 81,
+    }
+
+    impl From<i16> for State {
+        fn from(v: i16) -> State {
+            match v {
+                1 => State::Health,
+                2 => State::Forbidden,
+                _ => State::Unknown,
+            }
+        }
     }
 }
 
@@ -60,6 +83,17 @@ pub mod user_auth {
     pub enum State {
         Health = 1,
         Forbidden = 2,
+        Unknown = 81,
+    }
+
+    impl From<i16> for State {
+        fn from(v: i16) -> State {
+            match v {
+                1 => State::Health,
+                2 => State::Forbidden,
+                _ => State::Unknown,
+            }
+        }
     }
 }
 
@@ -72,6 +106,18 @@ pub mod executor_processor {
         NotEnabled = 1,
         Enabled = 2,
         Abnormal = 3,
+        Unknown = 81,
+    }
+
+    impl From<i16> for State {
+        fn from(v: i16) -> State {
+            match v {
+                1 => State::NotEnabled,
+                2 => State::Enabled,
+                3 => State::Abnormal,
+                _ => State::Unknown,
+            }
+        }
     }
 }
 
@@ -83,6 +129,17 @@ pub mod executor_group {
     pub enum State {
         Health = 1,
         Forbidden = 2,
+        Unknown = 81,
+    }
+
+    impl From<i16> for State {
+        fn from(v: i16) -> State {
+            match v {
+                1 => State::Health,
+                2 => State::Forbidden,
+                _ => State::Unknown,
+            }
+        }
     }
 }
 
@@ -122,6 +179,21 @@ pub mod user_login_log {
         Ldap = 4,
         OtherOAuth = 5,
         Logout = 81,
+        Unknown = 88,
+    }
+
+    impl From<i16> for LoginType {
+        fn from(v: i16) -> LoginType {
+            match v {
+                1 => LoginType::Mobile,
+                2 => LoginType::Email,
+                3 => LoginType::UserName,
+                4 => LoginType::Ldap,
+                5 => LoginType::OtherOAuth,
+                81 => LoginType::Logout,
+                _ => LoginType::Unknown,
+            }
+        }
     }
 
     #[allow(dead_code)]
@@ -131,6 +203,19 @@ pub mod user_login_log {
         LogoutSuccess = 2,
         Loginfailure = 3,
         Logoutfailure = 4,
+        Unknown = 81,
+    }
+
+    impl From<i16> for LoginCommand {
+        fn from(v: i16) -> LoginCommand {
+            match v {
+                1 => LoginCommand::LoginSuccess,
+                2 => LoginCommand::LogoutSuccess,
+                3 => LoginCommand::Loginfailure,
+                4 => LoginCommand::Logoutfailure,
+                _ => LoginCommand::Unknown,
+            }
+        }
     }
 }
 
