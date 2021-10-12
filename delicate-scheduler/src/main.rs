@@ -31,6 +31,7 @@ pub(crate) use prelude::*;
 // 1. migrate to poem.
 // 2. Implement the actuator, via tonic.
 // 3. Prioritize minimalist implementations, supporting only single machines at first, with subsequent support for slicing or various rules.
+// 4. advertise on `poem` Readme.
 async fn main() -> AnyResut<()> {
     // Loads environment variables.
     dotenv().ok();
