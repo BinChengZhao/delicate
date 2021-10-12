@@ -10,30 +10,31 @@ name = "delicate_utils"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-log = "^0.4"
-rand = "^0.8.3"
-ring = "^0.16.20"
-fastrand = "^1.4.1"
-thiserror = "1.0.25"
 async-lock = "^2.3.0"
 actix-web = "^3.3.2"
 actix-session = "0.4.1"
-tracing = "0.1.26"
-tracing-subscriber = "0.2.19"
-flexi_logger = {version = "0.19", features = ["trc"]}
-serde_json = "^1.0.62"
-sysinfo = "^0.16.5"
-derive_more = "^0.99.14"
-uuid = {version = "^0.8.2", features = ["v4"]}
-hex = {version = "^0.4", features = ["serde"]}
-serde = { version = "^1.0", features = ["derive"] }
-delay_timer = {version = "^0.9.0", features = ["full"]}
-rsa = { version = "^0.4.0", features = ["std", "pem" ,"serde"] }
-diesel = { version = "^1.4.6", features = ["postgres", "mysql", "extras", "r2d2", "chrono"] }
 # TODO: This(casbin-version) must be changed when upgrading to actix-web4.
 casbin = {version = '2.0.5', default-features = false, features = ["incremental", "logging", "tokio", "runtime-tokio", "watcher"]}
+derive_more = "^0.99.14"
+delay_timer = {version = "^0.9.0", features = ["full"]}
+fastrand = "^1.4.1"
+flexi_logger = {version = "0.19", features = ["trc"]}
+hex = {version = "^0.4", features = ["serde"]}
+log = "^0.4"
+poem = "1.0.1"
+rand = "^0.8.3"
+ring = "^0.16.20"
+rsa = { version = "^0.4.0", features = ["std", "pem" ,"serde"] }
 # TODO: This(redis-version) must be changed when upgrading to actix-web4.
 redis = { version = "= 0.17.0", features = ["connection-manager", "tokio-comp"] }
-
+serde = { version = "^1.0", features = ["derive"] }
+serde_json = "^1.0.62"
+sysinfo = "^0.16.5"
+diesel = { version = "^1.4.6", features = ["postgres", "mysql", "extras", "r2d2", "chrono"] }
+thiserror = "1.0.25"
+tokio ={version = "1.12.0", features = ["full"] }
+tracing = "0.1.26"
+tracing-subscriber = "0.2.19"
+uuid = {version = "^0.8.2", features = ["v4"]}
 
 [dev-dependencies]

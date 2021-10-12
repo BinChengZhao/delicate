@@ -97,7 +97,7 @@ https://github.com/BinChengZhao/delicate)
 我们把它分成多个简单的步骤来说明`Delicate`的概念和操作.
 
 源码安装的依赖:
- * [rustc](https://www.rust-lang.org/tools/install) (minimum-supported version of `rustc` is **1.49**.) 
+ * [rustc](https://www.rust-lang.org/tools/install) (minimum-supported version of `rustc` is **1.54**.) 
  * libmysqlclient-dev & libpq-dev & libssl-dev
 
 ### 部署 delicate
