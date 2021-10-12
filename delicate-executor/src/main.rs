@@ -1,3 +1,4 @@
+#![allow(clippy::async_yields_async)]
 mod component;
 mod prelude;
 use prelude::*;

@@ -37,7 +37,7 @@ async fn users(
     web::Json(RoleId { role_id }): web::Json<RoleId>,
 ) -> HttpResponse {
     if let Some(role_name) = ROLES.get(role_id) {
-        let users = enforcer.read().await.get_users_for_role(&role_name, None);
+        let users = enforcer.read().await.get_users_for_role(role_name, None);
         return HttpResponse::Ok().json(UnifiedResponseMessages::<Vec<String>>::success_with_data(
             users,
         ));
