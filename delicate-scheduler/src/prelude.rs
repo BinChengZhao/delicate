@@ -67,14 +67,12 @@ pub(crate) use diesel::r2d2::CustomizeConnection;
 pub(crate) use diesel::result::Error as DieselError;
 pub(crate) use diesel::sql_types;
 
-pub(crate) use actix_session::{CookieSession, Session, UserSession};
 pub(crate) use actix_web::client::Client as RequestClient;
 pub(crate) use actix_web::dev::Decompress;
 pub(crate) use actix_web::dev::Payload;
 pub(crate) use actix_web::dev::{
     HttpResponseBuilder, Service, ServiceRequest, ServiceResponse, Transform,
 };
-pub(crate) use actix_web::http::StatusCode;
 pub(crate) use actix_web::middleware::Logger as MiddlewareLogger;
 pub(crate) use actix_web::rt::spawn as rt_spawn;
 pub(crate) use actix_web::rt::time::{
@@ -109,10 +107,11 @@ pub(crate) use strum::IntoEnumIterator;
 pub(crate) use strum_macros::{AsRefStr, EnumIter, IntoStaticStr, ToString as StrumToString};
 pub(crate) use validator::{Validate, ValidationErrors};
 
-pub(crate) use poem::http::Method;
+pub(crate) use poem::http::{Method, Uri};
 pub(crate) use poem::listener::TcpListener;
 pub(crate) use poem::middleware::AddData;
 pub(crate) use poem::middleware::Cors;
+pub(crate) use poem::web::cookie::{Cookie, CookieJar};
 pub(crate) use poem::web::{Data, IntoResponse, Json};
 pub(crate) use poem::{
     get, handler, post, Endpoint, EndpointExt, Middleware, Request, Route, Server,

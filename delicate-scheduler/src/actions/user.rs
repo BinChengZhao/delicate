@@ -4,7 +4,7 @@ use model::user::{
     get_encrypted_certificate_by_raw_certificate, UserAndPermissions, UserAndRoles, UserName,
 };
 
-pub(crate) fn route(route: Route) -> Route {
+pub(crate) fn config_route(route: Route) -> Route {
     route
         .at("/api/user/create", post(create_user))
         .at("/api/user/list", post(show_users))
@@ -226,7 +226,7 @@ async fn pre_login_user(
         account,
         password,
     }: model::UserAuthLogin,
-    session: Session,
+    // session: Session,
     pool: Data<&db::ConnectionPool>,
 ) -> Result<(), CommonError> {
     use model::user_login_log::NewUserLoginLog;
@@ -282,14 +282,17 @@ async fn pre_login_user(
 }
 
 fn save_session(
-    session: Session,
+    // session: Session,
     (_, user): (model::UserAuth, model::User),
 ) -> Result<(), CommonError> {
-    session.set("login_time", get_timestamp())?;
-    session.set("user_id", user.id)?;
-    session.set("user_name", user.user_name)?;
-    session.set("nick_name", user.nick_name)?;
-    Ok(())
+    // FIXME:
+
+    // session.set("login_time", get_timestamp())?;
+    // session.set("user_id", user.id)?;
+    // session.set("user_name", user.user_name)?;
+    // session.set("nick_name", user.nick_name)?;
+    // Ok(())
+    todo!();
 }
 
 // FIXME:

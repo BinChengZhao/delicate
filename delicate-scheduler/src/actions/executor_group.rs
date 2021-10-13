@@ -1,6 +1,6 @@
 use super::prelude::*;
 
-pub(crate) fn route(route: Route) -> Route {
+pub(crate) fn config_route(route: Route) -> Route {
     route
         .at("/api/executor_group/list", post(show_executor_groups))
         .at(

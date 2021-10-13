@@ -15,7 +15,6 @@ documentation = ""
 
 [dependencies]
 actix-web = "^3.3.2"
-actix-session = "0.4.1"
 async-channel = "1.6.1"
 async-lock = "^2.4.0"
 async-trait = "0.1.51"

@@ -5,7 +5,3 @@ members = [
   "delicate-scheduler",
   "delicate-utils"
 ]
-
-# TODO: This(casbin-patch) must be remove when upgrading to actix-web4.
-[patch.crates-io]
-casbin = { git = 'https://github.com/BinChengZhao/casbin-rs', branch = 'fix-casbin-v2.0.5-compile-bug' }

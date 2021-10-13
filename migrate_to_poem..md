@@ -57,3 +57,45 @@ pub(crate) fn config_route(route: Route) -> Route {
         .at("/api/executor/list", get(executor_list))
         .at("/api/permission/list", get(permission_list))
 }
+
+       let app = App::new()
+            .configure(actions::task::config)
+            .configure(actions::user::config)
+            .configure(actions::task_log::config)
+            .configure(actions::executor_group::config)
+            .configure(actions::executor_processor::config)
+            .configure(actions::executor_processor_bind::config)
+            .configure(actions::data_reports::config)
+            .configure(actions::components::config)
+            .configure(actions::operation_log::config)
+            .configure(actions::user_login_log::config);
+
+        let app = Some(Route::new())
+            .map(actions::task::config_route)
+            .map(actions::user::config_route)
+            .map(actions::task_log::config_route)
+            .map(actions::executor_group::config_route)
+            .map(actions::executor_processor::config_route)
+            .map(actions::executor_processor_bind::config_route)
+            .map(actions::data_reports::config_route)
+            .map(actions::components::config_route)
+            .map(actions::operation_log::config_route)
+            .map(actions::user_login_log::config_route)
+            .expect("");
+
+// remove patch and older packages.
+
+# TODO: This(casbin-patch) must be remove when upgrading to actix-web4.
+[patch.crates-io]
+casbin = { git = 'https://github.com/BinChengZhao/casbin-rs', branch = 'fix-casbin-v2.0.5-compile-bug' }
+
+            # TODO: This(casbin-version) must be changed when upgrading to poem.
+casbin = {version = '2.0.5', default-features = false, features = ["incremental", "logging", "tokio", "runtime-tokio", "watcher"]}
+
+
+# TODO: This(redis-version) must be changed when upgrading to poem.
+redis = { version = "= 0.17.0", features = ["connection-manager", "tokio-comp"] }
+
+// Cookie 中间件，不能用户配置属性有点不方便。
+// 通过CookieJar，每存一个新Cookie都需要手动配置安全相关的属性。
+// 如果中间件支持用户配置一次，后续默认走配置的属性就可以很简洁。

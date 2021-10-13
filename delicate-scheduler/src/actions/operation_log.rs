@@ -1,6 +1,6 @@
 use super::prelude::*;
 
-pub(crate) fn route(route: Route) -> Route {
+pub(crate) fn config_route(route: Route) -> Route {
     route
         .at("/api/operation_log/list", post(show_operation_log))
         .at("/api/operation_log/detail", post(show_operation_log_detail))

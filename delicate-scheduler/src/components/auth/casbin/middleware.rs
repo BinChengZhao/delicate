@@ -65,31 +65,18 @@ pub(crate) fn get_casbin_model_conf_path() -> &'static str {
 #[derive(Copy, Clone, Debug, Serialize, Deserialize)]
 pub(crate) struct CasbinService;
 
-impl<S, B> Transform<S> for CasbinService
-where
-    S: Service<Request = ServiceRequest, Response = ServiceResponse<B>, Error = ActixWebError>
-        + 'static,
-    S::Future: 'static,
-    B: 'static,
-{
-    type Request = ServiceRequest;
-    type Response = ServiceResponse<B>;
-    type Error = ActixWebError;
-    type InitError = ();
-    type Transform = CasbinAuthMiddleware<S>;
-    type Future = Ready<Result<Self::Transform, Self::InitError>>;
+impl<E: Endpoint> Middleware<E> for CasbinService {
+    type Output = CasbinAuthMiddleware<E>;
 
-    fn new_transform(&self, service: S) -> Self::Future {
-        ok(CasbinAuthMiddleware {
-            service: Rc::new(RefCell::new(service)),
-        })
+    fn transform(&self, ep: E) -> Self::Output {
+        CasbinAuthMiddleware { ep }
     }
 }
 
 #[derive(Clone)]
 
-pub struct CasbinAuthMiddleware<S> {
-    service: Rc<RefCell<S>>,
+pub struct CasbinAuthMiddleware<E> {
+    ep: E,
 }
 
 const WHITE_LIST: [&str; 9] = [
@@ -104,43 +91,30 @@ const WHITE_LIST: [&str; 9] = [
     "/api/casbin/test",
 ];
 
-impl<S, B> Service for CasbinAuthMiddleware<S>
-where
-    S: Service<Request = ServiceRequest, Response = ServiceResponse<B>, Error = ActixWebError>
-        + 'static,
-    S::Future: 'static,
-    B: 'static,
-{
-    type Request = ServiceRequest;
-    type Response = ServiceResponse<B>;
-    type Error = ActixWebError;
-    type Future = MiddlewareFuture<Self::Response, Self::Error>;
+#[poem::async_trait]
+impl<E: Endpoint> Endpoint for CasbinAuthMiddleware<E> {
+    type Output = E::Output;
 
-    fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-        // Because also impl<S> Service for Rc<RefCell<S>> in actix.
-        // So it work.
-        self.service.poll_ready(cx)
-    }
-
-    fn call(&mut self, req: ServiceRequest) -> Self::Future {
+    async fn call(&self, mut req: Request) -> Self::Output {
         let enforcer = req
-            .app_data::<Data<&RwLock<Enforcer>>>()
+            .extensions()
+            .get::<Data<Arc<RwLock<Enforcer>>>>()
             .expect("Casbin's enforcer acquisition failed")
             .clone();
-        let mut service = self.service.clone();
-        let session = req.get_session();
-        let path = req.path().to_string();
+        let extensions = req.extensions();
+        let session = extensions.get::<CookieJar>();
+        let path = req.uri().path().to_string();
         let auth_part = path.split('/').into_iter().collect::<Vec<&str>>();
 
         let resource = auth_part.get(2).map(|s| s.to_string()).unwrap_or_default();
         let action = auth_part.get(3).map(|s| s.to_string()).unwrap_or_default();
-        let username = session
-            .get::<String>("user_name")
-            .unwrap_or_default()
-            .unwrap_or_default();
 
         // FIXME:
         todo!();
+        // let username = session
+        //     .get::<String>("user_name")
+        //     .unwrap_or_default()
+        //     .unwrap_or_default();
         // Box::pin(async move {
         //     // Path in the whitelist do not need to be verified.
         //     if WHITE_LIST.contains(&path.deref()) {

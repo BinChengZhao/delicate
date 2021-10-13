@@ -112,17 +112,20 @@ fn main() -> AnyResut<()> {
         //     #[cfg(APP_DEBUG_MODE)]
         //     let cors = cors.allow_origin("*");
 
-        //     let app = App::new()
-        //         // .configure(actions::task::config)
-        //         // .configure(actions::user::config)
-        //         // .configure(actions::task_log::config)
-        //         // .configure(actions::executor_group::config)
-        //         // .configure(actions::executor_processor::config)
-        //         // .configure(actions::executor_processor_bind::config)
-        //         // .configure(actions::data_reports::config)
-        //         // .configure(actions::components::config)
-        //         // .configure(actions::operation_log::config)
-        //         // .configure(actions::user_login_log::config)
+        // FIXME: Reference poem/routes.rs
+        let app = Some(Route::new())
+            .map(actions::task::config_route)
+            .map(actions::user::config_route)
+            .map(actions::task_log::config_route)
+            .map(actions::executor_group::config_route)
+            .map(actions::executor_processor::config_route)
+            .map(actions::executor_processor_bind::config_route)
+            .map(actions::data_reports::config_route)
+            .map(actions::components::config_route)
+            .map(actions::operation_log::config_route)
+            .map(actions::user_login_log::config_route)
+            .expect("");
+
         //         .app_data(shared_delay_timer.clone())
         //         .app_data(shared_connection_pool.clone())
         //         .app_data(shared_scheduler_meta_info.clone());

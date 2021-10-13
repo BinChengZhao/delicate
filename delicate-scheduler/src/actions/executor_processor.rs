@@ -1,7 +1,7 @@
 use super::prelude::*;
 use db::schema::executor_processor;
 
-pub(crate) fn route(route: Route) -> Route {
+pub(crate) fn config_route(route: Route) -> Route {
     route
         .at(
             "/api/executor_processor/list",

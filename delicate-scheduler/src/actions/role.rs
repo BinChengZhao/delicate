@@ -1,7 +1,7 @@
 use super::prelude::*;
 use db::model::casbin_rule::RoleId;
 
-pub(crate) fn route(route: Route) -> Route {
+pub(crate) fn config_route(route: Route) -> Route {
     route
         .at("/api/role/list", get(list))
         .at("/api/role/permission_detail", post(permission_detail))

@@ -13,8 +13,7 @@ name = "delicate_utils"
 async-lock = "^2.3.0"
 actix-web = "^3.3.2"
 actix-session = "0.4.1"
-# TODO: This(casbin-version) must be changed when upgrading to actix-web4.
-casbin = {version = '2.0.5', default-features = false, features = ["incremental", "logging", "tokio", "runtime-tokio", "watcher"]}
+casbin = {version = '2.0.9', default-features = false, features = ["incremental", "logging", "tokio", "runtime-tokio", "watcher"]}
 derive_more = "^0.99.14"
 delay_timer = {version = "^0.9.0", features = ["full"]}
 fastrand = "^1.4.1"
@@ -22,12 +21,11 @@ flexi_logger = {version = "0.19", features = ["trc"]}
 reqwest = { version = "0.11", features = ["json"] }
 hex = {version = "^0.4", features = ["serde"]}
 log = "^0.4"
-poem = "1.0.1"
+poem = {version = "1.0.1", features = ["cookie", "tower-compat"]}
 rand = "^0.8.3"
 ring = "^0.16.20"
 rsa = { version = "^0.4.0", features = ["std", "pem" ,"serde"] }
-# TODO: This(redis-version) must be changed when upgrading to actix-web4.
-redis = { version = "= 0.17.0", features = ["connection-manager", "tokio-comp"] }
+redis = { version = "0.21.2", features = ["connection-manager", "tokio-comp"] }
 serde = { version = "^1.0", features = ["derive"] }
 serde_json = "^1.0.62"
 sysinfo = "^0.16.5"
