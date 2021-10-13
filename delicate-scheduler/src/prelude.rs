@@ -4,8 +4,9 @@ pub(crate) use super::components::auth::casbin::casbin_event_consumer::{
 };
 #[allow(unused_imports)]
 pub(crate) use super::components::auth::casbin::*;
-pub(crate) use super::components::base::{SchedulerMetaInfo, SharedSchedulerMetaInfo};
-pub(crate) use super::components::health_checker::loop_health_check;
+pub(crate) use super::components::base::SchedulerMetaInfo;
+// FIXME:
+// pub(crate) use super::components::health_checker::loop_health_check;
 pub(crate) use super::components::helper::handle_response;
 pub(crate) use super::components::operation_log_consumer::{
     loop_operate_logs, send_option_operation_log_pair,
@@ -40,6 +41,8 @@ pub(crate) use std::ops::Deref;
 pub(crate) use std::rc::Rc;
 pub(crate) use std::str::FromStr;
 pub(crate) use std::string::ToString;
+pub(crate) use std::sync::atomic::{AtomicUsize, Ordering};
+pub(crate) use std::sync::Arc;
 pub(crate) use std::task::{Context, Poll};
 pub(crate) use std::time::Duration;
 pub(crate) use std::time::SystemTime;
@@ -64,7 +67,6 @@ pub(crate) use diesel::r2d2::CustomizeConnection;
 pub(crate) use diesel::result::Error as DieselError;
 pub(crate) use diesel::sql_types;
 
-pub(crate) use actix_cors::Cors;
 pub(crate) use actix_session::{CookieSession, Session, UserSession};
 pub(crate) use actix_web::client::Client as RequestClient;
 pub(crate) use actix_web::dev::Decompress;
@@ -79,7 +81,6 @@ pub(crate) use actix_web::rt::time::{
     delay_for as rt_delay_for, interval, timeout as rt_timeout, Timeout as RtTimeout,
 };
 pub(crate) use actix_web::web::{self, Data as ShareData};
-pub(crate) use actix_web::{get, post, App, HttpRequest, HttpResponse, HttpServer};
 pub(crate) use actix_web::{Error as ActixWebError, Result};
 pub(crate) use awc::{JsonBody, SendClientRequest};
 
@@ -89,6 +90,9 @@ pub(crate) use async_lock::RwLock;
 pub(crate) use delay_timer::prelude::*;
 pub(crate) use diesel::query_dsl::RunQueryDsl;
 pub(crate) use dotenv::dotenv;
+pub(crate) use tokio::runtime::Builder;
+pub(crate) use tokio::spawn as tokio_spawn;
+pub(crate) use tokio::time::{timeout as tokio_timeout, Timeout as TokioTimeout};
 pub(crate) use tracing::{debug, error, info, info_span, span, Instrument, Level};
 pub(crate) use tracing_subscriber::FmtSubscriber;
 
@@ -105,6 +109,14 @@ pub(crate) use strum::IntoEnumIterator;
 pub(crate) use strum_macros::{AsRefStr, EnumIter, IntoStaticStr, ToString as StrumToString};
 pub(crate) use validator::{Validate, ValidationErrors};
 
+pub(crate) use poem::http::Method;
+pub(crate) use poem::listener::TcpListener;
+pub(crate) use poem::middleware::AddData;
+pub(crate) use poem::middleware::Cors;
+pub(crate) use poem::web::{Data, IntoResponse, Json};
+pub(crate) use poem::{
+    get, handler, post, Endpoint, EndpointExt, Middleware, Request, Route, Server,
+};
 // The public middleware output type.
 pub(crate) type MiddlewareFuture<T, E> =
     std::pin::Pin<Box<dyn std::future::Future<Output = Result<T, E>>>>;

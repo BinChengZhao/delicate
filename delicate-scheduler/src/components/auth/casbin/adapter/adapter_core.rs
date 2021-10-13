@@ -7,13 +7,13 @@ use async_trait::async_trait;
 use casbin::{Adapter, Error as CasbinError, Filter, Model};
 
 pub struct DieselAdapter {
-    pool: ShareData<db::ConnectionPool>,
+    pool: Arc<db::ConnectionPool>,
     is_filtered: bool,
 }
 
 impl DieselAdapter {
     #[allow(dead_code)]
-    pub fn new(pool: ShareData<db::ConnectionPool>) -> Self {
+    pub fn new(pool: Arc<db::ConnectionPool>) -> Self {
         Self {
             pool,
             is_filtered: false,
@@ -357,7 +357,7 @@ mod tests {
         let mut e = Enforcer::new(m, file_adapter).await.unwrap();
         let mut adapter = DieselAdapter::new({
             let connection_pool = db::get_connection_pool();
-            ShareData::new(connection_pool)
+            Arc::new(connection_pool)
         });
 
         assert!(adapter.save_policy(e.get_mut_model()).await.is_ok());

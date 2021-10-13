@@ -19,6 +19,7 @@ derive_more = "^0.99.14"
 delay_timer = {version = "^0.9.0", features = ["full"]}
 fastrand = "^1.4.1"
 flexi_logger = {version = "0.19", features = ["trc"]}
+reqwest = { version = "0.11", features = ["json"] }
 hex = {version = "^0.4", features = ["serde"]}
 log = "^0.4"
 poem = "1.0.1"

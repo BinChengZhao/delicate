@@ -1,21 +1,22 @@
 use super::prelude::*;
 use db::schema::executor_processor;
 
-pub(crate) async fn loop_health_check(pool: ShareData<db::ConnectionPool>) {
-    let mut interval = interval(Duration::from_secs(20));
-    loop {
-        interval.tick().await;
-        if let Ok(conn) = pool.get() {
-            health_check(conn)
-                .await
-                .map_err(|e| error!(target:"loop-health-check", "{}", e.to_string()))
-                .ok();
-            continue;
-        }
+// FIXME:
+// pub(crate) async fn loop_health_check(pool: Arc<db::ConnectionPool>) {
+//     let mut interval = interval(Duration::from_secs(20));
+//     loop {
+//         interval.tick().await;
+//         if let Ok(conn) = pool.get() {
+//             health_check(conn)
+//                 .await
+//                 .map_err(|e| error!(target:"loop-health-check", "{}", e.to_string()))
+//                 .ok();
+//             continue;
+//         }
 
-        error!(target:"loop-health-check", "No available database connection.");
-    }
-}
+//         error!(target:"loop-health-check", "No available database connection.");
+//     }
+// }
 
 async fn health_check(conn: db::PoolConnection) -> Result<(), CommonError> {
     let (executor_packages, conn) = web::block::<_, _, diesel::result::Error>(move || {

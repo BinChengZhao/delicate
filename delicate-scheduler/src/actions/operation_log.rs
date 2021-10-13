@@ -1,17 +1,19 @@
 use super::prelude::*;
 
-pub(crate) fn config(cfg: &mut web::ServiceConfig) {
-    cfg.service(show_operation_log)
-        .service(show_operation_log_detail);
+pub(crate) fn route(route: Route) -> Route {
+    route
+        .at("/api/operation_log/list", post(show_operation_log))
+        .at("/api/operation_log/detail", post(show_operation_log_detail))
 }
 
-#[post("/api/operation_log/list")]
+#[handler]
+
 async fn show_operation_log(
-    web::Json(query_params): web::Json<model::QueryParamsOperationLog>,
-    pool: ShareData<db::ConnectionPool>,
-) -> HttpResponse {
+    Json(query_params): Json<model::QueryParamsOperationLog>,
+    pool: Data<&db::ConnectionPool>,
+) -> impl IntoResponse {
     if let Ok(conn) = pool.get() {
-        return HttpResponse::Ok().json(Into::<
+        return Json(Into::<
             UnifiedResponseMessages<PaginateData<model::FrontEndOperationLog>>,
         >::into(
             web::block::<_, _, diesel::result::Error>(move || {
@@ -42,20 +44,20 @@ async fn show_operation_log(
         ));
     }
 
-    HttpResponse::Ok().json(UnifiedResponseMessages::<
+    Json(UnifiedResponseMessages::<
         PaginateData<model::FrontEndOperationLog>,
     >::error())
 }
+#[handler]
 
-#[post("/api/operation_log/detail")]
 async fn show_operation_log_detail(
-    web::Json(query_params): web::Json<model::OperationLogId>,
-    pool: ShareData<db::ConnectionPool>,
-) -> HttpResponse {
+    Json(query_params): Json<model::OperationLogId>,
+    pool: Data<&db::ConnectionPool>,
+) -> impl IntoResponse {
     use db::schema::operation_log_detail;
 
     if let Ok(conn) = pool.get() {
-        return HttpResponse::Ok().json(Into::<
+        return Json(Into::<
             UnifiedResponseMessages<Vec<model::OperationLogDetail>>,
         >::into(
             web::block::<_, _, diesel::result::Error>(move || {
@@ -71,5 +73,5 @@ async fn show_operation_log_detail(
         ));
     }
 
-    HttpResponse::Ok().json(UnifiedResponseMessages::<Vec<model::OperationLogDetail>>::error())
+    Json(UnifiedResponseMessages::<Vec<model::OperationLogDetail>>::error())
 }

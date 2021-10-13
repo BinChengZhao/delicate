@@ -4,6 +4,7 @@ pub use flexi_logger;
 pub use hex;
 pub use poem;
 pub use redis;
+pub use reqwest;
 pub use tokio;
 pub use tracing;
 pub use tracing_subscriber;

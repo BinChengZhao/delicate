@@ -152,23 +152,20 @@ async fn maintenance(shared_delay_timer: Data<&DelayTimer>) -> Json<UnitUnifiedR
 
 // Health Screening
 #[handler]
-// FIXME:
-// #[instrument(skip(req, signed_health_screen_unit, executor_conf, system_mirror), fields(time = signed_health_screen_unit.health_screen_unit.time))]
-#[instrument(skip(signed_health_screen_unit, executor_conf, system_mirror), fields(time = signed_health_screen_unit.health_screen_unit.time))]
+#[instrument(skip(req, signed_health_screen_unit, executor_conf, system_mirror), fields(time = signed_health_screen_unit.health_screen_unit.time))]
 async fn health_screen(
-    // FIXME:
-    // req: Request,
+    req: &Request,
     Json(signed_health_screen_unit): Json<SignedHealthScreenUnit>,
     executor_conf: Data<&ExecutorSecurityConf>,
     system_mirror: Data<&SystemMirror>,
 ) -> Json<UnifiedResponseMessages<HealthCheckPackage>> {
-    let guard = executor_conf.get_bind_scheduler_token_ref().await;
-    let token = guard.as_ref().map(|s| s.deref());
-
+    // FIXME:
     todo!();
+    // let guard = executor_conf.get_bind_scheduler_token_ref().await;
+    // let token = guard.as_ref().map(|s| s.deref());
+
     // let verify_result = signed_health_screen_unit.get_health_screen_unit_after_verify(token);
     // if let Ok(health_screen_unit) = verify_result {
-    // FIXME:
     // let ip = req.remote_addr();
     // info!("From: {}, Request-time:{}", ip, health_screen_unit);
 
@@ -310,45 +307,52 @@ fn launch_status_reporter(
 ) {
     let status_reporter_option = delay_timer.take_status_reporter();
 
-    if let Some(status_reporter) = status_reporter_option {
-        tokio_spawn(async move {
-            // After taking the lock, get the resource quickly and release the lock.
+    // if let Some(status_reporter) = status_reporter_option {
+    //     tokio_spawn(async move {
+    //         // After taking the lock, get the resource quickly and release the lock.
 
-            let mut token: Option<String> = None;
-            let mut scheduler: Option<BindRequest> = None;
+    //         let mut token: Option<String> = None;
+    //         let mut scheduler: Option<BindRequest> = None;
+    //         let client = RequestClient::new();
 
-            loop {
-                let f = async {
-                    fresh_scheduler_conf(&shared_security_conf, &mut token, &mut scheduler).await;
+    //         loop {
+    //             let f = async {
+    //                 fresh_scheduler_conf(&shared_security_conf, &mut token, &mut scheduler).await;
 
-                    // FIXME:
-                    // let events = collect_events(&status_reporter, scheduler.as_ref()).await?;
+    //                 let events = collect_events(&status_reporter, scheduler.as_ref()).await?;
 
-                    // if !events.is_empty() {
-                    //     send_event_collection(
-                    //         scheduler.as_ref(),
-                    //         Into::<ExecutorEventCollection>::into(events).sign(token.as_deref()),
-                    //     )
-                    //     .await;
-                    // }
+    //                 if events.is_empty() {
+    //                     return Ok(());
+    //                 }
 
-                    // Ok(())
-                };
-                // let f_result: Result<(), CommonError> = f
-                //     .instrument(span!(
-                //         Level::INFO,
-                //         "status-reporter",
-                //         log_id = get_unique_id_string().deref()
-                //     ))
-                //     .await;
+    //                 if let Ok(executor_event_collection) =
+    //                     Into::<ExecutorEventCollection>::into(events).sign(token.as_deref())
+    //                 {
+    //                     send_event_collection(
+    //                         scheduler.as_ref(),
+    //                         executor_event_collection,
+    //                         &client,
+    //                     )
+    //                     .await;
+    //                 }
 
-                // if let Err(e) = f_result {
-                //     error!("{}", e);
-                //     return;
-                // }
-            }
-        });
-    }
+    //                 Ok(())
+    //             };
+    //             let f_result: Result<(), NewCommonError> = f
+    //                 .instrument(span!(
+    //                     Level::INFO,
+    //                     "status-reporter",
+    //                     log_id = get_unique_id_string().deref()
+    //                 ))
+    //                 .await;
+
+    //             if let Err(e) = f_result {
+    //                 error!("{}", e);
+    //                 return;
+    //             }
+    //         }
+    //     });
+    // }
 }
 async fn fresh_scheduler_conf(
     shared_security_conf: &ExecutorSecurityConf,
@@ -371,9 +375,9 @@ async fn fresh_scheduler_conf(
             scheduler.clone_from(&fresh_scheduler);
 
             // Adjust the internal host to avoid the need to clone String when calling RequestClient::post.
-            //+ "/api/task_logs/event_trigger"
+            //+ "/api/task_log/event_trigger"
             if let Some(scheduler_mut_ref) = scheduler.as_mut() {
-                scheduler_mut_ref.scheduler_host += "/api/task_logs/event_trigger";
+                scheduler_mut_ref.scheduler_host += "/api/task_log/event_trigger";
             }
         }
     }
@@ -382,7 +386,7 @@ async fn fresh_scheduler_conf(
 async fn collect_events(
     status_reporter: &StatusReporter,
     scheduler: Option<&BindRequest>,
-) -> Result<Vec<ExecutorEvent>, CommonError> {
+) -> Result<Vec<ExecutorEvent>, NewCommonError> {
     let mut events: Vec<ExecutorEvent> = Vec::new();
     for _i in 0..10 {
         let event_future: TokioTimeout<_> = tokio_timeout(
@@ -395,7 +399,7 @@ async fn collect_events(
             Err(_) => break,
             // Internal runtime exception.
             Ok(Err(_)) => {
-                return Err(CommonError::DisPass(
+                return Err(NewCommonError::DisPass(
                     "Internal runtime exception".to_string(),
                 ));
             }
@@ -410,29 +414,32 @@ async fn collect_events(
 
 async fn send_event_collection(
     scheduler: Option<&BindRequest>,
-    executor_event_collection_result: Result<SignedExecutorEventCollection, CommonError>,
+    executor_event_collection: SignedExecutorEventCollection,
+    client: &RequestClient,
 ) {
     if let Some(scheduler_ref) = scheduler.as_ref() {
-        if let Ok(executor_event_collection) = executor_event_collection_result {
-            debug!(
-                "Event collection - {:?}",
-                &executor_event_collection.event_collection
-            );
+        debug!(
+            "Event collection - {:?}",
+            &executor_event_collection.event_collection
+        );
 
-            // FIXME:
-            // if let Ok(mut response) = RequestClient::new()
-            //     .post(&scheduler_ref.scheduler_host)
-            //     .send_json(&executor_event_collection)
-            //     .await
-            //     .map_err(|e| {
-            //         error!(
-            //             "Failed to send the event collection: {} - {} - {:?}",
-            //             e, &scheduler_ref, &executor_event_collection.event_collection
-            //         )
-            //     })
-            // {
-            //     debug!("delicate-schduler response: {:?}", response.body().await)
-            // }
+        if let Ok(response) = client
+            .post(&scheduler_ref.scheduler_host)
+            .json(&executor_event_collection)
+            .send()
+            .await
+            .map_err(|e| {
+                error!(
+                    "Failed to send the event collection: {} - {} - {:?}",
+                    e, &scheduler_ref, &executor_event_collection.event_collection
+                )
+            })
+        {
+            response
+                .bytes()
+                .await
+                .map(|b| debug!("delicate-schduler response: {:?}", b))
+                .ok();
         }
     }
 }

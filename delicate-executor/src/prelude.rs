@@ -42,4 +42,5 @@ pub(crate) use poem::middleware::AddData;
 pub(crate) use poem::web::{Data, Json, Path};
 pub(crate) use poem::{handler, listener::TcpListener, post, EndpointExt, Request, Route, Server};
 
+pub(crate) use reqwest::Client as RequestClient;
 pub(crate) type UnitUnifiedResponseMessages = UnifiedResponseMessages<()>;

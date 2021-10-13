@@ -1,11 +1,11 @@
 use super::prelude::*;
 
-pub(crate) fn config(cfg: &mut web::ServiceConfig) {
-    cfg.service(show_one_day_tasks_state);
+pub(crate) fn config_route(route: Route) -> Route {
+    route.at("/api/tasks_state/one_day", get(show_one_day_tasks_state))
 }
 
-#[get("/api/tasks_state/one_day")]
-async fn show_one_day_tasks_state(pool: ShareData<db::ConnectionPool>) -> HttpResponse {
+#[handler]
+async fn show_one_day_tasks_state(pool: Data<&db::ConnectionPool>) -> impl IntoResponse {
     use db::schema::task_log;
     use state::task_log::State;
 
@@ -74,12 +74,12 @@ async fn show_one_day_tasks_state(pool: ShareData<db::ConnectionPool>) -> HttpRe
             ))
         })
         .await;
-        return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<model::DailyState>>::into(
+        return Json(Into::<UnifiedResponseMessages<model::DailyState>>::into(
             daily_state_result,
         ));
     }
 
-    HttpResponse::Ok().json(UnifiedResponseMessages::<model::DailyState>::error())
+    Json(UnifiedResponseMessages::<model::DailyState>::error())
 }
 
 pub(crate) fn pre_show_one_day_tasks_state(

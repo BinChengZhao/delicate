@@ -1,29 +1,45 @@
 use super::prelude::*;
 
-pub(crate) fn config(cfg: &mut web::ServiceConfig) {
-    cfg.service(show_executor_processor_binds)
-        .service(create_executor_processor_bind)
-        .service(update_executor_processor_bind)
-        .service(delete_executor_processor_bind);
+pub(crate) fn route(route: Route) -> Route {
+    route
+        .at(
+            "/api/executor_processor_bind/list",
+            post(show_executor_processor_binds),
+        )
+        .at(
+            "/api/executor_processor_bind/create",
+            post(create_executor_processor_bind),
+        )
+        // FIXME:
+        // .at(
+        //     "/api/executor_processor_bind/update",
+        //     post(update_executor_processor_bind),
+        // )
+        .at(
+            "/api/executor_processor_bind/delete",
+            post(delete_executor_processor_bind),
+        )
 }
 
-#[post("/api/executor_processor_bind/create")]
+#[handler]
+
 async fn create_executor_processor_bind(
-    req: HttpRequest,
-    web::Json(executor_processor_binds): web::Json<model::NewExecutorProcessorBinds>,
-    pool: ShareData<db::ConnectionPool>,
-) -> HttpResponse {
+    req: &Request,
+    Json(executor_processor_binds): Json<model::NewExecutorProcessorBinds>,
+    pool: Data<&db::ConnectionPool>,
+) -> impl IntoResponse {
     use db::schema::executor_processor_bind;
 
-    let operation_log_pair_option = generate_operation_executor_processor_bind_addtion_log(
-        &req.get_session(),
-        &executor_processor_binds,
-    )
-    .ok();
-    send_option_operation_log_pair(operation_log_pair_option).await;
+    // FIXME:
+    // let operation_log_pair_option = generate_operation_executor_processor_bind_addtion_log(
+    //     &req.get_session(),
+    //     &executor_processor_binds,
+    // )
+    // .ok();
+    // send_option_operation_log_pair(operation_log_pair_option).await;
 
     if let Ok(conn) = pool.get() {
-        return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
+        return Json(Into::<UnifiedResponseMessages<usize>>::into(
             web::block(move || {
                 let new_binds: Vec<model::NewExecutorProcessorBind> = executor_processor_binds
                     .executor_ids
@@ -44,16 +60,17 @@ async fn create_executor_processor_bind(
         ));
     }
 
-    HttpResponse::Ok().json(UnifiedResponseMessages::<()>::error())
+    Json(UnifiedResponseMessages::<usize>::error())
 }
 
-#[post("/api/executor_processor_bind/list")]
+#[handler]
+
 async fn show_executor_processor_binds(
-    web::Json(query_params): web::Json<model::QueryParamsExecutorProcessorBind>,
-    pool: ShareData<db::ConnectionPool>,
-) -> HttpResponse {
+    Json(query_params): Json<model::QueryParamsExecutorProcessorBind>,
+    pool: Data<&db::ConnectionPool>,
+) -> impl IntoResponse {
     if let Ok(conn) = pool.get() {
-        return HttpResponse::Ok().json(Into::<
+        return Json(Into::<
             UnifiedResponseMessages<PaginateData<model::ExecutorProcessorBind>>,
         >::into(
             web::block::<_, _, diesel::result::Error>(move || {
@@ -81,149 +98,158 @@ async fn show_executor_processor_binds(
         ));
     }
 
-    HttpResponse::Ok().json(UnifiedResponseMessages::<PaginateData<()>>::error())
+    // FIXME:
+    todo!();
+    // Json(UnifiedResponseMessages::<PaginateData<()>>::error())
 }
 
-#[post("/api/executor_processor_bind/update")]
-async fn update_executor_processor_bind(
-    req: HttpRequest,
-    web::Json(executor_processor_bind): web::Json<model::UpdateExecutorProcessorBind>,
-    pool: ShareData<db::ConnectionPool>,
-) -> HttpResponse {
-    return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<()>>::into(
-        pre_update_executor_processor_bind(req, executor_processor_bind, pool).await,
-    ));
-}
+// FIXME:
 
-async fn pre_update_executor_processor_bind(
-    req: HttpRequest,
-    executor_processor_bind: model::UpdateExecutorProcessorBind,
-    pool: ShareData<db::ConnectionPool>,
-) -> Result<(), CommonError> {
-    use db::schema::{executor_processor, executor_processor_bind, task, task_bind};
-    use delicate_utils_task::{TaskPackage, TaskUnit};
-    use state::task::State;
+// #[handler]
 
-    let conn = pool.get()?;
-    let executor_processor_bind_id = executor_processor_bind.id;
-    let executor_processor_bind_executor_id = executor_processor_bind.executor_id;
+// async fn update_executor_processor_bind(
+//     req: &Request,
+//     Json(executor_processor_bind): Json<model::UpdateExecutorProcessorBind>,
+//     pool: Data<&db::ConnectionPool>,
+// ) -> impl IntoResponse {
+//     return Json(Into::<UnifiedResponseMessages<()>>::into(
+//         pre_update_executor_processor_bind(req, executor_processor_bind, pool).await,
+//     ));
+// }
 
-    let operation_log_pair_option = generate_operation_executor_processor_bind_modify_log(
-        &req.get_session(),
-        &executor_processor_bind,
-    )
-    .ok();
-    send_option_operation_log_pair(operation_log_pair_option).await;
+// async fn pre_update_executor_processor_bind(
+//     req: &Request,
+//     executor_processor_bind: model::UpdateExecutorProcessorBind,
+//     pool: Data<&db::ConnectionPool>,
+// ) -> Result<(), CommonError> {
+//     use db::schema::{executor_processor, executor_processor_bind, task, task_bind};
+//     use delicate_utils_task::{TaskPackage, TaskUnit};
+//     use state::task::State;
 
-    let (older_executor_id, older_executor_host, older_executor_token) =
-        web::block::<_, _, diesel::result::Error>(move || {
-            let older_executor = executor_processor_bind::table
-                .inner_join(executor_processor::table)
-                .filter(executor_processor_bind::id.eq(executor_processor_bind.id))
-                .select((
-                    executor_processor_bind::executor_id,
-                    executor_processor::host,
-                    executor_processor::token,
-                ))
-                .first::<(i64, String, String)>(&conn)?;
+//     let conn = pool.get()?;
+//     let executor_processor_bind_id = executor_processor_bind.id;
+//     let executor_processor_bind_executor_id = executor_processor_bind.executor_id;
 
-            diesel::update(&executor_processor_bind)
-                .set(&executor_processor_bind)
-                .execute(&conn)?;
-            Ok(older_executor)
-        })
-        .await?;
+//     // FIXME:
+//     // todo!();
+//     // let operation_log_pair_option = generate_operation_executor_processor_bind_modify_log(
+//     //     &req.get_session(),
+//     //     &executor_processor_bind,
+//     // )
+//     // .ok();
+//     // send_option_operation_log_pair(operation_log_pair_option).await;
 
-    if older_executor_id == executor_processor_bind_executor_id {
-        return Ok(());
-    }
+//     let (older_executor_id, older_executor_host, older_executor_token) =
+//         web::block::<_, _, diesel::result::Error>(move || {
+//             let older_executor = executor_processor_bind::table
+//                 .inner_join(executor_processor::table)
+//                 .filter(executor_processor_bind::id.eq(executor_processor_bind.id))
+//                 .select((
+//                     executor_processor_bind::executor_id,
+//                     executor_processor::host,
+//                     executor_processor::token,
+//                 ))
+//                 .first::<(i64, String, String)>(&conn)?;
 
-    // Task migration needs to be performed only when `executor_id` is modified.
-    let conn = pool.get()?;
-    let task_packages: Vec<(TaskPackage, (String, String))> =
-        web::block::<_, _, diesel::result::Error>(move || {
-            let task_packages: Vec<(TaskPackage, (String, String))> = task_bind::table
-                .inner_join(executor_processor_bind::table.inner_join(executor_processor::table))
-                .inner_join(task::table)
-                .filter(task::status.eq(State::Enabled as i16))
-                .filter(executor_processor_bind::id.eq(executor_processor_bind_id))
-                .select((
-                    (
-                        task::id,
-                        task::command,
-                        task::frequency,
-                        task::cron_expression,
-                        task::timeout,
-                        task::maximum_parallel_runnable_num,
-                    ),
-                    (executor_processor::host, executor_processor::token),
-                ))
-                .load::<(TaskPackage, (String, String))>(&conn)?;
+//             diesel::update(&executor_processor_bind)
+//                 .set(&executor_processor_bind)
+//                 .execute(&conn)?;
+//             Ok(older_executor)
+//         })
+//         .await?;
 
-            Ok(task_packages)
-        })
-        .await?;
+//     if older_executor_id == executor_processor_bind_executor_id {
+//         return Ok(());
+//     }
 
-    let task_ids = task_packages.iter().map(|&(ref t, _)| t.id);
+//     // Task migration needs to be performed only when `executor_id` is modified.
+//     let conn = pool.get()?;
+//     let task_packages: Vec<(TaskPackage, (String, String))> =
+//         web::block::<_, _, diesel::result::Error>(move || {
+//             let task_packages: Vec<(TaskPackage, (String, String))> = task_bind::table
+//                 .inner_join(executor_processor_bind::table.inner_join(executor_processor::table))
+//                 .inner_join(task::table)
+//                 .filter(task::status.eq(State::Enabled as i16))
+//                 .filter(executor_processor_bind::id.eq(executor_processor_bind_id))
+//                 .select((
+//                     (
+//                         task::id,
+//                         task::command,
+//                         task::frequency,
+//                         task::cron_expression,
+//                         task::timeout,
+//                         task::maximum_parallel_runnable_num,
+//                     ),
+//                     (executor_processor::host, executor_processor::token),
+//                 ))
+//                 .load::<(TaskPackage, (String, String))>(&conn)?;
 
-    let remove_task_units: JoinAll<_> = task_ids
-        .filter_map(|task_id| {
-            let executor_host =
-                "http://".to_string() + (older_executor_host.deref()) + "/api/task/remove";
-            TaskUnit::default()
-                .set_task_id(task_id)
-                .set_time(get_timestamp())
-                .sign(Some(older_executor_token.deref()))
-                .map(|t| (t, executor_host))
-                .ok()
-        })
-        .map(|(signed_task_unit, executor_host)| {
-            RequestClient::default()
-                .post(executor_host)
-                .send_json(&signed_task_unit)
-        })
-        .collect();
+//             Ok(task_packages)
+//         })
+//         .await?;
 
-    let create_task_packages: JoinAll<_> = task_packages
-        .into_iter()
-        .filter_map(|(t, (host, token))| {
-            let executor_host = "http://".to_string() + (host.deref()) + "/api/task/create";
-            t.sign(Some(&token)).map(|t| (t, executor_host)).ok()
-        })
-        .map(|(signed_task_package, executor_host)| {
-            RequestClient::default()
-                .post(executor_host)
-                .send_json(&signed_task_package)
-        })
-        .collect();
+//     let task_ids = task_packages.iter().map(|&(ref t, _)| t.id);
 
-    join(
-        handle_response::<UnifiedResponseMessages<()>>(remove_task_units),
-        handle_response::<UnifiedResponseMessages<()>>(create_task_packages),
-    )
-    .await;
-    Ok(())
-}
-#[post("/api/executor_processor_bind/delete")]
+//     let remove_task_units: JoinAll<_> = task_ids
+//         .filter_map(|task_id| {
+//             let executor_host =
+//                 "http://".to_string() + (older_executor_host.deref()) + "/api/task/remove";
+//             TaskUnit::default()
+//                 .set_task_id(task_id)
+//                 .set_time(get_timestamp())
+//                 .sign(Some(older_executor_token.deref()))
+//                 .map(|t| (t, executor_host))
+//                 .ok()
+//         })
+//         .map(|(signed_task_unit, executor_host)| {
+//             RequestClient::default()
+//                 .post(executor_host)
+//                 .send_json(&signed_task_unit)
+//         })
+//         .collect();
+
+//     let create_task_packages: JoinAll<_> = task_packages
+//         .into_iter()
+//         .filter_map(|(t, (host, token))| {
+//             let executor_host = "http://".to_string() + (host.deref()) + "/api/task/create";
+//             t.sign(Some(&token)).map(|t| (t, executor_host)).ok()
+//         })
+//         .map(|(signed_task_package, executor_host)| {
+//             RequestClient::default()
+//                 .post(executor_host)
+//                 .send_json(&signed_task_package)
+//         })
+//         .collect();
+
+//     join(
+//         handle_response::<UnifiedResponseMessages<()>>(remove_task_units),
+//         handle_response::<UnifiedResponseMessages<()>>(create_task_packages),
+//     )
+//     .await;
+//     Ok(())
+// }
+
+#[handler]
 async fn delete_executor_processor_bind(
-    req: HttpRequest,
-    web::Json(model::ExecutorProcessorBindId {
+    req: &Request,
+    Json(model::ExecutorProcessorBindId {
         executor_processor_bind_id,
-    }): web::Json<model::ExecutorProcessorBindId>,
-    pool: ShareData<db::ConnectionPool>,
-) -> HttpResponse {
+    }): Json<model::ExecutorProcessorBindId>,
+    pool: Data<&db::ConnectionPool>,
+) -> impl IntoResponse {
     use db::schema::executor_processor_bind::dsl::*;
 
-    let operation_log_pair_option = generate_operation_executor_processor_bind_delete_log(
-        &req.get_session(),
-        &CommonTableRecord::default().set_id(executor_processor_bind_id),
-    )
-    .ok();
-    send_option_operation_log_pair(operation_log_pair_option).await;
+    // FIXME:
+    // let operation_log_pair_option = generate_operation_executor_processor_bind_delete_log(
+    //     &req.get_session(),
+    //     &CommonTableRecord::default().set_id(executor_processor_bind_id),
+    // )
+    // .ok();
+    // send_option_operation_log_pair(operation_log_pair_option).await;
 
     // TODO: Check if there are associated tasks on the binding.
     if let Ok(conn) = pool.get() {
-        return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
+        return Json(Into::<UnifiedResponseMessages<usize>>::into(
             web::block(move || {
                 diesel::delete(executor_processor_bind.find(executor_processor_bind_id))
                     .execute(&conn)
@@ -232,5 +258,5 @@ async fn delete_executor_processor_bind(
         ));
     }
 
-    HttpResponse::Ok().json(UnifiedResponseMessages::<usize>::error())
+    Json(UnifiedResponseMessages::<usize>::error())
 }

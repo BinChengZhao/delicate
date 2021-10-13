@@ -1,16 +1,16 @@
 use super::prelude::*;
 
-pub(crate) fn config(cfg: &mut web::ServiceConfig) {
-    cfg.service(show_user_login_log);
+pub(crate) fn route(route: Route) -> Route {
+    route.at("/api/user_login_log/list", post(show_user_login_log))
 }
 
-#[post("/api/user_login_log/list")]
+#[handler]
 async fn show_user_login_log(
-    web::Json(query_params): web::Json<model::QueryParamsUserLoginLog>,
-    pool: ShareData<db::ConnectionPool>,
-) -> HttpResponse {
+    Json(query_params): Json<model::QueryParamsUserLoginLog>,
+    pool: Data<&db::ConnectionPool>,
+) -> impl IntoResponse {
     if let Ok(conn) = pool.get() {
-        return HttpResponse::Ok().json(Into::<
+        return Json(Into::<
             UnifiedResponseMessages<PaginateData<model::FrontEndUserLoginLog>>,
         >::into(
             web::block::<_, _, diesel::result::Error>(move || {
@@ -43,7 +43,7 @@ async fn show_user_login_log(
         ));
     }
 
-    HttpResponse::Ok().json(UnifiedResponseMessages::<
+    Json(UnifiedResponseMessages::<
         PaginateData<model::FrontEndUserLoginLog>,
     >::error())
 }

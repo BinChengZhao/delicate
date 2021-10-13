@@ -1,7 +1,6 @@
 use crate::prelude::*;
 use crate::security::SchedulerSecurityConf;
 
-pub(crate) type SharedSchedulerMetaInfo = ShareData<SchedulerMetaInfo>;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub(crate) struct SchedulerMetaInfo {
     name: String,

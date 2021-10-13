@@ -1,19 +1,23 @@
 use super::prelude::*;
 
-pub(crate) fn config(cfg: &mut web::ServiceConfig) {
-    cfg.service(create_task_logs)
-        .service(show_task_logs)
-        .service(show_task_log_detail)
-        .service(kill_task_instance);
+pub(crate) fn route(route: Route) -> Route {
+    route
+        .at("/api/task_log/event_trigger", post(create_task_logs))
+        .at("/api/task_log/list", post(show_task_logs))
+        .at("/api/task_log/detail", post(show_task_log_detail))
+        // FIXME:
+        // .at("/api/task_instance/kill", post(kill_task_instance))
+        .at("/api/task_log/delete", post(delete_task_log))
 }
 
 // Depending on the event, scheduler records/updates different logs.
 // Bulk operations are supported for log messages passed from delicate-executor.
-#[post("/api/task_logs/event_trigger")]
+#[handler]
+
 async fn create_task_logs(
-    web::Json(events_collection): web::Json<delicate_utils_task_log::SignedExecutorEventCollection>,
-    pool: ShareData<db::ConnectionPool>,
-) -> HttpResponse {
+    Json(events_collection): Json<delicate_utils_task_log::SignedExecutorEventCollection>,
+    pool: Data<&db::ConnectionPool>,
+) -> impl IntoResponse {
     let r = async {
         debug!(
             "Event collection - {:?}",
@@ -30,12 +34,12 @@ async fn create_task_logs(
     .await;
 
     let response = Into::<UnifiedResponseMessages<usize>>::into(r);
-    HttpResponse::Ok().json(response)
+    Json(response)
 }
 
 async fn pre_create_task_logs(
     events_collection: delicate_utils_task_log::SignedExecutorEventCollection,
-    pool: ShareData<db::ConnectionPool>,
+    pool: Data<&db::ConnectionPool>,
 ) -> Result<usize, CommonError> {
     use delicate_utils_task_log::EventType;
 
@@ -81,13 +85,14 @@ async fn pre_create_task_logs(
     Ok(num)
 }
 
-#[post("/api/task_log/list")]
+#[handler]
+
 async fn show_task_logs(
-    web::Json(query_params): web::Json<model::QueryParamsTaskLog>,
-    pool: ShareData<db::ConnectionPool>,
-) -> HttpResponse {
+    Json(query_params): Json<model::QueryParamsTaskLog>,
+    pool: Data<&db::ConnectionPool>,
+) -> impl IntoResponse {
     if let Ok(conn) = pool.get() {
-        return HttpResponse::Ok().json(Into::<
+        return Json(Into::<
             UnifiedResponseMessages<PaginateData<model::FrontEndTaskLog>>,
         >::into(
             web::block::<_, _, diesel::result::Error>(move || {
@@ -118,47 +123,48 @@ async fn show_task_logs(
         ));
     }
 
-    HttpResponse::Ok().json(UnifiedResponseMessages::<
+    Json(UnifiedResponseMessages::<
         PaginateData<model::FrontEndTaskLog>,
     >::error())
 }
 
-#[post("/api/task_log/detail")]
+#[handler]
+
 async fn show_task_log_detail(
-    web::Json(query_params): web::Json<model::RecordId>,
-    pool: ShareData<db::ConnectionPool>,
-) -> HttpResponse {
+    Json(query_params): Json<model::RecordId>,
+    pool: Data<&db::ConnectionPool>,
+) -> impl IntoResponse {
     use db::schema::task_log_extend;
 
     if let Ok(conn) = pool.get() {
-        return HttpResponse::Ok().json(
-            Into::<UnifiedResponseMessages<model::TaskLogExtend>>::into(
-                web::block::<_, _, diesel::result::Error>(move || {
-                    let task_log_extend = task_log_extend::table
-                        .find(query_params.record_id.0)
-                        .first::<model::TaskLogExtend>(&conn)?;
+        return Json(Into::<UnifiedResponseMessages<model::TaskLogExtend>>::into(
+            web::block::<_, _, diesel::result::Error>(move || {
+                let task_log_extend = task_log_extend::table
+                    .find(query_params.record_id.0)
+                    .first::<model::TaskLogExtend>(&conn)?;
 
-                    Ok(task_log_extend)
-                })
-                .await,
-            ),
-        );
+                Ok(task_log_extend)
+            })
+            .await,
+        ));
     }
 
-    HttpResponse::Ok().json(UnifiedResponseMessages::<model::TaskLogExtend>::error())
+    Json(UnifiedResponseMessages::<model::TaskLogExtend>::error())
 }
 
-#[post("/api/task_instance/kill")]
-async fn kill_task_instance(
-    req: HttpRequest,
-    web::Json(task_record): web::Json<model::TaskRecord>,
-    pool: ShareData<db::ConnectionPool>,
-) -> HttpResponse {
-    let response_result = kill_one_task_instance(req, pool, task_record).await;
+// #[handler]
 
-    let response = Into::<UnifiedResponseMessages<()>>::into(response_result);
-    HttpResponse::Ok().json(response)
-}
+// FIXME:
+// async fn kill_task_instance(
+//     req: &Request,
+//     Json(task_record): Json<model::TaskRecord>,
+//     pool: Data<&db::ConnectionPool>,
+// ) -> impl IntoResponse {
+//     let response_result = kill_one_task_instance(req, pool, task_record).await;
+
+//     let response = Into::<UnifiedResponseMessages<()>>::into(response_result);
+//     Json(response)
+// }
 
 fn batch_insert_task_logs(
     conn: &db::PoolConnection,
@@ -225,8 +231,8 @@ fn batch_update_task_logs(
 }
 
 async fn kill_one_task_instance(
-    req: HttpRequest,
-    pool: ShareData<db::ConnectionPool>,
+    req: &Request,
+    pool: Data<&db::ConnectionPool>,
     model::TaskRecord {
         task_id,
         record_id,
@@ -235,14 +241,16 @@ async fn kill_one_task_instance(
 ) -> Result<(), CommonError> {
     use db::schema::task_log;
 
-    let operation_log_pair_option = generate_operation_task_log_modify_log(
-        &req.get_session(),
-        &CommonTableRecord::default()
-            .set_id(record_id.0)
-            .set_description("kill task instance."),
-    )
-    .ok();
-    send_option_operation_log_pair(operation_log_pair_option).await;
+    // FIXME:
+
+    // let operation_log_pair_option = generate_operation_task_log_modify_log(
+    //     &req.get_session(),
+    //     &CommonTableRecord::default()
+    //         .set_id(record_id.0)
+    //         .set_description("kill task instance."),
+    // )
+    // .ok();
+    // send_option_operation_log_pair(operation_log_pair_option).await;
 
     let token = model::get_executor_token_by_id(executor_processor_id, pool.get()?).await;
 
@@ -281,26 +289,27 @@ async fn kill_one_task_instance(
         .into()
 }
 
-#[post("/api/task_log/delete")]
-async fn delete_task(
-    req: HttpRequest,
-    web::Json(delete_params): web::Json<model::DeleteParamsTaskLog>,
-    pool: ShareData<db::ConnectionPool>,
-) -> HttpResponse {
-    let operation_log_pair_option =
-        generate_operation_task_delete_log(&req.get_session(), &delete_params).ok();
-    send_option_operation_log_pair(operation_log_pair_option).await;
+#[handler]
+async fn delete_task_log(
+    req: &Request,
+    Json(delete_params): Json<model::DeleteParamsTaskLog>,
+    pool: Data<&db::ConnectionPool>,
+) -> impl IntoResponse {
+    // FIXME:
+    // let operation_log_pair_option =
+    //     generate_operation_task_delete_log(&req.get_session(), &delete_params).ok();
+    // send_option_operation_log_pair(operation_log_pair_option).await;
 
     if let Ok(conn) = pool.get() {
-        return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<()>>::into(
-            pre_delete_task(delete_params, conn).await,
+        return Json(Into::<UnifiedResponseMessages<()>>::into(
+            pre_delete_task_log(delete_params, conn).await,
         ));
     }
 
-    HttpResponse::Ok().json(UnifiedResponseMessages::<()>::error())
+    Json(UnifiedResponseMessages::<()>::error())
 }
 
-async fn pre_delete_task(
+async fn pre_delete_task_log(
     delete_params: model::DeleteParamsTaskLog,
     conn: db::PoolConnection,
 ) -> Result<(), CommonError> {

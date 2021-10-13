@@ -13,7 +13,7 @@ lazy_static! {
 // The user's operations in the system are logged to track,
 // But in order not to affect the performance of the system,
 // These logs go through the channel with the asynchronous state machine to consume.
-pub(crate) async fn loop_operate_logs(pool: ShareData<db::ConnectionPool>) {
+pub(crate) async fn loop_operate_logs(pool: Arc<db::ConnectionPool>) {
     loop {
         let mut operation_log_pairs: Vec<NewOperationLogPair> = Vec::new();
 
