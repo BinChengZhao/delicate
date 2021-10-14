@@ -39,7 +39,7 @@ impl CasbinWatcher for CasbinGuard {
         error!(target:"set_update_callback", "unreachable.");
     }
 
-    fn update(&mut self, d: EventData) {
+    fn update(&mut self, d: CasbinEventData) {
         debug!("CasbinGuard: {}", &d);
         handle_event_for_watcher(d);
     }
@@ -93,7 +93,7 @@ const WHITE_LIST: [&str; 9] = [
 
 #[poem::async_trait]
 impl<E: Endpoint> Endpoint for CasbinAuthMiddleware<E> {
-    type Output = E::Output;
+    type Output = Response;
 
     async fn call(&self, mut req: Request) -> Self::Output {
         let enforcer = req
@@ -102,65 +102,56 @@ impl<E: Endpoint> Endpoint for CasbinAuthMiddleware<E> {
             .expect("Casbin's enforcer acquisition failed")
             .clone();
         let extensions = req.extensions();
-        let session = extensions.get::<CookieJar>();
+        let session = extensions
+            .get::<CookieJar>()
+            .expect("CookieJar acquisition failed");
         let path = req.uri().path().to_string();
         let auth_part = path.split('/').into_iter().collect::<Vec<&str>>();
 
         let resource = auth_part.get(2).map(|s| s.to_string()).unwrap_or_default();
         let action = auth_part.get(3).map(|s| s.to_string()).unwrap_or_default();
 
-        // FIXME:
-        todo!();
-        // let username = session
-        //     .get::<String>("user_name")
-        //     .unwrap_or_default()
-        //     .unwrap_or_default();
-        // Box::pin(async move {
-        //     // Path in the whitelist do not need to be verified.
-        //     if WHITE_LIST.contains(&path.deref()) {
-        //         return service.call(req).await;
-        //     }
+        let username = session
+            .get("user_name")
+            .map(|c| c.value::<String>().unwrap_or_default())
+            .unwrap_or_default();
 
-        //     #[cfg(APP_DEBUG_MODE)]
-        //     {
-        //         return service.call(req).await;
-        //     }
+        // Path in the whitelist do not need to be verified.
+        if WHITE_LIST.contains(&path.deref()) {
+            return self.ep.call(req).await.into_response();
+        }
 
-        //     let auther = enforcer.read().await;
+        #[cfg(APP_DEBUG_MODE)]
+        {
+            return self.ep.call(req).await.into_response();
+        }
 
-        //     if username.is_empty() || resource.is_empty() || action.is_empty() {
-        //         return Ok(req.error_response(
-        //             HttpResponseBuilder::new(StatusCode::default()).json(
-        //                 UnifiedResponseMessages::<()>::error()
-        //                     .customized_error_msg(String::from("Permission check failed.")),
-        //             ),
-        //         ));
-        //     }
+        let auther = enforcer.read().await;
 
-        //     match auther.enforce(vec![username, resource, action]) {
-        //         Ok(true) => {
-        //             drop(auther);
-        //             service.call(req).await
-        //         }
-        //         Ok(false) => {
-        //             drop(auther);
-        //             Ok(req.error_response(
-        //                 HttpResponseBuilder::new(StatusCode::default()).json(
-        //                     UnifiedResponseMessages::<()>::error()
-        //                         .customized_error_msg(String::from("Permission check failed.")),
-        //                 ),
-        //             ))
-        //         }
-        //         Err(e) => {
-        //             drop(auther);
-        //             Ok(req.error_response(
-        //                 HttpResponseBuilder::new(StatusCode::default()).json(
-        //                     UnifiedResponseMessages::<()>::error()
-        //                         .customized_error_msg(format!("Permission check failed. ({})", e)),
-        //                 ),
-        //             ))
-        //         }
-        //     }
-        // })
+        if username.is_empty() || resource.is_empty() || action.is_empty() {
+            return UnifiedResponseMessages::<()>::error()
+                .customized_error_msg(String::from("Permission check failed."))
+                .into_response();
+        }
+
+        match auther.enforce(vec![username, resource, action]) {
+            Ok(true) => {
+                drop(auther);
+                self.ep.call(req).await.into_response()
+            }
+            Ok(false) => {
+                drop(auther);
+                UnifiedResponseMessages::<()>::error()
+                    .customized_error_msg(String::from("Permission check failed."))
+                    .into_response()
+            }
+            Err(e) => {
+                drop(auther);
+
+                UnifiedResponseMessages::<()>::error()
+                    .customized_error_msg(format!("Permission check failed. ({})", e))
+                    .into_response()
+            }
+        }
     }
 }

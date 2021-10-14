@@ -73,6 +73,8 @@ fn main() -> AnyResut<()> {
         // completes the builder.
         .init();
 
+    let request_client = RequestClient::new();
+
     arc_runtime.block_on(async {
         let delay_timer = DelayTimerBuilder::default()
             .tokio_runtime_shared_by_custom(arc_runtime_cloned)
@@ -95,22 +97,23 @@ fn main() -> AnyResut<()> {
         // All ready work when the delicate-application starts.
         launch_ready_operation(
             arc_connection_pool.clone(),
+            request_client,
             #[cfg(AUTH_CASBIN)]
             shared_enforcer.clone(),
         )
         .await;
 
         // let result = HttpServer::new(move || {
-        //     let cors = Cors::new()
-        //         .allow_origin(&scheduler_front_end_domain)
-        //         .allow_method(Method::GET)
-        //         .allow_method(Method::POST)
-        //         .allow_header("*")
-        //         .allow_credentials(true)
-        //         .max_age(3600);
+        let cors = Cors::new()
+            .allow_origin(&scheduler_front_end_domain)
+            .allow_method(Method::GET)
+            .allow_method(Method::POST)
+            .allow_header("*")
+            .allow_credentials(true)
+            .max_age(3600);
 
-        //     #[cfg(APP_DEBUG_MODE)]
-        //     let cors = cors.allow_origin("*");
+        #[cfg(APP_DEBUG_MODE)]
+        let cors = cors.allow_origin("*");
 
         // FIXME: Reference poem/routes.rs
         let app = Some(Route::new())
@@ -124,21 +127,21 @@ fn main() -> AnyResut<()> {
             .map(actions::components::config_route)
             .map(actions::operation_log::config_route)
             .map(actions::user_login_log::config_route)
-            .expect("");
+            .expect("")
+            .with(shared_delay_timer)
+            .with(shared_connection_pool)
+            .with(shared_scheduler_meta_info);
 
-        //         .app_data(shared_delay_timer.clone())
-        //         .app_data(shared_connection_pool.clone())
-        //         .app_data(shared_scheduler_meta_info.clone());
+        #[cfg(AUTH_CASBIN)]
+        let app = app
+            .configure(actions::role::config_route)
+            .wrap(CasbinService)
+            .app_data(shared_enforcer.clone());
 
-        //     #[cfg(AUTH_CASBIN)]
-        //     let app = app
-        //         .configure(actions::role::config)
-        //         .wrap(CasbinService)
-        //         .app_data(shared_enforcer.clone());
-
-        //     app.wrap(components::session::auth_middleware())
-        //         .wrap(components::session::session_middleware())
-        //         .wrap(cors)
+        let app = app
+            .with(components::session::auth_middleware())
+            //         .wrap(components::session::session_middleware())
+            .with(cors);
         //         .wrap(MiddlewareLogger::default())
         //         .wrap_fn(|req, srv| {
         //             let unique_id = get_unique_id_string();
@@ -156,23 +159,19 @@ fn main() -> AnyResut<()> {
         // .run()
         // .await;
 
-        //     let address = env::var("EXECUTOR_LISTENING_ADDRESS")
-        //     .expect("Without `EXECUTOR_LISTENING_ADDRESS` set in .env");
-        // let listener = TcpListener::bind(address);
-        // let server = Server::new(listener).await?;
-        // Ok(server.run(route).await?)
-    });
-
-    // Ok(result?)
-    todo!();
+        let listener = TcpListener::bind(scheduler_listening_address);
+        let server = Server::new(listener).await?;
+        Ok(server.run(app).await?)
+    })
 }
 
 // All ready work when the delicate-application starts.
 async fn launch_ready_operation(
     pool: Arc<db::ConnectionPool>,
+    request_client: RequestClient,
     #[cfg(AUTH_CASBIN)] enforcer: AddData<RwLock<Enforcer>>,
 ) {
-    launch_health_check(pool.clone());
+    launch_health_check(pool.clone(), request_client);
     launch_operation_log_consumer(pool);
 
     #[cfg(AUTH_CASBIN)]
@@ -187,9 +186,9 @@ async fn launch_ready_operation(
 
 // Heartbeat checker
 // That constantly goes to detect whether the machine survives with the machine's indicators.
-fn launch_health_check(pool: Arc<db::ConnectionPool>) {
+fn launch_health_check(pool: Arc<db::ConnectionPool>, request_client: RequestClient) {
     // FIXME:
-    // tokio_spawn(loop_health_check(pool));
+    tokio_spawn(loop_health_check(pool, request_client));
 }
 
 // Operation log asynchronous consumer

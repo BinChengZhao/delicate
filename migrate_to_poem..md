@@ -96,6 +96,45 @@ casbin = {version = '2.0.5', default-features = false, features = ["incremental"
 # TODO: This(redis-version) must be changed when upgrading to poem.
 redis = { version = "= 0.17.0", features = ["connection-manager", "tokio-comp"] }
 
-// Cookie 中间件，不能用户配置属性有点不方便。
-// 通过CookieJar，每存一个新Cookie都需要手动配置安全相关的属性。
-// 如果中间件支持用户配置一次，后续默认走配置的属性就可以很简洁。
+ Cookie 中间件，是否能支持用户自定义配置属性？
+ 目前使用CookieJar，每存一个新Cookie都需要手动配置安全相关的属性，这虽然很灵活，但是有很多重复的工作在做。
+
+ 对一个站点，通常cookie的安全策略是保持一致的，对每个key都单独配置的场景比较少。
+
+ 并且目前`poem`中，Cookie中间件是开启feature后自动注册的，这样用户缺少一些初始化属性的控制力。
+
+ 我建议：Cookie 中间件，用户在框架启动时支持自定义配置并且可以覆盖默认装载的Cookie中间件，
+ 后续 Cookie 默认走配置的安全属性，使用起来会很轻便优雅。
+
+
+如何在中间件中提前响应？
+
+我最近在迁移项目从 `actix-web` 到 `poem` 遇到了一些棘手的问题.
+
+问题描述：
+
+在 `actix-web` 中，我可以将任务分成两步：
+
+1.状态判断成功 -> service.call() (相似于`poem`中的 ep.call())
+2. 状态判断失败，提前响应 -> 通过 req.error_response() (ServiceRequest::error_response)
+
+步骤1可以在poem中实现，但是步骤2目前没找到好的办法。
+
+参考example中的中间件实现，可以用 extensions 加一个 `状态X`
+handler 中使用提取器提取 `Result<状态X>` 自己处理,
+但是我有50/60个 handler，不方便给每个handler都加一个状态。
+并且每次加中间件，都需要给handler配套加 `状态*`, 会让handler 很冗长。 
+
+特定向您请教。
+
+Box::pin(async move {
+                        Ok(req.error_response(
+                            HttpResponseBuilder::new(StatusCode::default()).json(
+                                UnifiedResponseMessages::<()>::error().customized_error_msg(
+                                    String::from("Please log in and operate."),
+                                ),
+                            ),
+                        ))
+                    })
+
+

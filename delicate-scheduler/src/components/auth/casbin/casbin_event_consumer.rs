@@ -117,7 +117,7 @@ pub(crate) enum CasbinDynamicField {
 #[inline(always)]
 pub(crate) fn handle_event_for_watcher(event: CasbinEventData) {
     let delicate_auth_rule_event = match event {
-        EventData::AddPolicy(sec, ptype, dynamic_fields) => {
+        CasbinEventData::AddPolicy(sec, ptype, dynamic_fields) => {
             let operation = AuthAdapterEventOperation::AddPolicy;
             let dynamic_fields = CasbinDynamicField::Singlelayer(dynamic_fields);
             let casbin_event_model = CasbinEventModel {
@@ -128,7 +128,7 @@ pub(crate) fn handle_event_for_watcher(event: CasbinEventData) {
             };
             DelicateAuthRuleEvent::casbin_event(casbin_event_model)
         }
-        EventData::RemovePolicy(sec, ptype, dynamic_fields) => {
+        CasbinEventData::RemovePolicy(sec, ptype, dynamic_fields) => {
             let operation = AuthAdapterEventOperation::RemovePolicy;
             let dynamic_fields = CasbinDynamicField::Singlelayer(dynamic_fields);
             let casbin_event_model = CasbinEventModel {
@@ -139,7 +139,7 @@ pub(crate) fn handle_event_for_watcher(event: CasbinEventData) {
             };
             DelicateAuthRuleEvent::casbin_event(casbin_event_model)
         }
-        EventData::AddPolicies(sec, ptype, dynamic_fields) => {
+        CasbinEventData::AddPolicies(sec, ptype, dynamic_fields) => {
             let operation = AuthAdapterEventOperation::AddPolicy;
             let dynamic_fields = CasbinDynamicField::MultiLayer(dynamic_fields);
 
@@ -151,7 +151,7 @@ pub(crate) fn handle_event_for_watcher(event: CasbinEventData) {
             };
             DelicateAuthRuleEvent::casbin_event(casbin_event_model)
         }
-        EventData::RemovePolicies(sec, ptype, dynamic_fields) => {
+        CasbinEventData::RemovePolicies(sec, ptype, dynamic_fields) => {
             let operation = AuthAdapterEventOperation::RemovePolicy;
             let dynamic_fields = CasbinDynamicField::MultiLayer(dynamic_fields);
             let casbin_event_model = CasbinEventModel {
@@ -167,7 +167,7 @@ pub(crate) fn handle_event_for_watcher(event: CasbinEventData) {
         }
     };
 
-    rt_spawn(async move {
+    tokio_spawn(async move {
         DELICATE_AUTH_RULE_EVENT_CONSUMERS
             .0
             .send(delicate_auth_rule_event)
@@ -201,7 +201,7 @@ pub(crate) async fn loop_publish_casbin_rule_events(redis_client: redis::Client)
         }
 
         error!(target:"loop-publish-casbin-rule-events", "No available redis connection.");
-        rt_delay_for(Duration::from_secs(1)).await;
+        sleep(Duration::from_secs(1)).await;
     }
 }
 
@@ -233,7 +233,7 @@ pub(crate) async fn loop_subscribe_casbin_rule_events(
         }
 
         error!(target:"loop-subscribe-casbin-rule-events", "No available redis connection.");
-        rt_delay_for(Duration::from_secs(1)).await;
+        sleep(Duration::from_secs(1)).await;
     }
 }
 

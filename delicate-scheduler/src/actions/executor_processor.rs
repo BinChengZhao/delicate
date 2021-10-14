@@ -40,14 +40,19 @@ async fn create_executor_processor(
     // send_option_operation_log_pair(operation_log_pair_option).await;
 
     if let Ok(conn) = pool.get() {
-        return Json(Into::<UnifiedResponseMessages<usize>>::into(
-            web::block(move || {
-                diesel::insert_into(executor_processor::table)
-                    .values(&executor_processor)
-                    .execute(&conn)
-            })
-            .await,
-        ));
+        let f_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
+            diesel::insert_into(executor_processor::table)
+                .values(&executor_processor)
+                .execute(&conn)
+        })
+        .await;
+
+        let count = f_result
+            .map(|count_result| Into::<UnifiedResponseMessages<usize>>::into(count_result))
+            .unwrap_or_else(|e| {
+                UnifiedResponseMessages::<usize>::error().customized_error_msg(e.to_string())
+            });
+        return Json(count);
     }
 
     Json(UnifiedResponseMessages::<usize>::error())
@@ -59,33 +64,40 @@ async fn show_executor_processors(
     pool: Data<&db::ConnectionPool>,
 ) -> impl IntoResponse {
     if let Ok(conn) = pool.get() {
-        return Json(Into::<
-            UnifiedResponseMessages<PaginateData<model::ExecutorProcessor>>,
-        >::into(
-            web::block::<_, _, diesel::result::Error>(move || {
-                let query_builder = model::ExecutorProcessorQueryBuilder::query_all_columns();
+        let f_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
+            let query_builder = model::ExecutorProcessorQueryBuilder::query_all_columns();
 
-                let executor_processors = query_params
-                    .clone()
-                    .query_filter(query_builder)
-                    .paginate(query_params.page)
-                    .set_per_page(query_params.per_page)
-                    .load::<model::ExecutorProcessor>(&conn)?;
+            let executor_processors = query_params
+                .clone()
+                .query_filter(query_builder)
+                .paginate(query_params.page)
+                .set_per_page(query_params.per_page)
+                .load::<model::ExecutorProcessor>(&conn)?;
 
-                let per_page = query_params.per_page;
-                let count_builder = model::ExecutorProcessorQueryBuilder::query_count();
-                let count = query_params
-                    .query_filter(count_builder)
-                    .get_result::<i64>(&conn)?;
+            let per_page = query_params.per_page;
+            let count_builder = model::ExecutorProcessorQueryBuilder::query_count();
+            let count = query_params
+                .query_filter(count_builder)
+                .get_result::<i64>(&conn)?;
 
-                Ok(PaginateData::<model::ExecutorProcessor>::default()
-                    .set_data_source(executor_processors)
-                    .set_page_size(per_page)
-                    .set_total(count)
-                    .set_state_desc::<state::executor_processor::State>())
+            Ok(PaginateData::<model::ExecutorProcessor>::default()
+                .set_data_source(executor_processors)
+                .set_page_size(per_page)
+                .set_total(count)
+                .set_state_desc::<state::executor_processor::State>())
+        })
+        .await;
+        let processor = f_result
+            .map(|processor_result| {
+                Into::<UnifiedResponseMessages<PaginateData<model::ExecutorProcessor>>>::into(
+                    processor_result,
+                )
             })
-            .await,
-        ));
+            .unwrap_or_else(|e| {
+                UnifiedResponseMessages::<PaginateData<model::ExecutorProcessor>>::error()
+                    .customized_error_msg(e.to_string())
+            });
+        return Json(processor);
     }
 
     Json(UnifiedResponseMessages::<
@@ -106,14 +118,19 @@ async fn update_executor_processor(
     // send_option_operation_log_pair(operation_log_pair_option).await;
 
     if let Ok(conn) = pool.get() {
-        return Json(Into::<UnifiedResponseMessages<usize>>::into(
-            web::block(move || {
-                diesel::update(&executor_processor)
-                    .set(&executor_processor)
-                    .execute(&conn)
-            })
-            .await,
-        ));
+        let f_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
+            diesel::update(&executor_processor)
+                .set(&executor_processor)
+                .execute(&conn)
+        })
+        .await;
+
+        let count = f_result
+            .map(|count_result| Into::<UnifiedResponseMessages<usize>>::into(count_result))
+            .unwrap_or_else(|e| {
+                UnifiedResponseMessages::<usize>::error().customized_error_msg(e.to_string())
+            });
+        return Json(count);
     }
 
     Json(UnifiedResponseMessages::<usize>::error())
@@ -139,12 +156,17 @@ async fn delete_executor_processor(
     // send_option_operation_log_pair(operation_log_pair_option).await;
 
     if let Ok(conn) = pool.get() {
-        return Json(Into::<UnifiedResponseMessages<usize>>::into(
-            web::block(move || {
-                diesel::delete(executor_processor.find(executor_processor_id)).execute(&conn)
-            })
-            .await,
-        ));
+        let f_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
+            diesel::delete(executor_processor.find(executor_processor_id)).execute(&conn)
+        })
+        .await;
+
+        let count = f_result
+            .map(|count_result| Into::<UnifiedResponseMessages<usize>>::into(count_result))
+            .unwrap_or_else(|e| {
+                UnifiedResponseMessages::<usize>::error().customized_error_msg(e.to_string())
+            });
+        return Json(count);
     }
 
     Json(UnifiedResponseMessages::<usize>::error())
@@ -182,7 +204,7 @@ async fn activate_executor(
     executor_processor_id: i64,
     scheduler: Data<&SchedulerMetaInfo>,
 ) -> Result<service_binding::BindResponse, CommonError> {
-    let query = web::block::<_, model::UpdateExecutorProcessor, diesel::result::Error>(move || {
+    let query = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
         executor_processor::table
             .find(executor_processor_id)
             .select((
@@ -195,7 +217,7 @@ async fn activate_executor(
             ))
             .first(&conn)
     })
-    .await?;
+    .await??;
 
     let model::UpdateExecutorProcessor {
         id,
@@ -219,15 +241,17 @@ async fn activate_executor(
         .set_time(get_timestamp())
         .sign(private_key)?;
 
-    let response: Result<service_binding::EncryptedBindResponse, CommonError> = client
-        .post(url)
-        .send_json(&signed_scheduler)
-        .await?
-        .json::<UnifiedResponseMessages<service_binding::EncryptedBindResponse>>()
-        .await?
-        .into();
+    // FIXME:
+    todo!();
+    // let response: Result<service_binding::EncryptedBindResponse, CommonError> = client
+    //     .post(url)
+    //     .send_json(&signed_scheduler)
+    //     .await?
+    //     .json::<UnifiedResponseMessages<service_binding::EncryptedBindResponse>>()
+    //     .await?
+    //     .into();
 
-    Ok(response?.decrypt_self(private_key)?)
+    // Ok(response?.decrypt_self(private_key)?)
 }
 
 async fn activate_executor_row(
@@ -242,7 +266,7 @@ async fn activate_executor_row(
     // This will avoid querying the database.
     // However, cached record operations cannot be placed in the context of the operation db update token.
 
-    web::block::<_, usize, diesel::result::Error>(move || {
+    spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
         diesel::update(executor_processor.find(executor_processor_id))
             .set((
                 token.eq(&bind_info.token.unwrap_or_default()),
@@ -250,7 +274,7 @@ async fn activate_executor_row(
             ))
             .execute(&conn)
     })
-    .await?;
+    .await??;
 
     Ok(())
 }

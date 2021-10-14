@@ -39,25 +39,30 @@ async fn create_executor_processor_bind(
     // send_option_operation_log_pair(operation_log_pair_option).await;
 
     if let Ok(conn) = pool.get() {
-        return Json(Into::<UnifiedResponseMessages<usize>>::into(
-            web::block(move || {
-                let new_binds: Vec<model::NewExecutorProcessorBind> = executor_processor_binds
-                    .executor_ids
-                    .iter()
-                    .map(|executor_id| model::NewExecutorProcessorBind {
-                        name: executor_processor_binds.name.clone(),
-                        group_id: executor_processor_binds.group_id,
-                        executor_id: *executor_id,
-                        weight: executor_processor_binds.weight,
-                    })
-                    .collect();
+        let f_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
+            let new_binds: Vec<model::NewExecutorProcessorBind> = executor_processor_binds
+                .executor_ids
+                .iter()
+                .map(|executor_id| model::NewExecutorProcessorBind {
+                    name: executor_processor_binds.name.clone(),
+                    group_id: executor_processor_binds.group_id,
+                    executor_id: *executor_id,
+                    weight: executor_processor_binds.weight,
+                })
+                .collect();
 
-                diesel::insert_into(executor_processor_bind::table)
-                    .values(&new_binds[..])
-                    .execute(&conn)
-            })
-            .await,
-        ));
+            diesel::insert_into(executor_processor_bind::table)
+                .values(&new_binds[..])
+                .execute(&conn)
+        })
+        .await;
+
+        let count = f_result
+            .map(|count_result| Into::<UnifiedResponseMessages<usize>>::into(count_result))
+            .unwrap_or_else(|e| {
+                UnifiedResponseMessages::<usize>::error().customized_error_msg(e.to_string())
+            });
+        return Json(count);
     }
 
     Json(UnifiedResponseMessages::<usize>::error())
@@ -70,32 +75,40 @@ async fn show_executor_processor_binds(
     pool: Data<&db::ConnectionPool>,
 ) -> impl IntoResponse {
     if let Ok(conn) = pool.get() {
-        return Json(Into::<
-            UnifiedResponseMessages<PaginateData<model::ExecutorProcessorBind>>,
-        >::into(
-            web::block::<_, _, diesel::result::Error>(move || {
-                let query_builder = model::ExecutorProcessorBindQueryBuilder::query_all_columns();
+        let f_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
+            let query_builder = model::ExecutorProcessorBindQueryBuilder::query_all_columns();
 
-                let executor_processor_binds = query_params
-                    .clone()
-                    .query_filter(query_builder)
-                    .paginate(query_params.page)
-                    .set_per_page(query_params.per_page)
-                    .load::<model::ExecutorProcessorBind>(&conn)?;
+            let executor_processor_binds = query_params
+                .clone()
+                .query_filter(query_builder)
+                .paginate(query_params.page)
+                .set_per_page(query_params.per_page)
+                .load::<model::ExecutorProcessorBind>(&conn)?;
 
-                let per_page = query_params.per_page;
-                let count_builder = model::ExecutorProcessorBindQueryBuilder::query_count();
-                let count = query_params
-                    .query_filter(count_builder)
-                    .get_result::<i64>(&conn)?;
+            let per_page = query_params.per_page;
+            let count_builder = model::ExecutorProcessorBindQueryBuilder::query_count();
+            let count = query_params
+                .query_filter(count_builder)
+                .get_result::<i64>(&conn)?;
 
-                Ok(PaginateData::<model::ExecutorProcessorBind>::default()
-                    .set_data_source(executor_processor_binds)
-                    .set_page_size(per_page)
-                    .set_total(count))
+            Ok(PaginateData::<model::ExecutorProcessorBind>::default()
+                .set_data_source(executor_processor_binds)
+                .set_page_size(per_page)
+                .set_total(count))
+        })
+        .await;
+
+        let binds = f_result
+            .map(|binds_result| {
+                Into::<UnifiedResponseMessages<PaginateData<model::ExecutorProcessorBind>>>::into(
+                    binds_result,
+                )
             })
-            .await,
-        ));
+            .unwrap_or_else(|e| {
+                UnifiedResponseMessages::<PaginateData<model::ExecutorProcessorBind>>::error()
+                    .customized_error_msg(e.to_string())
+            });
+        return Json(binds);
     }
 
     // FIXME:
@@ -140,7 +153,7 @@ async fn show_executor_processor_binds(
 //     // send_option_operation_log_pair(operation_log_pair_option).await;
 
 //     let (older_executor_id, older_executor_host, older_executor_token) =
-//         web::block::<_, _, diesel::result::Error>(move || {
+//         spawn_blocking::<_,Result<_, diesel::result::Error>>(move || {
 //             let older_executor = executor_processor_bind::table
 //                 .inner_join(executor_processor::table)
 //                 .filter(executor_processor_bind::id.eq(executor_processor_bind.id))
@@ -165,7 +178,7 @@ async fn show_executor_processor_binds(
 //     // Task migration needs to be performed only when `executor_id` is modified.
 //     let conn = pool.get()?;
 //     let task_packages: Vec<(TaskPackage, (String, String))> =
-//         web::block::<_, _, diesel::result::Error>(move || {
+//         spawn_blocking::<_,Result<_, diesel::result::Error>>(move || {
 //             let task_packages: Vec<(TaskPackage, (String, String))> = task_bind::table
 //                 .inner_join(executor_processor_bind::table.inner_join(executor_processor::table))
 //                 .inner_join(task::table)
@@ -249,13 +262,18 @@ async fn delete_executor_processor_bind(
 
     // TODO: Check if there are associated tasks on the binding.
     if let Ok(conn) = pool.get() {
-        return Json(Into::<UnifiedResponseMessages<usize>>::into(
-            web::block(move || {
-                diesel::delete(executor_processor_bind.find(executor_processor_bind_id))
-                    .execute(&conn)
-            })
-            .await,
-        ));
+        let f_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
+            diesel::delete(executor_processor_bind.find(executor_processor_bind_id)).execute(&conn)
+        })
+        .await;
+
+        let count = f_result
+            .map(|count_result| Into::<UnifiedResponseMessages<usize>>::into(count_result))
+            .unwrap_or_else(|e| {
+                UnifiedResponseMessages::<usize>::error().customized_error_msg(e.to_string())
+            });
+
+        return Json(count);
     }
 
     Json(UnifiedResponseMessages::<usize>::error())

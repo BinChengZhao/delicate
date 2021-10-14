@@ -27,27 +27,31 @@ async fn create_task(
         //     generate_operation_task_addtion_log(&req.get_session(), &task).ok();
         // send_option_operation_log_pair(operation_log_pair_option).await;
 
-        return Json(Into::<UnifiedResponseMessages<usize>>::into(
-            web::block::<_, _, diesel::result::Error>(move || {
-                conn.transaction::<_, _, _>(|| {
-                    diesel::insert_into(task::table)
-                        .values(&task)
-                        .execute(&conn)?;
-                    let task_id =
-                        diesel::select(db::last_insert_id).get_result::<u64>(&conn)? as i64;
+        let f_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
+            conn.transaction::<_, _, _>(|| {
+                diesel::insert_into(task::table)
+                    .values(&task)
+                    .execute(&conn)?;
+                let task_id = diesel::select(db::last_insert_id).get_result::<u64>(&conn)? as i64;
 
-                    let new_task_binds: Vec<model::NewTaskBind> = binding_ids
-                        .into_iter()
-                        .map(|bind_id| model::NewTaskBind { task_id, bind_id })
-                        .collect();
+                let new_task_binds: Vec<model::NewTaskBind> = binding_ids
+                    .into_iter()
+                    .map(|bind_id| model::NewTaskBind { task_id, bind_id })
+                    .collect();
 
-                    diesel::insert_into(task_bind::table)
-                        .values(&new_task_binds)
-                        .execute(&conn)
-                })
+                diesel::insert_into(task_bind::table)
+                    .values(&new_task_binds)
+                    .execute(&conn)
             })
-            .await,
-        ));
+        })
+        .await;
+
+        let count = f_result
+            .map(|count_result| Into::<UnifiedResponseMessages<usize>>::into(count_result))
+            .unwrap_or_else(|e| {
+                UnifiedResponseMessages::<usize>::error().customized_error_msg(e.to_string())
+            });
+        return Json(count);
     }
 
     Json(UnifiedResponseMessages::<usize>::error())
@@ -62,55 +66,63 @@ async fn show_tasks(
     use db::schema::task_bind;
 
     if let Ok(conn) = pool.get() {
-        return Json(Into::<
-            UnifiedResponseMessages<PaginateData<model::FrontEndTask>>,
-        >::into(
-            web::block::<_, _, diesel::result::Error>(move || {
-                let query_builder = model::TaskQueryBuilder::query_all_columns();
+        let f_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
+            let query_builder = model::TaskQueryBuilder::query_all_columns();
 
-                let mut tasks: HashMap<i64, model::FrontEndTask> = query_params
-                    .clone()
-                    .query_filter(query_builder)
-                    .paginate(query_params.page)
-                    .set_per_page(query_params.per_page)
-                    .load::<model::Task>(&conn)?
-                    .into_iter()
-                    .map(|t| (t.id, t.into()))
-                    .collect();
+            let mut tasks: HashMap<i64, model::FrontEndTask> = query_params
+                .clone()
+                .query_filter(query_builder)
+                .paginate(query_params.page)
+                .set_per_page(query_params.per_page)
+                .load::<model::Task>(&conn)?
+                .into_iter()
+                .map(|t| (t.id, t.into()))
+                .collect();
 
-                let tasks_ids: Vec<i64> = tasks.iter().map(|(id, _)| *id).collect();
+            let tasks_ids: Vec<i64> = tasks.iter().map(|(id, _)| *id).collect();
 
-                let tasks_bind_pairs = task_bind::table
-                    .select((task_bind::task_id, task_bind::bind_id))
-                    .filter(task_bind::task_id.eq_any(&tasks_ids[..]))
-                    .load::<(i64, i64)>(&conn)?;
+            let tasks_bind_pairs = task_bind::table
+                .select((task_bind::task_id, task_bind::bind_id))
+                .filter(task_bind::task_id.eq_any(&tasks_ids[..]))
+                .load::<(i64, i64)>(&conn)?;
 
-                tasks_bind_pairs.into_iter().for_each(|(task_id, bind_id)| {
-                    if let Some(task) = tasks.get_mut(&task_id) {
-                        task.binding_ids.push(bind_id);
-                    }
-                });
+            tasks_bind_pairs.into_iter().for_each(|(task_id, bind_id)| {
+                if let Some(task) = tasks.get_mut(&task_id) {
+                    task.binding_ids.push(bind_id);
+                }
+            });
 
-                let per_page = query_params.per_page;
-                let count_builder = model::TaskQueryBuilder::query_count();
-                let count = query_params
-                    .query_filter(count_builder)
-                    .get_result::<i64>(&conn)?;
+            let per_page = query_params.per_page;
+            let count_builder = model::TaskQueryBuilder::query_count();
+            let count = query_params
+                .query_filter(count_builder)
+                .get_result::<i64>(&conn)?;
 
-                let mut front_end_task = tasks
-                    .into_iter()
-                    .map(|(_, t)| t)
-                    .collect::<Vec<model::FrontEndTask>>();
+            let mut front_end_task = tasks
+                .into_iter()
+                .map(|(_, t)| t)
+                .collect::<Vec<model::FrontEndTask>>();
 
-                front_end_task.sort_by(|a, b| a.id.cmp(&b.id));
-                Ok(PaginateData::<model::FrontEndTask>::default()
-                    .set_data_source(front_end_task)
-                    .set_page_size(per_page)
-                    .set_total(count)
-                    .set_state_desc::<state::task::State>())
+            front_end_task.sort_by(|a, b| a.id.cmp(&b.id));
+            Ok(PaginateData::<model::FrontEndTask>::default()
+                .set_data_source(front_end_task)
+                .set_page_size(per_page)
+                .set_total(count)
+                .set_state_desc::<state::task::State>())
+        })
+        .await;
+
+        let page = f_result
+            .map(|page_result| {
+                Into::<UnifiedResponseMessages<PaginateData<model::FrontEndTask>>>::into(
+                    page_result,
+                )
             })
-            .await,
-        ));
+            .unwrap_or_else(|e| {
+                UnifiedResponseMessages::<PaginateData<model::FrontEndTask>>::error()
+                    .customized_error_msg(e.to_string())
+            });
+        return Json(page);
     }
 
     Json(UnifiedResponseMessages::<PaginateData<model::FrontEndTask>>::error())
@@ -166,7 +178,7 @@ pub async fn pre_update_task_row(
     use db::schema::{executor_processor, executor_processor_bind, task_bind};
     use model::BindProcessor;
 
-    let task_binds_pair = web::block::<_, _, diesel::result::Error>(move || {
+    let task_binds_pair = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
         conn.transaction(|| {
             let task_id = task.id;
             let update_effect_row = diesel::update(&task).set(&task).execute(&conn)?;
@@ -259,7 +271,7 @@ pub async fn pre_update_task_row(
             ))
         })
     })
-    .await?;
+    .await??;
 
     Ok(task_binds_pair)
 }
@@ -293,85 +305,87 @@ pub async fn pre_update_task_sevice(
 
     let task_id = task_package.id;
 
-    if status == state::task::State::Enabled as i16 {
-        let remove_tasks_future: JoinAll<_> = removed_bind_processors
-            .into_iter()
-            .filter_map(|processor| {
-                let executor_host =
-                    "http://".to_string() + (processor.host.deref()) + "/api/task/remove";
+    // FIXME:
+    todo!();
+    // if status == state::task::State::Enabled as i16 {
+    //     let remove_tasks_future: JoinAll<_> = removed_bind_processors
+    //         .into_iter()
+    //         .filter_map(|processor| {
+    //             let executor_host =
+    //                 "http://".to_string() + (processor.host.deref()) + "/api/task/remove";
 
-                let message = delicate_utils_task::TaskUnit::default()
-                    .set_task_id(task_id)
-                    .set_time(get_timestamp());
+    //             let message = delicate_utils_task::TaskUnit::default()
+    //                 .set_task_id(task_id)
+    //                 .set_time(get_timestamp());
 
-                info!("Remove task{} at:{}", &task_package, &executor_host);
-                message
-                    .sign(Some(&processor.token))
-                    .map(|s| (s, executor_host))
-                    .ok()
-            })
-            .map(|(signed_task_unit, executor_host)| {
-                RequestClient::default()
-                    .post(executor_host)
-                    .send_json(&signed_task_unit)
-            })
-            .collect::<Vec<_>>()
-            .into_iter()
-            .collect();
+    //             info!("Remove task{} at:{}", &task_package, &executor_host);
+    //             message
+    //                 .sign(Some(&processor.token))
+    //                 .map(|s| (s, executor_host))
+    //                 .ok()
+    //         })
+    //         .map(|(signed_task_unit, executor_host)| {
+    //             RequestClient::default()
+    //                 .post(executor_host)
+    //                 .send_json(&signed_task_unit)
+    //         })
+    //         .collect::<Vec<_>>()
+    //         .into_iter()
+    //         .collect();
 
-        let append_tasks_future: JoinAll<_> = append_bind_processors
-            .into_iter()
-            .filter_map(|processor| {
-                let executor_host =
-                    "http://".to_string() + (processor.host.deref()) + "/api/task/create";
+    //     let append_tasks_future: JoinAll<_> = append_bind_processors
+    //         .into_iter()
+    //         .filter_map(|processor| {
+    //             let executor_host =
+    //                 "http://".to_string() + (processor.host.deref()) + "/api/task/create";
 
-                info!("Create task{} at:{}", &task_package, &executor_host);
-                task_package
-                    .clone()
-                    .sign(Some(&processor.token))
-                    .map(|s| (s, executor_host))
-                    .ok()
-            })
-            .map(|(signed_task_package, executor_host)| {
-                RequestClient::default()
-                    .post(executor_host)
-                    .send_json(&signed_task_package)
-            })
-            .collect::<Vec<_>>()
-            .into_iter()
-            .collect();
+    //             info!("Create task{} at:{}", &task_package, &executor_host);
+    //             task_package
+    //                 .clone()
+    //                 .sign(Some(&processor.token))
+    //                 .map(|s| (s, executor_host))
+    //                 .ok()
+    //         })
+    //         .map(|(signed_task_package, executor_host)| {
+    //             RequestClient::default()
+    //                 .post(executor_host)
+    //                 .send_json(&signed_task_package)
+    //         })
+    //         .collect::<Vec<_>>()
+    //         .into_iter()
+    //         .collect();
 
-        let update_tasks_future: JoinAll<_> = reserved_bind_processors
-            .into_iter()
-            .filter_map(|processor| {
-                let executor_host =
-                    "http://".to_string() + (processor.host.deref()) + "/api/task/update";
+    //     let update_tasks_future: JoinAll<_> = reserved_bind_processors
+    //         .into_iter()
+    //         .filter_map(|processor| {
+    //             let executor_host =
+    //                 "http://".to_string() + (processor.host.deref()) + "/api/task/update";
 
-                info!("Update task {} at:{}", &task_package, &executor_host);
-                task_package
-                    .clone()
-                    .sign(Some(&processor.token))
-                    .map(|s| (s, executor_host))
-                    .ok()
-            })
-            .map(|(signed_task_package, executor_host)| {
-                RequestClient::default()
-                    .post(executor_host)
-                    .send_json(&signed_task_package)
-            })
-            .collect::<Vec<_>>()
-            .into_iter()
-            .collect();
+    //             info!("Update task {} at:{}", &task_package, &executor_host);
+    //             task_package
+    //                 .clone()
+    //                 .sign(Some(&processor.token))
+    //                 .map(|s| (s, executor_host))
+    //                 .ok()
+    //         })
+    //         .map(|(signed_task_package, executor_host)| {
+    //             RequestClient::default()
+    //                 .post(executor_host)
+    //                 .send_json(&signed_task_package)
+    //         })
+    //         .collect::<Vec<_>>()
+    //         .into_iter()
+    //         .collect();
 
-        join3(
-            handle_response::<UnifiedResponseMessages<()>>(remove_tasks_future),
-            handle_response::<UnifiedResponseMessages<()>>(append_tasks_future),
-            handle_response::<UnifiedResponseMessages<()>>(update_tasks_future),
-        )
-        .await;
-    }
+    //     join3(
+    //         handle_response::<UnifiedResponseMessages<()>>(remove_tasks_future),
+    //         handle_response::<UnifiedResponseMessages<()>>(append_tasks_future),
+    //         handle_response::<UnifiedResponseMessages<()>>(update_tasks_future),
+    //     )
+    //     .await;
+    // }
 
-    Ok(())
+    // Ok(())
 }
 
 #[handler]
@@ -394,15 +408,20 @@ async fn delete_task(
 
     // delete
     if let Ok(conn) = pool.get() {
-        return Json(Into::<UnifiedResponseMessages<()>>::into(
-            web::block::<_, _, diesel::result::Error>(move || {
-                diesel::delete(task::table.find(task_id)).execute(&conn)?;
-                diesel::delete(task_bind::table.filter(task_bind::task_id.eq(task_id)))
-                    .execute(&conn)?;
-                Ok(())
-            })
-            .await,
-        ));
+        let f_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
+            diesel::delete(task::table.find(task_id)).execute(&conn)?;
+            diesel::delete(task_bind::table.filter(task_bind::task_id.eq(task_id)))
+                .execute(&conn)?;
+            Ok(())
+        })
+        .await;
+
+        let resp = f_result
+            .map(|resp_result| Into::<UnifiedResponseMessages<()>>::into(resp_result))
+            .unwrap_or_else(|e| {
+                UnifiedResponseMessages::<()>::error().customized_error_msg(e.to_string())
+            });
+        return Json(resp);
     }
 
     Json(UnifiedResponseMessages::<()>::error())
@@ -486,7 +505,7 @@ async fn pre_run_task(
 
     // Many machine.
     let task_packages: Vec<(delicate_utils_task::TaskPackage, (String, String))> =
-        web::block(move || {
+        spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
             diesel::update(task.find(task_id))
                 .set(task::status.eq(State::Enabled as i16))
                 .execute(&conn)?;
@@ -508,31 +527,33 @@ async fn pre_run_task(
                 .filter(task_bind::task_id.eq(task_id))
                 .load::<(delicate_utils_task::TaskPackage, (String, String))>(&conn)
         })
-        .await?;
+        .await??;
 
-    let request_all: JoinAll<_> = task_packages
-        .into_iter()
-        .filter_map(|(task_package, (executor_host_str, executor_token))| {
-            let executor_host =
-                "http://".to_string() + (executor_host_str.deref()) + "/api/task/create";
-            info!("Run task{} at:{}", &task_package, &executor_host);
-            task_package
-                .sign(Some(&executor_token))
-                .map(|s| (s, executor_host))
-                .ok()
-        })
-        .map(|(signed_task_package, executor_host)| {
-            RequestClient::default()
-                .post(executor_host)
-                .send_json(&signed_task_package)
-        })
-        .collect::<Vec<_>>()
-        .into_iter()
-        .collect();
+    // FIXME:
+    todo!();
+    // let request_all: JoinAll<_> = task_packages
+    //     .into_iter()
+    //     .filter_map(|(task_package, (executor_host_str, executor_token))| {
+    //         let executor_host =
+    //             "http://".to_string() + (executor_host_str.deref()) + "/api/task/create";
+    //         info!("Run task{} at:{}", &task_package, &executor_host);
+    //         task_package
+    //             .sign(Some(&executor_token))
+    //             .map(|s| (s, executor_host))
+    //             .ok()
+    //     })
+    //     .map(|(signed_task_package, executor_host)| {
+    //         RequestClient::default()
+    //             .post(executor_host)
+    //             .send_json(&signed_task_package)
+    //     })
+    //     .collect::<Vec<_>>()
+    //     .into_iter()
+    //     .collect();
 
-    handle_response::<UnifiedResponseMessages<()>>(request_all).await;
+    // handle_response::<UnifiedResponseMessages<()>>(request_all).await;
 
-    Ok(())
+    // Ok(())
 }
 
 // FIXME:
@@ -558,7 +579,7 @@ async fn pre_run_task(
 // send_option_operation_log_pair(operation_log_pair_option).await;
 
 // Many machine.
-// let executor_packages: IntoIter<(String, String)> = web::block(move || {
+// let executor_packages: IntoIter<(String, String)> = spawn_blocking::<_,Result<_, diesel::result::Error>>(move || {
 //     // TODO: Optimize.
 //     if action.eq("Suspend") {
 //         diesel::update(task::table.find(task_id))

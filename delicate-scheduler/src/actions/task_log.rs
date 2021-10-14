@@ -71,7 +71,7 @@ async fn pre_create_task_logs(
 
     debug!("{:?}, {:?}", &new_task_logs, &supply_task_logs);
 
-    let num = web::block::<_, _, diesel::result::Error>(move || {
+    let num = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
         conn.transaction(|| {
             effect_num += batch_insert_task_logs(&conn, new_task_logs)?;
 
@@ -80,7 +80,7 @@ async fn pre_create_task_logs(
             Ok(effect_num)
         })
     })
-    .await?;
+    .await??;
 
     Ok(num)
 }
@@ -92,35 +92,43 @@ async fn show_task_logs(
     pool: Data<&db::ConnectionPool>,
 ) -> impl IntoResponse {
     if let Ok(conn) = pool.get() {
-        return Json(Into::<
-            UnifiedResponseMessages<PaginateData<model::FrontEndTaskLog>>,
-        >::into(
-            web::block::<_, _, diesel::result::Error>(move || {
-                let query_builder = model::TaskLogQueryBuilder::query_all_columns();
+        let f_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
+            let query_builder = model::TaskLogQueryBuilder::query_all_columns();
 
-                let task_logs = query_params
-                    .clone()
-                    .query_filter(query_builder)
-                    .paginate(query_params.page)
-                    .set_per_page(query_params.per_page)
-                    .load::<model::TaskLog>(&conn)?;
+            let task_logs = query_params
+                .clone()
+                .query_filter(query_builder)
+                .paginate(query_params.page)
+                .set_per_page(query_params.per_page)
+                .load::<model::TaskLog>(&conn)?;
 
-                let per_page = query_params.per_page;
-                let count_builder = model::TaskLogQueryBuilder::query_count();
-                let count = query_params
-                    .query_filter(count_builder)
-                    .get_result::<i64>(&conn)?;
+            let per_page = query_params.per_page;
+            let count_builder = model::TaskLogQueryBuilder::query_count();
+            let count = query_params
+                .query_filter(count_builder)
+                .get_result::<i64>(&conn)?;
 
-                let front_end_task_logs: Vec<model::FrontEndTaskLog> =
-                    task_logs.into_iter().map(|t| t.into()).collect();
-                Ok(PaginateData::<model::FrontEndTaskLog>::default()
-                    .set_data_source(front_end_task_logs)
-                    .set_page_size(per_page)
-                    .set_total(count)
-                    .set_state_desc::<state::task_log::State>())
+            let front_end_task_logs: Vec<model::FrontEndTaskLog> =
+                task_logs.into_iter().map(|t| t.into()).collect();
+            Ok(PaginateData::<model::FrontEndTaskLog>::default()
+                .set_data_source(front_end_task_logs)
+                .set_page_size(per_page)
+                .set_total(count)
+                .set_state_desc::<state::task_log::State>())
+        })
+        .await;
+
+        let page = f_result
+            .map(|page_result| {
+                Into::<UnifiedResponseMessages<PaginateData<model::FrontEndTaskLog>>>::into(
+                    page_result,
+                )
             })
-            .await,
-        ));
+            .unwrap_or_else(|e| {
+                UnifiedResponseMessages::<PaginateData<model::FrontEndTaskLog>>::error()
+                    .customized_error_msg(e.to_string())
+            });
+        return Json(page);
     }
 
     Json(UnifiedResponseMessages::<
@@ -137,16 +145,24 @@ async fn show_task_log_detail(
     use db::schema::task_log_extend;
 
     if let Ok(conn) = pool.get() {
-        return Json(Into::<UnifiedResponseMessages<model::TaskLogExtend>>::into(
-            web::block::<_, _, diesel::result::Error>(move || {
-                let task_log_extend = task_log_extend::table
-                    .find(query_params.record_id.0)
-                    .first::<model::TaskLogExtend>(&conn)?;
+        let f_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
+            let task_log_extend = task_log_extend::table
+                .find(query_params.record_id.0)
+                .first::<model::TaskLogExtend>(&conn)?;
 
-                Ok(task_log_extend)
+            Ok(task_log_extend)
+        })
+        .await;
+
+        let log_extend = f_result
+            .map(|log_extend_result| {
+                Into::<UnifiedResponseMessages<model::TaskLogExtend>>::into(log_extend_result)
             })
-            .await,
-        ));
+            .unwrap_or_else(|e| {
+                UnifiedResponseMessages::<model::TaskLogExtend>::error()
+                    .customized_error_msg(e.to_string())
+            });
+        return Json(log_extend);
     }
 
     Json(UnifiedResponseMessages::<model::TaskLogExtend>::error())
@@ -255,7 +271,7 @@ async fn kill_one_task_instance(
     let token = model::get_executor_token_by_id(executor_processor_id, pool.get()?).await;
 
     let conn = pool.get()?;
-    let host = web::block::<_, String, diesel::result::Error>(move || {
+    let host = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
         let host = task_log::table
             .find(&record_id.0)
             .filter(task_log::status.eq(state::task_log::State::Running as i16))
@@ -269,7 +285,7 @@ async fn kill_one_task_instance(
 
         Ok(host)
     })
-    .await?;
+    .await??;
 
     let client = RequestClient::default();
     let url = "http://".to_string() + (host.deref()) + "/api/task_instance/kill";
@@ -280,13 +296,15 @@ async fn kill_one_task_instance(
         .set_time(get_timestamp())
         .sign(token.as_deref())?;
 
-    client
-        .post(url)
-        .send_json(&record)
-        .await?
-        .json::<UnifiedResponseMessages<()>>()
-        .await?
-        .into()
+    // FIXME:
+    todo!();
+    // client
+    //     .post(url)
+    //     .send_json(&record)
+    //     .await?
+    //     .json::<UnifiedResponseMessages<()>>()
+    //     .await?
+    //     .into()
 }
 
 #[handler]
@@ -321,7 +339,7 @@ async fn pre_delete_task_log(
 
     // 2. the primary key in batches of 2048 items and then start executing the deletion, task-log and task-log-extend.
 
-    web::block::<_, _, diesel::result::Error>(move || {
+    spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
         let query_builder = model::TaskLogQueryBuilder::query_id_column();
         let task_log_ids = delete_params
             .query_filter(query_builder)

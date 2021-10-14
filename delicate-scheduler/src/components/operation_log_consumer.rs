@@ -18,8 +18,8 @@ pub(crate) async fn loop_operate_logs(pool: Arc<db::ConnectionPool>) {
         let mut operation_log_pairs: Vec<NewOperationLogPair> = Vec::new();
 
         'logs_collection: for _ in 0..512 {
-            let logs_future: RtTimeout<_> =
-                rt_timeout(Duration::from_secs(3), OPERATION_LOG_CONSUMERS.1.recv());
+            let logs_future: TokioTimeout<_> =
+                tokio_timeout(Duration::from_secs(3), OPERATION_LOG_CONSUMERS.1.recv());
 
             match logs_future.await {
                 // No new events and timeout.
@@ -70,7 +70,7 @@ async fn operate_logs(
             operation_logs.push(operation_log);
             operation_log_details.push(operation_log_detail);
         });
-    web::block::<_, _, diesel::result::Error>(move || {
+    spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
         // Use this solution to ensure that the conditions are met (innodb_autoinc_lock_mode = 1 ("executive" lock mode)):
         // https://stackoverflow.com/questions/27225804/mysql-batch-insert-on-multiple-tables-with-last-insert-id
         // https://dev.mysql.com/doc/refman/8.0/en/innodb-auto-increment-handling.html
@@ -96,7 +96,7 @@ async fn operate_logs(
             .execute(&conn)?;
         Ok(())
     })
-    .await?;
+    .await??;
 
     Ok(())
 }

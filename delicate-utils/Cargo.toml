@@ -11,8 +11,6 @@ name = "delicate_utils"
 
 [dependencies]
 async-lock = "^2.3.0"
-actix-web = "^3.3.2"
-actix-session = "0.4.1"
 casbin = {version = '2.0.9', default-features = false, features = ["incremental", "logging", "tokio", "runtime-tokio", "watcher"]}
 derive_more = "^0.99.14"
 delay_timer = {version = "^0.9.0", features = ["full"]}

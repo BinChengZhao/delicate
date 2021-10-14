@@ -10,7 +10,7 @@ async fn show_one_day_tasks_state(pool: Data<&db::ConnectionPool>) -> impl IntoR
     use state::task_log::State;
 
     if let Ok(conn) = pool.get() {
-        let daily_state_result = web::block::<_, _, diesel::result::Error>(move || {
+        let daily_state_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
             let datetime: DateTime<Local> = SystemTime::now().into();
             let now = datetime.naive_local();
             let raw_past_day = now - ChronoDuration::days(1);
@@ -74,9 +74,15 @@ async fn show_one_day_tasks_state(pool: Data<&db::ConnectionPool>) -> impl IntoR
             ))
         })
         .await;
-        return Json(Into::<UnifiedResponseMessages<model::DailyState>>::into(
-            daily_state_result,
-        ));
+        let daily_state = daily_state_result
+            .map(|daily_state_result| {
+                Into::<UnifiedResponseMessages<model::DailyState>>::into(daily_state_result)
+            })
+            .unwrap_or_else(|e| {
+                UnifiedResponseMessages::<model::DailyState>::error()
+                    .customized_error_msg(e.to_string())
+            });
+        return Json(daily_state);
     }
 
     Json(UnifiedResponseMessages::<model::DailyState>::error())

@@ -23,6 +23,7 @@ use super::prelude::*;
 // }
 
 // Register authentication middleware to check login status based on `CookieSession`.
+
 pub(crate) fn auth_middleware() -> SessionAuth {
     SessionAuth
 }
@@ -43,12 +44,12 @@ pub struct SessionAuthMiddleware<E> {
 
 #[poem::async_trait]
 impl<E: Endpoint> Endpoint for SessionAuthMiddleware<E> {
-    type Output = E::Output;
+    type Output = Response;
 
     async fn call(&self, mut req: Request) -> Self::Output {
         #[cfg(APP_DEBUG_MODE)]
         {
-            return self.ep.call(req).await;
+            return self.ep.call(req).await.into_response();
         }
 
         let extensions = req.extensions();
@@ -56,29 +57,25 @@ impl<E: Endpoint> Endpoint for SessionAuthMiddleware<E> {
         let uri = req.uri();
         let path = uri.path();
 
-        // https://github.com/poem-web/poem/blob/master/examples/poem/cookie-session/src/main.rs
-
-        // TODO:  Use `CookieJar` as the backend of `Session`.
-        // // Judgment, if it is a special api will not check the token.
-        // // (for example: login-api, event-collection-api)
+        // Use `CookieJar` as the backend of `Session`.
+        // Judgment, if it is a special api will not check the token.
+        // (for example: login-api, event-collection-api)
 
         match path {
             "/api/user/login" | "/api/task_log/event_trigger" => {
-                return self.ep.call(req).await;
+                self.ep.call(req).await.into_response()
             }
             _ => {
-                let user_id = session.map(|s| s.get("user_id")).flatten().map(|c|c.value::<u64>());
+                let user_id = session
+                    .map(|s| s.get("user_id"))
+                    .flatten()
+                    .map(|c| c.value::<u64>());
                 if let Some(Ok(_)) = user_id {
-                    return self.ep.call(req).await;
+                    self.ep.call(req).await.into_response()
                 } else {
-                    // FIXME:
-                    // TODO: early return.
-                    /// actix : req.error(msg).
-                    // Json(
-                    //     UnifiedResponseMessages::<()>::error()
-                    //         .customized_error_msg(String::from("Please log in and operate.")),
-                    // )
-                    todo!();
+                    UnifiedResponseMessages::<()>::error()
+                        .customized_error_msg(String::from("Please log in and operate."))
+                        .into_response()
                 }
             }
         }

@@ -44,27 +44,32 @@ async fn create_user(
     // send_option_operation_log_pair(operation_log_pair_option).await;
 
     if let Ok(conn) = pool.get() {
-        return Json(Into::<UnifiedResponseMessages<()>>::into(
-            web::block::<_, _, diesel::result::Error>(move || {
-                conn.transaction(|| {
-                    diesel::insert_into(user::table)
-                        .values(&new_user)
-                        .execute(&conn)?;
+        let f_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
+            conn.transaction(|| {
+                diesel::insert_into(user::table)
+                    .values(&new_user)
+                    .execute(&conn)?;
 
-                    let last_id = diesel::select(db::last_insert_id).get_result::<u64>(&conn)?;
+                let last_id = diesel::select(db::last_insert_id).get_result::<u64>(&conn)?;
 
-                    let user_auths: model::NewUserAuths =
-                        From::<(model::QueryNewUser, u64)>::from((user, last_id));
+                let user_auths: model::NewUserAuths =
+                    From::<(model::QueryNewUser, u64)>::from((user, last_id));
 
-                    diesel::insert_into(user_auth::table)
-                        .values(&user_auths.0[..])
-                        .execute(&conn)?;
+                diesel::insert_into(user_auth::table)
+                    .values(&user_auths.0[..])
+                    .execute(&conn)?;
 
-                    Ok(())
-                })
+                Ok(())
             })
-            .await,
-        ));
+        })
+        .await;
+
+        let resp = f_result
+            .map(|resp_result| Into::<UnifiedResponseMessages<()>>::into(resp_result))
+            .unwrap_or_else(|e| {
+                UnifiedResponseMessages::<()>::error().customized_error_msg(e.to_string())
+            });
+        return Json(resp);
     }
 
     Json(UnifiedResponseMessages::<()>::error())
@@ -77,32 +82,38 @@ async fn show_users(
     pool: Data<&db::ConnectionPool>,
 ) -> impl IntoResponse {
     if let Ok(conn) = pool.get() {
-        return Json(
-            Into::<UnifiedResponseMessages<PaginateData<model::User>>>::into(
-                web::block::<_, _, diesel::result::Error>(move || {
-                    let query_builder = model::UserQueryBuilder::query_all_columns();
+        let f_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
+            let query_builder = model::UserQueryBuilder::query_all_columns();
 
-                    let users = query_params
-                        .clone()
-                        .query_filter(query_builder)
-                        .paginate(query_params.page)
-                        .set_per_page(query_params.per_page)
-                        .load::<model::User>(&conn)?;
+            let users = query_params
+                .clone()
+                .query_filter(query_builder)
+                .paginate(query_params.page)
+                .set_per_page(query_params.per_page)
+                .load::<model::User>(&conn)?;
 
-                    let per_page = query_params.per_page;
-                    let count_builder = model::UserQueryBuilder::query_count();
-                    let count = query_params
-                        .query_filter(count_builder)
-                        .get_result::<i64>(&conn)?;
+            let per_page = query_params.per_page;
+            let count_builder = model::UserQueryBuilder::query_count();
+            let count = query_params
+                .query_filter(count_builder)
+                .get_result::<i64>(&conn)?;
 
-                    Ok(PaginateData::<model::User>::default()
-                        .set_data_source(users)
-                        .set_page_size(per_page)
-                        .set_total(count))
-                })
-                .await,
-            ),
-        );
+            Ok(PaginateData::<model::User>::default()
+                .set_data_source(users)
+                .set_page_size(per_page)
+                .set_total(count))
+        })
+        .await;
+
+        let page = f_result
+            .map(|page_result| {
+                Into::<UnifiedResponseMessages<PaginateData<model::User>>>::into(page_result)
+            })
+            .unwrap_or_else(|e| {
+                UnifiedResponseMessages::<PaginateData<model::User>>::error()
+                    .customized_error_msg(e.to_string())
+            });
+        return Json(page);
     }
 
     Json(UnifiedResponseMessages::<PaginateData<model::User>>::error())
@@ -122,9 +133,17 @@ async fn update_user(
     // send_option_operation_log_pair(operation_log_pair_option).await;
 
     if let Ok(conn) = pool.get() {
-        return Json(Into::<UnifiedResponseMessages<usize>>::into(
-            web::block(move || diesel::update(&user_value).set(&user_value).execute(&conn)).await,
-        ));
+        let f_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
+            diesel::update(&user_value).set(&user_value).execute(&conn)
+        })
+        .await;
+
+        let count = f_result
+            .map(|count_result| Into::<UnifiedResponseMessages<usize>>::into(count_result))
+            .unwrap_or_else(|e| {
+                UnifiedResponseMessages::<usize>::error().customized_error_msg(e.to_string())
+            });
+        return Json(count);
     }
 
     Json(UnifiedResponseMessages::<usize>::error())
@@ -147,7 +166,7 @@ async fn change_password(
 
     // if let Ok(conn) = pool.get() {
     //     return Json(Into::<UnifiedResponseMessages<usize>>::into(
-    //         web::block::<_, _, diesel::result::Error>(move || {
+    //         spawn_blocking::<_,Result<_, diesel::result::Error>>(move || {
     //             let user_auth_id = user_auth::table
     //                 .select(user_auth::id)
     //                 .filter(user_auth::user_id.eq(&user_id))
@@ -187,18 +206,23 @@ async fn delete_user(
     // send_option_operation_log_pair(operation_log_pair_option).await;
 
     if let Ok(conn) = pool.get() {
-        return Json(Into::<UnifiedResponseMessages<()>>::into(
-            web::block::<_, _, diesel::result::Error>(move || {
-                conn.transaction(|| {
-                    diesel::delete(user::table.filter(user::id.eq(user_id))).execute(&conn)?;
-                    diesel::delete(user_auth::table.filter(user_auth::user_id.eq(user_id)))
-                        .execute(&conn)?;
+        let f_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
+            conn.transaction(|| {
+                diesel::delete(user::table.filter(user::id.eq(user_id))).execute(&conn)?;
+                diesel::delete(user_auth::table.filter(user_auth::user_id.eq(user_id)))
+                    .execute(&conn)?;
 
-                    Ok(())
-                })
+                Ok(())
             })
-            .await,
-        ));
+        })
+        .await;
+
+        let resp = f_result
+            .map(|resp_result| Into::<UnifiedResponseMessages<()>>::into(resp_result))
+            .unwrap_or_else(|e| {
+                UnifiedResponseMessages::<()>::error().customized_error_msg(e.to_string())
+            });
+        return Json(resp);
     }
 
     Json(UnifiedResponseMessages::<()>::error())
@@ -243,7 +267,7 @@ async fn pre_login_user(
 
     // let conn = pool.get()?;
     // let user_package: (model::UserAuth, model::User) =
-    //     web::block::<_, _, diesel::result::Error>(move || {
+    //     spawn_blocking::<_,Result<_, diesel::result::Error>>(move || {
     //         let login_result = user_auth::table
     //             .inner_join(user::table)
     //             .select((user_auth::all_columns, user::all_columns))
@@ -326,7 +350,7 @@ fn save_session(
 //         .get::<u64>("user_id")?
 //         .ok_or_else(|| CommonError::DisPass("Without set `user_id` .".into()))?;
 
-//     let user = web::block::<_, _, diesel::result::Error>(move || {
+//     let user = spawn_blocking::<_,Result<_, diesel::result::Error>>(move || {
 //         let user = user::table
 //             .select(user::all_columns)
 //             .find(user_id)

@@ -16,11 +16,16 @@ async fn binding_list(pool: Data<&db::ConnectionPool>) -> impl IntoResponse {
     if let Ok(conn) = pool.get() {
         return Json(
             Into::<UnifiedResponseMessages<Vec<model::BindingSelection>>>::into(
-                web::block::<_, _, diesel::result::Error>(move || {
+                spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
                     ExecutorProcessorBindQueryBuilder::query_binding_columns()
                         .load::<BindingSelection>(&conn)
                 })
-                .await,
+                .await
+                .map(|r| r.into())
+                .unwrap_or_else(|e| {
+                    UnifiedResponseMessages::<Vec<model::BindingSelection>>::error()
+                        .customized_error_msg(e.to_string())
+                }),
             ),
         );
     }
@@ -35,11 +40,16 @@ async fn executor_list(pool: Data<&db::ConnectionPool>) -> impl IntoResponse {
     if let Ok(conn) = pool.get() {
         return Json(
             Into::<UnifiedResponseMessages<Vec<model::ExecutorSelection>>>::into(
-                web::block::<_, _, diesel::result::Error>(move || {
+                spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
                     ExecutorProcessorQueryBuilder::query_selection_columns()
                         .load::<ExecutorSelection>(&conn)
                 })
-                .await,
+                .await
+                .map(|r| r.into())
+                .unwrap_or_else(|e| {
+                    UnifiedResponseMessages::<Vec<model::ExecutorSelection>>::error()
+                        .customized_error_msg(e.to_string())
+                }),
             ),
         );
     }
@@ -53,7 +63,7 @@ async fn permission_list(pool: Data<&db::ConnectionPool>) -> impl IntoResponse {
 
     // TODO: Awaiting follow-up adjustment.
     if let Ok(conn) = pool.get() {
-        let permissions = web::block::<_, _, diesel::result::Error>(move || {
+        let permissions = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
             casbin_rule::table
                 .select((casbin_rule::v1, casbin_rule::v2))
                 .filter(casbin_rule::ptype.eq("p"))
@@ -69,7 +79,10 @@ async fn permission_list(pool: Data<&db::ConnectionPool>) -> impl IntoResponse {
         .await;
 
         let response_permissions: UnifiedResponseMessages<Vec<(String, String)>> =
-            permissions.into();
+            permissions.map(|r| r.into()).unwrap_or_else(|e| {
+                UnifiedResponseMessages::<Vec<(String, String)>>::error()
+                    .customized_error_msg(e.to_string())
+            });
 
         return Json(response_permissions);
     }
