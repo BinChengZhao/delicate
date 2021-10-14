@@ -1,7 +1,7 @@
 use super::prelude::*;
-use model::schema::{user, user_auth, user_login_log};
+use model::schema::{user, user_auth};
 use model::user::{
-    get_encrypted_certificate_by_raw_certificate, UserAndPermissions, UserAndRoles, UserName,
+    UserAndPermissions, UserAndRoles, UserName,
 };
 
 pub(crate) fn config_route(route: Route) -> Route {
@@ -26,7 +26,7 @@ pub(crate) fn config_route(route: Route) -> Route {
 #[handler]
 
 async fn create_user(
-    req: &Request,
+    _req: &Request,
     Json(user): Json<model::QueryNewUser>,
     pool: Data<&db::ConnectionPool>,
 ) -> impl IntoResponse {
@@ -65,7 +65,7 @@ async fn create_user(
         .await;
 
         let resp = f_result
-            .map(|resp_result| Into::<UnifiedResponseMessages<()>>::into(resp_result))
+            .map(Into::<UnifiedResponseMessages<()>>::into)
             .unwrap_or_else(|e| {
                 UnifiedResponseMessages::<()>::error().customized_error_msg(e.to_string())
             });
@@ -122,7 +122,7 @@ async fn show_users(
 #[handler]
 
 async fn update_user(
-    req: &Request,
+    _req: &Request,
     Json(user_value): Json<model::UpdateUser>,
     pool: Data<&db::ConnectionPool>,
 ) -> impl IntoResponse {
@@ -139,7 +139,7 @@ async fn update_user(
         .await;
 
         let count = f_result
-            .map(|count_result| Into::<UnifiedResponseMessages<usize>>::into(count_result))
+            .map(Into::<UnifiedResponseMessages<usize>>::into)
             .unwrap_or_else(|e| {
                 UnifiedResponseMessages::<usize>::error().customized_error_msg(e.to_string())
             });
@@ -152,9 +152,9 @@ async fn update_user(
 #[handler]
 
 async fn change_password(
-    req: &Request,
-    Json(user_value): Json<model::UserChangePassword>,
-    pool: Data<&db::ConnectionPool>,
+    _req: &Request,
+    Json(_user_value): Json<model::UserChangePassword>,
+    _pool: Data<&db::ConnectionPool>,
 ) -> impl IntoResponse {
     // FIXME:
 
@@ -193,7 +193,7 @@ async fn change_password(
 #[handler]
 
 async fn delete_user(
-    req: &Request,
+    _req: &Request,
     Json(model::UserId { user_id }): Json<model::UserId>,
     pool: Data<&db::ConnectionPool>,
 ) -> impl IntoResponse {
@@ -218,7 +218,7 @@ async fn delete_user(
         .await;
 
         let resp = f_result
-            .map(|resp_result| Into::<UnifiedResponseMessages<()>>::into(resp_result))
+            .map(Into::<UnifiedResponseMessages<()>>::into)
             .unwrap_or_else(|e| {
                 UnifiedResponseMessages::<()>::error().customized_error_msg(e.to_string())
             });
@@ -244,16 +244,16 @@ async fn delete_user(
 // }
 
 async fn pre_login_user(
-    req: &Request,
+    _req: &Request,
     model::UserAuthLogin {
-        login_type,
-        account,
-        password,
+        login_type: _,
+        account: _,
+        password: _,
     }: model::UserAuthLogin,
     // session: Session,
-    pool: Data<&db::ConnectionPool>,
+    _pool: Data<&db::ConnectionPool>,
 ) -> Result<(), CommonError> {
-    use model::user_login_log::NewUserLoginLog;
+    
 
     // FIXME:
 
@@ -307,7 +307,7 @@ async fn pre_login_user(
 
 fn save_session(
     // session: Session,
-    (_, user): (model::UserAuth, model::User),
+    (_, _user): (model::UserAuth, model::User),
 ) -> Result<(), CommonError> {
     // FIXME:
 
@@ -407,7 +407,7 @@ async fn permissions(
 #[handler]
 
 async fn append_role(
-    req: &Request,
+    _req: &Request,
     enforcer: Data<&RwLock<Enforcer>>,
     Json(user_and_roles): Json<UserAndRoles>,
 ) -> impl IntoResponse {
@@ -445,7 +445,7 @@ async fn append_role(
 #[handler]
 
 async fn delete_role(
-    req: &Request,
+    _req: &Request,
     enforcer: Data<&RwLock<Enforcer>>,
     Json(user_and_roles): Json<UserAndRoles>,
 ) -> impl IntoResponse {
@@ -488,7 +488,7 @@ async fn delete_role(
 #[handler]
 
 async fn append_permission(
-    req: &Request,
+    _req: &Request,
     enforcer: Data<&RwLock<Enforcer>>,
     Json(user_and_permissions): Json<UserAndPermissions>,
 ) -> impl IntoResponse {
@@ -514,7 +514,7 @@ async fn append_permission(
 
 #[handler]
 async fn delete_permission(
-    req: &Request,
+    _req: &Request,
     enforcer: Data<&RwLock<Enforcer>>,
     Json(user_and_permissions): Json<UserAndPermissions>,
 ) -> impl IntoResponse {

@@ -15,7 +15,7 @@ pub(crate) fn config_route(route: Route) -> Route {
 #[handler]
 
 async fn create_task(
-    req: &Request,
+    _req: &Request,
     Json(model::NewTaskBody { task, binding_ids }): Json<model::NewTaskBody>,
     pool: Data<&db::ConnectionPool>,
 ) -> impl IntoResponse {
@@ -47,7 +47,7 @@ async fn create_task(
         .await;
 
         let count = f_result
-            .map(|count_result| Into::<UnifiedResponseMessages<usize>>::into(count_result))
+            .map(Into::<UnifiedResponseMessages<usize>>::into)
             .unwrap_or_else(|e| {
                 UnifiedResponseMessages::<usize>::error().customized_error_msg(e.to_string())
             });
@@ -144,7 +144,7 @@ async fn show_tasks(
 // }
 
 pub async fn pre_update_task(
-    req: &Request,
+    _req: &Request,
     model::UpdateTaskBody { task, binding_ids }: model::UpdateTaskBody,
     pool: Data<&db::ConnectionPool>,
 ) -> Result<(), CommonError> {
@@ -279,7 +279,7 @@ pub async fn pre_update_task_row(
 pub async fn pre_update_task_sevice(
     conn: db::PoolConnection,
     task_id: i64,
-    (removed_bind_processors, append_bind_processors, reserved_bind_processors): (
+    (_removed_bind_processors, _append_bind_processors, _reserved_bind_processors): (
         Vec<model::BindProcessor>,
         Vec<model::BindProcessor>,
         Vec<model::BindProcessor>,
@@ -288,7 +288,7 @@ pub async fn pre_update_task_sevice(
     use db::schema::task;
     use delicate_utils_task::TaskPackage;
 
-    let (task_package, status) = task::table
+    let (task_package, _status) = task::table
         .select((
             (
                 task::id,
@@ -303,7 +303,7 @@ pub async fn pre_update_task_sevice(
         .filter(task::id.eq(task_id))
         .first::<(TaskPackage, i16)>(&conn)?;
 
-    let task_id = task_package.id;
+    let _task_id = task_package.id;
 
     // FIXME:
     todo!();
@@ -391,7 +391,7 @@ pub async fn pre_update_task_sevice(
 #[handler]
 
 async fn delete_task(
-    req: &Request,
+    _req: &Request,
     Json(model::TaskId { task_id }): Json<model::TaskId>,
     pool: Data<&db::ConnectionPool>,
 ) -> impl IntoResponse {
@@ -417,7 +417,7 @@ async fn delete_task(
         .await;
 
         let resp = f_result
-            .map(|resp_result| Into::<UnifiedResponseMessages<()>>::into(resp_result))
+            .map(Into::<UnifiedResponseMessages<()>>::into)
             .unwrap_or_else(|e| {
                 UnifiedResponseMessages::<()>::error().customized_error_msg(e.to_string())
             });
@@ -480,7 +480,7 @@ async fn delete_task(
 // }
 
 async fn pre_run_task(
-    req: &Request,
+    _req: &Request,
     task_id: i64,
     pool: Data<&db::ConnectionPool>,
 ) -> Result<(), CommonError> {
@@ -504,7 +504,7 @@ async fn pre_run_task(
     let conn = pool.get()?;
 
     // Many machine.
-    let task_packages: Vec<(delicate_utils_task::TaskPackage, (String, String))> =
+    let _task_packages: Vec<(delicate_utils_task::TaskPackage, (String, String))> =
         spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
             diesel::update(task.find(task_id))
                 .set(task::status.eq(State::Enabled as i16))

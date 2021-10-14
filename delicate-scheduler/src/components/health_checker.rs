@@ -23,9 +23,9 @@ pub(crate) async fn loop_health_check(
 
 async fn health_check(
     conn: db::PoolConnection,
-    request_client: RequestClient,
+    _request_client: RequestClient,
 ) -> Result<(), CommonError> {
-    let (executor_packages, conn) =
+    let (executor_packages, _conn) =
         spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
             let executors = executor_processor::table
                 .select((
@@ -41,7 +41,7 @@ async fn health_check(
             Ok((executors, conn))
         })
         .await??;
-    let all_executor_ids: HashSet<i64> = executor_packages.iter().map(|(id, _, _)| *id).collect();
+    let _all_executor_ids: HashSet<i64> = executor_packages.iter().map(|(id, _, _)| *id).collect();
 
     // FIXME:
     todo!();

@@ -247,7 +247,7 @@ fn batch_update_task_logs(
 }
 
 async fn kill_one_task_instance(
-    req: &Request,
+    _req: &Request,
     pool: Data<&db::ConnectionPool>,
     model::TaskRecord {
         task_id,
@@ -287,10 +287,10 @@ async fn kill_one_task_instance(
     })
     .await??;
 
-    let client = RequestClient::default();
-    let url = "http://".to_string() + (host.deref()) + "/api/task_instance/kill";
+    let _client = RequestClient::default();
+    let _url = "http://".to_string() + (host.deref()) + "/api/task_instance/kill";
 
-    let record = delicate_utils_task_log::CancelTaskRecord::default()
+    let _record = delicate_utils_task_log::CancelTaskRecord::default()
         .set_task_id(task_id)
         .set_record_id(record_id.0)
         .set_time(get_timestamp())
@@ -309,7 +309,7 @@ async fn kill_one_task_instance(
 
 #[handler]
 async fn delete_task_log(
-    req: &Request,
+    _req: &Request,
     Json(delete_params): Json<model::DeleteParamsTaskLog>,
     pool: Data<&db::ConnectionPool>,
 ) -> impl IntoResponse {

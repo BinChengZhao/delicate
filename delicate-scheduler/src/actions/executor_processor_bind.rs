@@ -24,7 +24,7 @@ pub(crate) fn config_route(route: Route) -> Route {
 #[handler]
 
 async fn create_executor_processor_bind(
-    req: &Request,
+    _req: &Request,
     Json(executor_processor_binds): Json<model::NewExecutorProcessorBinds>,
     pool: Data<&db::ConnectionPool>,
 ) -> impl IntoResponse {
@@ -58,7 +58,7 @@ async fn create_executor_processor_bind(
         .await;
 
         let count = f_result
-            .map(|count_result| Into::<UnifiedResponseMessages<usize>>::into(count_result))
+            .map(Into::<UnifiedResponseMessages<usize>>::into)
             .unwrap_or_else(|e| {
                 UnifiedResponseMessages::<usize>::error().customized_error_msg(e.to_string())
             });
@@ -244,7 +244,7 @@ async fn show_executor_processor_binds(
 
 #[handler]
 async fn delete_executor_processor_bind(
-    req: &Request,
+    _req: &Request,
     Json(model::ExecutorProcessorBindId {
         executor_processor_bind_id,
     }): Json<model::ExecutorProcessorBindId>,
@@ -268,7 +268,7 @@ async fn delete_executor_processor_bind(
         .await;
 
         let count = f_result
-            .map(|count_result| Into::<UnifiedResponseMessages<usize>>::into(count_result))
+            .map(Into::<UnifiedResponseMessages<usize>>::into)
             .unwrap_or_else(|e| {
                 UnifiedResponseMessages::<usize>::error().customized_error_msg(e.to_string())
             });

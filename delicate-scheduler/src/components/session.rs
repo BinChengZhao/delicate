@@ -46,7 +46,7 @@ pub struct SessionAuthMiddleware<E> {
 impl<E: Endpoint> Endpoint for SessionAuthMiddleware<E> {
     type Output = Response;
 
-    async fn call(&self, mut req: Request) -> Self::Output {
+    async fn call(&self, req: Request) -> Self::Output {
         #[cfg(APP_DEBUG_MODE)]
         {
             return self.ep.call(req).await.into_response();

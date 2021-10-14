@@ -29,7 +29,7 @@ pub(crate) fn config_route(route: Route) -> Route {
 
 #[handler]
 async fn create_executor_processor(
-    req: &Request,
+    _req: &Request,
     Json(executor_processor): Json<model::NewExecutorProcessor>,
     pool: Data<&db::ConnectionPool>,
 ) -> impl IntoResponse {
@@ -48,7 +48,7 @@ async fn create_executor_processor(
         .await;
 
         let count = f_result
-            .map(|count_result| Into::<UnifiedResponseMessages<usize>>::into(count_result))
+            .map(Into::<UnifiedResponseMessages<usize>>::into)
             .unwrap_or_else(|e| {
                 UnifiedResponseMessages::<usize>::error().customized_error_msg(e.to_string())
             });
@@ -107,7 +107,7 @@ async fn show_executor_processors(
 
 #[handler]
 async fn update_executor_processor(
-    req: &Request,
+    _req: &Request,
     Json(executor_processor): Json<model::UpdateExecutorProcessor>,
     pool: Data<&db::ConnectionPool>,
 ) -> impl IntoResponse {
@@ -126,7 +126,7 @@ async fn update_executor_processor(
         .await;
 
         let count = f_result
-            .map(|count_result| Into::<UnifiedResponseMessages<usize>>::into(count_result))
+            .map(Into::<UnifiedResponseMessages<usize>>::into)
             .unwrap_or_else(|e| {
                 UnifiedResponseMessages::<usize>::error().customized_error_msg(e.to_string())
             });
@@ -138,7 +138,7 @@ async fn update_executor_processor(
 
 #[handler]
 async fn delete_executor_processor(
-    req: &Request,
+    _req: &Request,
     Json(model::ExecutorProcessorId {
         executor_processor_id,
     }): Json<model::ExecutorProcessorId>,
@@ -162,7 +162,7 @@ async fn delete_executor_processor(
         .await;
 
         let count = f_result
-            .map(|count_result| Into::<UnifiedResponseMessages<usize>>::into(count_result))
+            .map(Into::<UnifiedResponseMessages<usize>>::into)
             .unwrap_or_else(|e| {
                 UnifiedResponseMessages::<usize>::error().customized_error_msg(e.to_string())
             });
@@ -227,12 +227,12 @@ async fn activate_executor(
         ..
     }: model::UpdateExecutorProcessor = query;
 
-    let client = RequestClient::default();
-    let url = "http://".to_string() + (host.deref()) + "/api/executor/bind";
+    let _client = RequestClient::default();
+    let _url = "http://".to_string() + (host.deref()) + "/api/executor/bind";
 
     let private_key = scheduler.get_app_security_key();
     let scheduler_host = scheduler.get_app_host_name().clone();
-    let signed_scheduler = service_binding::BindRequest::default()
+    let _signed_scheduler = service_binding::BindRequest::default()
         .set_scheduler_host(scheduler_host)
         .set_executor_processor_id(id)
         .set_executor_processor_host(host)

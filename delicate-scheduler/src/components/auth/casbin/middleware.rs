@@ -95,7 +95,7 @@ const WHITE_LIST: [&str; 9] = [
 impl<E: Endpoint> Endpoint for CasbinAuthMiddleware<E> {
     type Output = Response;
 
-    async fn call(&self, mut req: Request) -> Self::Output {
+    async fn call(&self, req: Request) -> Self::Output {
         let enforcer = req
             .extensions()
             .get::<Data<Arc<RwLock<Enforcer>>>>()

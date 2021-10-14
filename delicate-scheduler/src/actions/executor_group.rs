@@ -14,7 +14,7 @@ pub(crate) fn config_route(route: Route) -> Route {
 
 #[handler]
 async fn create_executor_group(
-    req: &Request,
+    _req: &Request,
     Json(executor_group): Json<model::NewExecutorGroup>,
     pool: Data<&db::ConnectionPool>,
 ) -> impl IntoResponse {
@@ -36,7 +36,7 @@ async fn create_executor_group(
         .await;
 
         let id = f_result
-            .map(|id_result| Into::<UnifiedResponseMessages<u64>>::into(id_result))
+            .map(Into::<UnifiedResponseMessages<u64>>::into)
             .unwrap_or_else(|e| {
                 UnifiedResponseMessages::<u64>::error().customized_error_msg(e.to_string())
             });
@@ -155,7 +155,7 @@ async fn pre_show_executor_group_detail(
 
 #[handler]
 async fn update_executor_group(
-    req: &Request,
+    _req: &Request,
     Json(executor_group): Json<model::UpdateExecutorGroup>,
     pool: Data<&db::ConnectionPool>,
 ) -> impl IntoResponse {
@@ -174,7 +174,7 @@ async fn update_executor_group(
         .await;
 
         let count = f_result
-            .map(|count_result| Into::<UnifiedResponseMessages<usize>>::into(count_result))
+            .map(Into::<UnifiedResponseMessages<usize>>::into)
             .unwrap_or_else(|e| {
                 UnifiedResponseMessages::<usize>::error().customized_error_msg(e.to_string())
             });
@@ -187,7 +187,7 @@ async fn update_executor_group(
 
 #[handler]
 async fn delete_executor_group(
-    req: &Request,
+    _req: &Request,
     Json(model::ExecutorGroupId { executor_group_id }): Json<model::ExecutorGroupId>,
     pool: Data<&db::ConnectionPool>,
 ) -> impl IntoResponse {
@@ -210,7 +210,7 @@ async fn delete_executor_group(
         .await;
 
         let count = f_result
-            .map(|count_result| Into::<UnifiedResponseMessages<usize>>::into(count_result))
+            .map(Into::<UnifiedResponseMessages<usize>>::into)
             .unwrap_or_else(|e| {
                 UnifiedResponseMessages::<usize>::error().customized_error_msg(e.to_string())
             });

@@ -1,7 +1,7 @@
 use super::prelude::*;
 
 pub(crate) async fn handle_response<T: DeserializeOwned + Trial>(
-    request_all: JoinAll<SendClientRequest>,
+    _request_all: JoinAll<SendClientRequest>,
 ) -> Vec<T> {
     // FIXME:
     todo!();
