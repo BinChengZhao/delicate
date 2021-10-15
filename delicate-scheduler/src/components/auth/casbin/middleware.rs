@@ -99,8 +99,7 @@ impl<E: Endpoint> Endpoint for CasbinAuthMiddleware<E> {
         let enforcer = req
             .extensions()
             .get::<Data<Arc<RwLock<Enforcer>>>>()
-            .expect("Casbin's enforcer acquisition failed")
-            .clone();
+            .expect("Casbin's enforcer acquisition failed");
         let extensions = req.extensions();
         let session = extensions
             .get::<CookieJar>()

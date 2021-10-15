@@ -39,7 +39,7 @@ pub(crate) use std::time::Duration;
 pub(crate) use sysinfo::{RefreshKind, System, SystemExt};
 
 pub(crate) use poem::middleware::AddData;
-pub(crate) use poem::web::{Data, Json, Path};
+pub(crate) use poem::web::{Data, Json};
 pub(crate) use poem::{
     handler, listener::TcpListener, post, Endpoint, EndpointExt, Request, Route, Server,
 };

@@ -186,7 +186,7 @@ async fn change_password(
         .await;
 
         let count = f_result
-            .map(|count_result| Into::<UnifiedResponseMessages<usize>>::into(count_result))
+            .map(Into::<UnifiedResponseMessages<usize>>::into)
             .unwrap_or_else(|e| {
                 UnifiedResponseMessages::<usize>::error().customized_error_msg(e.to_string())
             });
@@ -305,7 +305,7 @@ async fn pre_login_user(
 }
 
 fn save_session(
-    req: &Request,
+    _req: &Request,
     (_, _user): (model::UserAuth, model::User),
 ) -> Result<(), CommonError> {
     // FIXME:

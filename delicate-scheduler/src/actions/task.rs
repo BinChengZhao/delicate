@@ -4,7 +4,6 @@ pub(crate) fn config_route(route: Route) -> Route {
     route
         .at("/api/task/create", post(create_task))
         .at("/api/task/list", post(show_tasks))
-        // FIXME:
         .at("/api/task/update", post(update_task))
         .at("/api/task/run", post(run_task))
         .at("/api/task/suspend", post(suspend_task))

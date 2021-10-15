@@ -10,7 +10,7 @@ pub(crate) async fn handle_response<
         .await
         .into_iter()
         .map(|response| match response {
-            Ok(mut r) => Some(r.json::<T>()),
+            Ok(r) => Some(r.json::<T>()),
             Err(e) => {
                 error!("SendRequestError : {}", e);
                 None
