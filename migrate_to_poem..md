@@ -85,6 +85,8 @@ pub(crate) fn config_route(route: Route) -> Route {
 
 // remove patch and older packages.
 
+// actix-web RequestClient -> reqwest Client  
+
 # TODO: This(casbin-patch) must be remove when upgrading to actix-web4.
 [patch.crates-io]
 casbin = { git = 'https://github.com/BinChengZhao/casbin-rs', branch = 'fix-casbin-v2.0.5-compile-bug' }
@@ -138,3 +140,5 @@ Box::pin(async move {
                     })
 
 
+
+##### I've been away from work for a while, and I'm ready to find a new job. If you are interested in my work or need a Rust engineer, please contact me `binchengZhao@outlook.com` .

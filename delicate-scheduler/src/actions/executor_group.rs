@@ -14,16 +14,15 @@ pub(crate) fn config_route(route: Route) -> Route {
 
 #[handler]
 async fn create_executor_group(
-    _req: &Request,
+    req: &Request,
     Json(executor_group): Json<model::NewExecutorGroup>,
     pool: Data<&db::ConnectionPool>,
 ) -> impl IntoResponse {
     use db::schema::executor_group;
 
-    // FIXME:
-    // let operation_log_pair_option =
-    //     generate_operation_executor_group_addtion_log(&req.get_session(), &executor_group).ok();
-    // send_option_operation_log_pair(operation_log_pair_option).await;
+    let operation_log_pair_option =
+        generate_operation_executor_group_addtion_log(&req.get_session(), &executor_group).ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
 
     if let Ok(conn) = pool.get() {
         let f_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
@@ -104,15 +103,15 @@ async fn show_executor_group_detail(
             UnifiedResponseMessages::<model::ExecutorGroupDetail>::success_with_data(
                 executor_group_detail,
             ),
-        );
+        )
+        .into_response();
     };
 
-    // FIXME:
-    todo!();
-    // Json(
-    //     UnifiedResponseMessages::<model::ExecutorGroupDetail>::error()
-    //         .customized_error_msg(executor_group_detail_result.expect_err("").to_string()),
-    // )
+    Json(
+        UnifiedResponseMessages::<()>::error()
+            .customized_error_msg(executor_group_detail_result.expect_err("").to_string()),
+    )
+    .into_response()
 }
 
 async fn pre_show_executor_group_detail(
@@ -155,15 +154,13 @@ async fn pre_show_executor_group_detail(
 
 #[handler]
 async fn update_executor_group(
-    _req: &Request,
+    req: &Request,
     Json(executor_group): Json<model::UpdateExecutorGroup>,
     pool: Data<&db::ConnectionPool>,
 ) -> impl IntoResponse {
-    // FIXME:
-
-    // let operation_log_pair_option =
-    //     generate_operation_executor_group_modify_log(&req.get_session(), &executor_group).ok();
-    // send_option_operation_log_pair(operation_log_pair_option).await;
+    let operation_log_pair_option =
+        generate_operation_executor_group_modify_log(&req.get_session(), &executor_group).ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
 
     if let Ok(conn) = pool.get() {
         let f_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
@@ -187,20 +184,18 @@ async fn update_executor_group(
 
 #[handler]
 async fn delete_executor_group(
-    _req: &Request,
+    req: &Request,
     Json(model::ExecutorGroupId { executor_group_id }): Json<model::ExecutorGroupId>,
     pool: Data<&db::ConnectionPool>,
 ) -> impl IntoResponse {
     use db::schema::executor_group::dsl::*;
 
-    // FIXME:
-
-    // let operation_log_pair_option = generate_operation_executor_group_delete_log(
-    //     &req.get_session(),
-    //     &CommonTableRecord::default().set_id(executor_group_id),
-    // )
-    // .ok();
-    // send_option_operation_log_pair(operation_log_pair_option).await;
+    let operation_log_pair_option = generate_operation_executor_group_delete_log(
+        &req.get_session(),
+        &CommonTableRecord::default().set_id(executor_group_id),
+    )
+    .ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
 
     if let Ok(conn) = pool.get() {
         let f_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {

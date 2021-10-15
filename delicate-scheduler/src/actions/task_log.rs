@@ -5,8 +5,7 @@ pub(crate) fn config_route(route: Route) -> Route {
         .at("/api/task_log/event_trigger", post(create_task_logs))
         .at("/api/task_log/list", post(show_task_logs))
         .at("/api/task_log/detail", post(show_task_log_detail))
-        // FIXME:
-        // .at("/api/task_instance/kill", post(kill_task_instance))
+        .at("/api/task_instance/kill", post(kill_task_instance))
         .at("/api/task_log/delete", post(delete_task_log))
 }
 
@@ -168,19 +167,18 @@ async fn show_task_log_detail(
     Json(UnifiedResponseMessages::<model::TaskLogExtend>::error())
 }
 
-// #[handler]
+#[handler]
 
-// FIXME:
-// async fn kill_task_instance(
-//     req: &Request,
-//     Json(task_record): Json<model::TaskRecord>,
-//     pool: Data<&db::ConnectionPool>,
-// ) -> impl IntoResponse {
-//     let response_result = kill_one_task_instance(req, pool, task_record).await;
+async fn kill_task_instance(
+    req: &Request,
+    Json(task_record): Json<model::TaskRecord>,
+    pool: Data<&db::ConnectionPool>,
+) -> impl IntoResponse {
+    let response_result = kill_one_task_instance(req, pool, task_record).await;
 
-//     let response = Into::<UnifiedResponseMessages<()>>::into(response_result);
-//     Json(response)
-// }
+    let response = Into::<UnifiedResponseMessages<()>>::into(response_result);
+    Json(response)
+}
 
 fn batch_insert_task_logs(
     conn: &db::PoolConnection,
@@ -247,7 +245,7 @@ fn batch_update_task_logs(
 }
 
 async fn kill_one_task_instance(
-    _req: &Request,
+    req: &Request,
     pool: Data<&db::ConnectionPool>,
     model::TaskRecord {
         task_id,
@@ -257,16 +255,19 @@ async fn kill_one_task_instance(
 ) -> Result<(), CommonError> {
     use db::schema::task_log;
 
-    // FIXME:
+    let operation_log_pair_option = generate_operation_task_log_modify_log(
+        &req.get_session(),
+        &CommonTableRecord::default()
+            .set_id(record_id.0)
+            .set_description("kill task instance."),
+    )
+    .ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
 
-    // let operation_log_pair_option = generate_operation_task_log_modify_log(
-    //     &req.get_session(),
-    //     &CommonTableRecord::default()
-    //         .set_id(record_id.0)
-    //         .set_description("kill task instance."),
-    // )
-    // .ok();
-    // send_option_operation_log_pair(operation_log_pair_option).await;
+    let request_client = req
+        .extensions()
+        .get::<RequestClient>()
+        .expect("Missing Components `RequestClient`");
 
     let token = model::get_executor_token_by_id(executor_processor_id, pool.get()?).await;
 
@@ -287,36 +288,33 @@ async fn kill_one_task_instance(
     })
     .await??;
 
-    let _client = RequestClient::default();
-    let _url = "http://".to_string() + (host.deref()) + "/api/task_instance/kill";
+    let url = "http://".to_string() + (host.deref()) + "/api/task_instance/kill";
 
-    let _record = delicate_utils_task_log::CancelTaskRecord::default()
+    let record = delicate_utils_task_log::CancelTaskRecord::default()
         .set_task_id(task_id)
         .set_record_id(record_id.0)
         .set_time(get_timestamp())
         .sign(token.as_deref())?;
 
-    // FIXME:
-    todo!();
-    // client
-    //     .post(url)
-    //     .send_json(&record)
-    //     .await?
-    //     .json::<UnifiedResponseMessages<()>>()
-    //     .await?
-    //     .into()
+    request_client
+        .post(url)
+        .json(&record)
+        .send()
+        .await?
+        .json::<UnifiedResponseMessages<()>>()
+        .await?
+        .into()
 }
 
 #[handler]
 async fn delete_task_log(
-    _req: &Request,
+    req: &Request,
     Json(delete_params): Json<model::DeleteParamsTaskLog>,
     pool: Data<&db::ConnectionPool>,
 ) -> impl IntoResponse {
-    // FIXME:
-    // let operation_log_pair_option =
-    //     generate_operation_task_delete_log(&req.get_session(), &delete_params).ok();
-    // send_option_operation_log_pair(operation_log_pair_option).await;
+    let operation_log_pair_option =
+        generate_operation_task_delete_log(&req.get_session(), &delete_params).ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
 
     if let Ok(conn) = pool.get() {
         return Json(Into::<UnifiedResponseMessages<()>>::into(
@@ -357,6 +355,6 @@ async fn pre_delete_task_log(
 
         Ok(())
     })
-    .await?;
+    .await??;
     Ok(())
 }

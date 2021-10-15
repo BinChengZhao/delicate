@@ -5,27 +5,26 @@ pub(crate) fn config_route(route: Route) -> Route {
         .at("/api/task/create", post(create_task))
         .at("/api/task/list", post(show_tasks))
         // FIXME:
-        // .at("/api/task/update", post(update_task))
-        // .at("/api/task/run", post(run_task))
-        // .at("/api/task/suspend", post(suspend_task))
-        // .at("/api/task/advance", post(advance_task))
+        .at("/api/task/update", post(update_task))
+        .at("/api/task/run", post(run_task))
+        .at("/api/task/suspend", post(suspend_task))
+        .at("/api/task/advance", post(advance_task))
         .at("/api/task/delete", post(delete_task))
 }
 
 #[handler]
 
 async fn create_task(
-    _req: &Request,
+    req: &Request,
     Json(model::NewTaskBody { task, binding_ids }): Json<model::NewTaskBody>,
     pool: Data<&db::ConnectionPool>,
 ) -> impl IntoResponse {
     use db::schema::{task, task_bind};
 
     if let Ok(conn) = pool.get() {
-        // // FIXME:
-        // let operation_log_pair_option =
-        //     generate_operation_task_addtion_log(&req.get_session(), &task).ok();
-        // send_option_operation_log_pair(operation_log_pair_option).await;
+        let operation_log_pair_option =
+            generate_operation_task_addtion_log(&req.get_session(), &task).ok();
+        send_option_operation_log_pair(operation_log_pair_option).await;
 
         let f_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
             conn.transaction::<_, _, _>(|| {
@@ -128,37 +127,34 @@ async fn show_tasks(
     Json(UnifiedResponseMessages::<PaginateData<model::FrontEndTask>>::error())
 }
 
-// FIXME:
-
-// #[handler]
-// async fn update_task(
-//     req: &Request,
-//     Json(update_task_body): Json<model::UpdateTaskBody>,
-//     pool: Data<&db::ConnectionPool>,
-// ) -> impl IntoResponse {
-//     let respose: UnifiedResponseMessages<()> = pre_update_task(req, update_task_body, pool)
-//         .instrument(span!(Level::INFO, "update-task"))
-//         .await
-//         .into();
-//     Json(respose)
-// }
+#[handler]
+async fn update_task(
+    req: &Request,
+    Json(update_task_body): Json<model::UpdateTaskBody>,
+    pool: Data<&db::ConnectionPool>,
+) -> impl IntoResponse {
+    let respose: UnifiedResponseMessages<()> = pre_update_task(req, update_task_body, pool)
+        .instrument(span!(Level::INFO, "update-task"))
+        .await
+        .into();
+    Json(respose)
+}
 
 pub async fn pre_update_task(
-    _req: &Request,
+    req: &Request,
     model::UpdateTaskBody { task, binding_ids }: model::UpdateTaskBody,
     pool: Data<&db::ConnectionPool>,
 ) -> Result<(), CommonError> {
     let task_id = task.id;
     let conn = pool.get()?;
-    // FIXME:
-    // let operation_log_pair_option =
-    //     generate_operation_task_modify_log(&req.get_session(), &task).ok();
-    // send_option_operation_log_pair(operation_log_pair_option).await;
+    let operation_log_pair_option =
+        generate_operation_task_modify_log(&req.get_session(), &task).ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
 
     let task_binds_pair = pre_update_task_row(conn, task, binding_ids).await?;
 
     let conn = pool.get()?;
-    pre_update_task_sevice(conn, task_id, task_binds_pair).await?;
+    pre_update_task_sevice(req, conn, task_id, task_binds_pair).await?;
 
     Ok(())
 }
@@ -277,9 +273,10 @@ pub async fn pre_update_task_row(
 }
 
 pub async fn pre_update_task_sevice(
+    req: &Request,
     conn: db::PoolConnection,
     task_id: i64,
-    (_removed_bind_processors, _append_bind_processors, _reserved_bind_processors): (
+    (removed_bind_processors, append_bind_processors, reserved_bind_processors): (
         Vec<model::BindProcessor>,
         Vec<model::BindProcessor>,
         Vec<model::BindProcessor>,
@@ -288,7 +285,12 @@ pub async fn pre_update_task_sevice(
     use db::schema::task;
     use delicate_utils_task::TaskPackage;
 
-    let (task_package, _status) = task::table
+    let request_client = req
+        .extensions()
+        .get::<RequestClient>()
+        .expect("Missing Components `RequestClient`");
+
+    let (task_package, status) = task::table
         .select((
             (
                 task::id,
@@ -305,106 +307,105 @@ pub async fn pre_update_task_sevice(
 
     let _task_id = task_package.id;
 
-    // FIXME:
-    todo!();
-    // if status == state::task::State::Enabled as i16 {
-    //     let remove_tasks_future: JoinAll<_> = removed_bind_processors
-    //         .into_iter()
-    //         .filter_map(|processor| {
-    //             let executor_host =
-    //                 "http://".to_string() + (processor.host.deref()) + "/api/task/remove";
+    if status == state::task::State::Enabled as i16 {
+        let remove_tasks_future: JoinAll<_> = removed_bind_processors
+            .into_iter()
+            .filter_map(|processor| {
+                let executor_host =
+                    "http://".to_string() + (processor.host.deref()) + "/api/task/remove";
 
-    //             let message = delicate_utils_task::TaskUnit::default()
-    //                 .set_task_id(task_id)
-    //                 .set_time(get_timestamp());
+                let message = delicate_utils_task::TaskUnit::default()
+                    .set_task_id(task_id)
+                    .set_time(get_timestamp());
 
-    //             info!("Remove task{} at:{}", &task_package, &executor_host);
-    //             message
-    //                 .sign(Some(&processor.token))
-    //                 .map(|s| (s, executor_host))
-    //                 .ok()
-    //         })
-    //         .map(|(signed_task_unit, executor_host)| {
-    //             RequestClient::default()
-    //                 .post(executor_host)
-    //                 .send_json(&signed_task_unit)
-    //         })
-    //         .collect::<Vec<_>>()
-    //         .into_iter()
-    //         .collect();
+                info!("Remove task{} at:{}", &task_package, &executor_host);
+                message
+                    .sign(Some(&processor.token))
+                    .map(|s| (s, executor_host))
+                    .ok()
+            })
+            .map(|(signed_task_unit, executor_host)| {
+                request_client
+                    .post(executor_host)
+                    .json(&signed_task_unit)
+                    .send()
+            })
+            .collect::<Vec<_>>()
+            .into_iter()
+            .collect();
 
-    //     let append_tasks_future: JoinAll<_> = append_bind_processors
-    //         .into_iter()
-    //         .filter_map(|processor| {
-    //             let executor_host =
-    //                 "http://".to_string() + (processor.host.deref()) + "/api/task/create";
+        let append_tasks_future: JoinAll<_> = append_bind_processors
+            .into_iter()
+            .filter_map(|processor| {
+                let executor_host =
+                    "http://".to_string() + (processor.host.deref()) + "/api/task/create";
 
-    //             info!("Create task{} at:{}", &task_package, &executor_host);
-    //             task_package
-    //                 .clone()
-    //                 .sign(Some(&processor.token))
-    //                 .map(|s| (s, executor_host))
-    //                 .ok()
-    //         })
-    //         .map(|(signed_task_package, executor_host)| {
-    //             RequestClient::default()
-    //                 .post(executor_host)
-    //                 .send_json(&signed_task_package)
-    //         })
-    //         .collect::<Vec<_>>()
-    //         .into_iter()
-    //         .collect();
+                info!("Create task{} at:{}", &task_package, &executor_host);
+                task_package
+                    .clone()
+                    .sign(Some(&processor.token))
+                    .map(|s| (s, executor_host))
+                    .ok()
+            })
+            .map(|(signed_task_package, executor_host)| {
+                request_client
+                    .post(executor_host)
+                    .json(&signed_task_package)
+                    .send()
+            })
+            .collect::<Vec<_>>()
+            .into_iter()
+            .collect();
 
-    //     let update_tasks_future: JoinAll<_> = reserved_bind_processors
-    //         .into_iter()
-    //         .filter_map(|processor| {
-    //             let executor_host =
-    //                 "http://".to_string() + (processor.host.deref()) + "/api/task/update";
+        let update_tasks_future: JoinAll<_> = reserved_bind_processors
+            .into_iter()
+            .filter_map(|processor| {
+                let executor_host =
+                    "http://".to_string() + (processor.host.deref()) + "/api/task/update";
 
-    //             info!("Update task {} at:{}", &task_package, &executor_host);
-    //             task_package
-    //                 .clone()
-    //                 .sign(Some(&processor.token))
-    //                 .map(|s| (s, executor_host))
-    //                 .ok()
-    //         })
-    //         .map(|(signed_task_package, executor_host)| {
-    //             RequestClient::default()
-    //                 .post(executor_host)
-    //                 .send_json(&signed_task_package)
-    //         })
-    //         .collect::<Vec<_>>()
-    //         .into_iter()
-    //         .collect();
+                info!("Update task {} at:{}", &task_package, &executor_host);
+                task_package
+                    .clone()
+                    .sign(Some(&processor.token))
+                    .map(|s| (s, executor_host))
+                    .ok()
+            })
+            .map(|(signed_task_package, executor_host)| {
+                request_client
+                    .post(executor_host)
+                    .json(&signed_task_package)
+                    .send()
+            })
+            .collect::<Vec<_>>()
+            .into_iter()
+            .collect();
 
-    //     join3(
-    //         handle_response::<UnifiedResponseMessages<()>>(remove_tasks_future),
-    //         handle_response::<UnifiedResponseMessages<()>>(append_tasks_future),
-    //         handle_response::<UnifiedResponseMessages<()>>(update_tasks_future),
-    //     )
-    //     .await;
-    // }
+        join3(
+            handle_response::<_, UnifiedResponseMessages<()>>(remove_tasks_future),
+            handle_response::<_, UnifiedResponseMessages<()>>(append_tasks_future),
+            handle_response::<_, UnifiedResponseMessages<()>>(update_tasks_future),
+        )
+        .await;
+    }
 
-    // Ok(())
+    Ok(())
 }
 
 #[handler]
 
 async fn delete_task(
-    _req: &Request,
+    req: &Request,
     Json(model::TaskId { task_id }): Json<model::TaskId>,
     pool: Data<&db::ConnectionPool>,
 ) -> impl IntoResponse {
     use db::schema::{task, task_bind};
 
-    // FIXME:
-
-    // let operation_log_pair_option = generate_operation_task_delete_log(
-    //     &req.get_session(),
-    //     &CommonTableRecord::default().set_id(task_id),
-    // )
-    // .ok();
-    // send_option_operation_log_pair(operation_log_pair_option).await;
+    let operation_log_pair_option = generate_operation_task_delete_log(
+        &req.get_session(),
+        &CommonTableRecord::default().set_id(task_id),
+    )
+    .ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
 
     // delete
     if let Ok(conn) = pool.get() {
@@ -427,62 +428,56 @@ async fn delete_task(
     Json(UnifiedResponseMessages::<()>::error())
 }
 
-// FIXME:
+#[handler]
+async fn run_task(
+    req: &Request,
+    Json(model::TaskId { task_id }): Json<model::TaskId>,
+    pool: Data<&Arc<db::ConnectionPool>>,
+) -> impl IntoResponse {
+    let result: UnifiedResponseMessages<()> = Into::into(
+        pre_run_task(req, task_id, pool)
+            .instrument(span!(Level::INFO, "run-task"))
+            .await,
+    );
 
-// #[handler]
-// async fn run_task(
-//     req: &Request,
-//     Json(model::TaskId { task_id }): Json<model::TaskId>,
-//     pool: Data<&db::ConnectionPool>,
-// ) -> impl IntoResponse {
-//     let result: UnifiedResponseMessages<()> = Into::into(
-//         pre_run_task(req, task_id, pool)
-//             .instrument(span!(Level::INFO, "run-task"))
-//             .await,
-//     );
+    Json(result)
+}
 
-//     Json(result)
-// }
+#[handler]
 
-// FIXME:
+async fn suspend_task(
+    req: &Request,
+    Json(model::TaskId { task_id }): Json<model::TaskId>,
+    pool: Data<&Arc<db::ConnectionPool>>,
+) -> impl IntoResponse {
+    let result: UnifiedResponseMessages<()> = Into::into(
+        pre_operate_task(req, pool.clone(), (task_id, "/api/task/remove", "Suspend"))
+            .instrument(span!(Level::INFO, "Suspend", task_id))
+            .await,
+    );
 
-// #[handler]
+    Json(result)
+}
 
-// async fn suspend_task(
-//     req: &Request,
-//     Json(model::TaskId { task_id }): Json<model::TaskId>,
-//     pool: Data<&Arc<db::ConnectionPool>>,
-// ) -> impl IntoResponse {
-//     let result: UnifiedResponseMessages<()> = Into::into(
-//         pre_operate_task(req, pool.clone(), (task_id, "/api/task/remove", "Suspend"))
-//             .instrument(span!(Level::INFO, "Suspend", task_id))
-//             .await,
-//     );
+#[handler]
+async fn advance_task(
+    req: &Request,
+    Json(model::TaskId { task_id }): Json<model::TaskId>,
+    pool: Data<&Arc<db::ConnectionPool>>,
+) -> impl IntoResponse {
+    let result: UnifiedResponseMessages<()> = Into::into(
+        pre_operate_task(req, pool.clone(), (task_id, "/api/task/advance", "Advance"))
+            .instrument(span!(Level::INFO, "Advance", task_id))
+            .await,
+    );
 
-//     Json(result)
-// }
-
-// FIXME:
-
-// #[handler]
-// async fn advance_task(
-//     req: &Request,
-//     Json(model::TaskId { task_id }): Json<model::TaskId>,
-//     pool: Data<&Arc<db::ConnectionPool>>,
-// ) -> impl IntoResponse {
-//     let result: UnifiedResponseMessages<()> = Into::into(
-//         pre_operate_task(req, pool, (task_id, "/api/task/advance", "Advance"))
-//             .instrument(span!(Level::INFO, "Advance", task_id))
-//             .await,
-//     );
-
-//     Json(result)
-// }
+    Json(result)
+}
 
 async fn pre_run_task(
-    _req: &Request,
+    req: &Request,
     task_id: i64,
-    pool: Data<&db::ConnectionPool>,
+    pool: Data<&Arc<db::ConnectionPool>>,
 ) -> Result<(), CommonError> {
     use db::schema::executor_processor::dsl::{host, token};
     use db::schema::task::dsl::*;
@@ -490,21 +485,24 @@ async fn pre_run_task(
 
     use state::task::State;
 
-    // FIXME:
+    let request_client = req
+        .extensions()
+        .get::<RequestClient>()
+        .expect("Missing Components `RequestClient`");
 
-    // let operation_log_pair_option = generate_operation_task_modify_log(
-    //     &req.get_session(),
-    //     &CommonTableRecord::default()
-    //         .set_id(task_id)
-    //         .set_description("Run task"),
-    // )
-    // .ok();
-    // send_option_operation_log_pair(operation_log_pair_option).await;
+    let operation_log_pair_option = generate_operation_task_modify_log(
+        &req.get_session(),
+        &CommonTableRecord::default()
+            .set_id(task_id)
+            .set_description("Run task"),
+    )
+    .ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
 
     let conn = pool.get()?;
 
     // Many machine.
-    let _task_packages: Vec<(delicate_utils_task::TaskPackage, (String, String))> =
+    let task_packages: Vec<(delicate_utils_task::TaskPackage, (String, String))> =
         spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
             diesel::update(task.find(task_id))
                 .set(task::status.eq(State::Enabled as i16))
@@ -529,101 +527,100 @@ async fn pre_run_task(
         })
         .await??;
 
-    // FIXME:
-    todo!();
-    // let request_all: JoinAll<_> = task_packages
-    //     .into_iter()
-    //     .filter_map(|(task_package, (executor_host_str, executor_token))| {
-    //         let executor_host =
-    //             "http://".to_string() + (executor_host_str.deref()) + "/api/task/create";
-    //         info!("Run task{} at:{}", &task_package, &executor_host);
-    //         task_package
-    //             .sign(Some(&executor_token))
-    //             .map(|s| (s, executor_host))
-    //             .ok()
-    //     })
-    //     .map(|(signed_task_package, executor_host)| {
-    //         RequestClient::default()
-    //             .post(executor_host)
-    //             .send_json(&signed_task_package)
-    //     })
-    //     .collect::<Vec<_>>()
-    //     .into_iter()
-    //     .collect();
+    let request_all: JoinAll<_> = task_packages
+        .into_iter()
+        .filter_map(|(task_package, (executor_host_str, executor_token))| {
+            let executor_host =
+                "http://".to_string() + (executor_host_str.deref()) + "/api/task/create";
+            info!("Run task{} at:{}", &task_package, &executor_host);
+            task_package
+                .sign(Some(&executor_token))
+                .map(|s| (s, executor_host))
+                .ok()
+        })
+        .map(|(signed_task_package, executor_host)| {
+            request_client
+                .post(executor_host)
+                .json(&signed_task_package)
+                .send()
+        })
+        .collect::<Vec<_>>()
+        .into_iter()
+        .collect();
 
-    // handle_response::<UnifiedResponseMessages<()>>(request_all).await;
+    handle_response::<_, UnifiedResponseMessages<()>>(request_all).await;
 
-    // Ok(())
+    Ok(())
 }
 
-// FIXME:
+async fn pre_operate_task(
+    req: &Request,
+    pool: Arc<db::ConnectionPool>,
+    (task_id, url, action): (i64, &'static str, &'static str),
+) -> Result<(), CommonError> {
+    use db::schema::executor_processor::dsl::{host, token};
+    use db::schema::{executor_processor, executor_processor_bind, task, task_bind};
+    use state::task::State;
 
-// async fn pre_operate_task(
-//     req: &Request,
-//     pool: Arc<db::ConnectionPool>,
-//     (task_id, url, action): (i64, &str, &'static str),
-// ) {
-//     use db::schema::executor_processor::dsl::{host, token};
-//     use db::schema::{executor_processor, executor_processor_bind, task, task_bind};
-//     use state::task::State;
+    let request_client = req
+        .extensions()
+        .get::<RequestClient>()
+        .expect("Missing Components `RequestClient`");
 
-// let conn = pool.get()?;
+    let conn = pool.get()?;
 
-// let operation_log_pair_option = generate_operation_task_modify_log(
-//     &req.get_session(),
-//     &CommonTableRecord::default()
-//         .set_id(task_id)
-//         .set_description(action),
-// )
-// .ok();
-// send_option_operation_log_pair(operation_log_pair_option).await;
+    let operation_log_pair_option = generate_operation_task_modify_log(
+        &req.get_session(),
+        &CommonTableRecord::default()
+            .set_id(task_id)
+            .set_description(action),
+    )
+    .ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
 
-// Many machine.
-// let executor_packages: IntoIter<(String, String)> = spawn_blocking::<_,Result<_, diesel::result::Error>>(move || {
-//     // TODO: Optimize.
-//     if action.eq("Suspend") {
-//         diesel::update(task::table.find(task_id))
-//             .set(task::status.eq(State::NotEnabled as i16))
-//             .execute(&conn)?;
-//     }
+    let executor_packages: IntoIter<(String, String)> =
+        spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
+            // TODO: Optimize.
+            if action.eq("Suspend") {
+                diesel::update(task::table.find(task_id))
+                    .set(task::status.eq(State::NotEnabled as i16))
+                    .execute(&conn)?;
+            }
 
-//     task_bind::table
-//         .inner_join(executor_processor_bind::table.inner_join(executor_processor::table))
-//         .inner_join(task::table)
-//         .select((host, token))
-//         .filter(task_bind::task_id.eq(task_id))
-//         .load::<(String, String)>(&conn)
-// })
-// .await?
-// .into_iter();
+            task_bind::table
+                .inner_join(executor_processor_bind::table.inner_join(executor_processor::table))
+                .inner_join(task::table)
+                .select((host, token))
+                .filter(task_bind::task_id.eq(task_id))
+                .load::<(String, String)>(&conn)
+        })
+        .await??
+        .into_iter();
 
-// let request_all: JoinAll<SendClientRequest> = executor_packages
-//     .filter_map(|(executor_host, executor_token)| {
-//         let message = delicate_utils_task::TaskUnit::default()
-//             .set_task_id(task_id)
-//             .set_time(get_timestamp());
+    let request_all: JoinAll<_> = executor_packages
+        .filter_map(|(executor_host, executor_token)| {
+            let message = delicate_utils_task::TaskUnit::default()
+                .set_task_id(task_id)
+                .set_time(get_timestamp());
 
-//         let executor_host = "http://".to_string() + (executor_host.deref()) + url;
+            let executor_host = "http://".to_string() + (executor_host.deref()) + url;
 
-//         info!("{} task{} at:{}", action, message, &executor_host);
-//         message
-//             .sign(Some(&executor_token))
-//             .map(|s| (s, executor_host))
-//             .ok()
-//     })
-//     .map(|(signed_task_unit, executor_host)| {
-//         RequestClient::builder()
-//             .timeout(Duration::from_secs(15))
-//             .finish()
-//             .post(executor_host)
-//             .send_json(&signed_task_unit)
-//     })
-//     .collect::<Vec<SendClientRequest>>()
-//     .into_iter()
-//     .collect();
+            info!("{} task{} at:{}", action, message, &executor_host);
+            message
+                .sign(Some(&executor_token))
+                .map(|s| (s, executor_host))
+                .ok()
+        })
+        .map(|(signed_task_unit, executor_host)| {
+            request_client
+                .post(executor_host)
+                .json(&signed_task_unit)
+                .send()
+        })
+        .collect::<Vec<_>>()
+        .into_iter()
+        .collect();
 
-// handle_response::<UnifiedResponseMessages<()>>(request_all).await;
-// Ok(())
-
-// todo!();
-// }
+    handle_response::<_, UnifiedResponseMessages<()>>(request_all).await;
+    Ok(())
+}

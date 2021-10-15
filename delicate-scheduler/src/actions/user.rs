@@ -1,8 +1,9 @@
 use super::prelude::*;
-use model::schema::{user, user_auth};
+use model::schema::{user, user_auth, user_login_log};
 use model::user::{
-    UserAndPermissions, UserAndRoles, UserName,
+    get_encrypted_certificate_by_raw_certificate, UserAndPermissions, UserAndRoles, UserName,
 };
+use model::user_login_log::NewUserLoginLog;
 
 pub(crate) fn config_route(route: Route) -> Route {
     route
@@ -10,10 +11,9 @@ pub(crate) fn config_route(route: Route) -> Route {
         .at("/api/user/list", post(show_users))
         .at("/api/user/update", post(update_user))
         .at("/api/user/delete", post(delete_user))
-        // FIXME:
-        // .at("/api/user/login", post(login_user))
-        // .at("/api/user/logout", post(logout_user))
-        // .at("/api/user/check", post(check_user))
+        .at("/api/user/login", post(login_user))
+        .at("/api/user/logout", post(logout_user))
+        .at("/api/user/check", post(check_user))
         .at("/api/user/change_password", post(change_password))
         .at("/api/user/roles", post(roles))
         .at("/api/user/permissions", post(permissions))
@@ -26,7 +26,7 @@ pub(crate) fn config_route(route: Route) -> Route {
 #[handler]
 
 async fn create_user(
-    _req: &Request,
+    req: &Request,
     Json(user): Json<model::QueryNewUser>,
     pool: Data<&db::ConnectionPool>,
 ) -> impl IntoResponse {
@@ -37,11 +37,9 @@ async fn create_user(
 
     let new_user = Into::<model::NewUser>::into(&user);
 
-    // FIXME:
-
-    // let operation_log_pair_option =
-    //     generate_operation_user_addtion_log(&req.get_session(), &new_user).ok();
-    // send_option_operation_log_pair(operation_log_pair_option).await;
+    let operation_log_pair_option =
+        generate_operation_user_addtion_log(&req.get_session(), &new_user).ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
 
     if let Ok(conn) = pool.get() {
         let f_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
@@ -122,15 +120,13 @@ async fn show_users(
 #[handler]
 
 async fn update_user(
-    _req: &Request,
+    req: &Request,
     Json(user_value): Json<model::UpdateUser>,
     pool: Data<&db::ConnectionPool>,
 ) -> impl IntoResponse {
-    // FIXME:
-
-    // let operation_log_pair_option =
-    //     generate_operation_user_modify_log(&req.get_session(), &user_value).ok();
-    // send_option_operation_log_pair(operation_log_pair_option).await;
+    let operation_log_pair_option =
+        generate_operation_user_modify_log(&req.get_session(), &user_value).ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
 
     if let Ok(conn) = pool.get() {
         let f_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
@@ -152,58 +148,67 @@ async fn update_user(
 #[handler]
 
 async fn change_password(
-    _req: &Request,
-    Json(_user_value): Json<model::UserChangePassword>,
-    _pool: Data<&db::ConnectionPool>,
+    req: &Request,
+    Json(user_value): Json<model::UserChangePassword>,
+    pool: Data<&db::ConnectionPool>,
 ) -> impl IntoResponse {
-    // FIXME:
+    let session = req.get_session();
+    let user_id = session
+        .get("user_id")
+        .map(|c| c.value::<u64>())
+        .map(|r| r.ok())
+        .unwrap_or_default();
 
-    // let session = req.get_session();
-    // let user_id = session
-    //     .get::<u64>("user_id")
-    //     .unwrap_or_default()
-    //     .unwrap_or_default();
+    if user_id.is_none() {
+        return Json(UnifiedResponseMessages::<usize>::error());
+    }
 
-    // if let Ok(conn) = pool.get() {
-    //     return Json(Into::<UnifiedResponseMessages<usize>>::into(
-    //         spawn_blocking::<_,Result<_, diesel::result::Error>>(move || {
-    //             let user_auth_id = user_auth::table
-    //                 .select(user_auth::id)
-    //                 .filter(user_auth::user_id.eq(&user_id))
-    //                 .filter(user_auth::identity_type.eq(user_value.identity_type))
-    //                 .filter(user_auth::certificate.eq(
-    //                     get_encrypted_certificate_by_raw_certificate(&user_value.current_password),
-    //                 ))
-    //                 .first::<i64>(&conn)?;
+    if let Ok(conn) = pool.get() {
+        let f_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
+            let user_auth_id =
+                user_auth::table
+                    .select(user_auth::id)
+                    .filter(user_auth::user_id.eq(&user_id.expect("")))
+                    .filter(user_auth::identity_type.eq(user_value.identity_type))
+                    .filter(user_auth::certificate.eq(
+                        get_encrypted_certificate_by_raw_certificate(&user_value.current_password),
+                    ))
+                    .first::<i64>(&conn)?;
 
-    //             diesel::update(user_auth::table.find(user_auth_id))
-    //                 .set(
-    //                     user_auth::certificate.eq(get_encrypted_certificate_by_raw_certificate(
-    //                         &user_value.modified_password,
-    //                     )),
-    //                 )
-    //                 .execute(&conn)
-    //         })
-    //         .await,
-    //     ));
-    // }
+            diesel::update(user_auth::table.find(user_auth_id))
+                .set(
+                    user_auth::certificate.eq(get_encrypted_certificate_by_raw_certificate(
+                        &user_value.modified_password,
+                    )),
+                )
+                .execute(&conn)
+        })
+        .await;
+
+        let count = f_result
+            .map(|count_result| Into::<UnifiedResponseMessages<usize>>::into(count_result))
+            .unwrap_or_else(|e| {
+                UnifiedResponseMessages::<usize>::error().customized_error_msg(e.to_string())
+            });
+
+        return Json(count);
+    }
 
     Json(UnifiedResponseMessages::<usize>::error())
 }
 #[handler]
 
 async fn delete_user(
-    _req: &Request,
+    req: &Request,
     Json(model::UserId { user_id }): Json<model::UserId>,
     pool: Data<&db::ConnectionPool>,
 ) -> impl IntoResponse {
-    // FIXME:
-    // let operation_log_pair_option = generate_operation_user_delete_log(
-    //     &req.get_session(),
-    //     &CommonTableRecord::default().set_id(user_id as i64),
-    // )
-    // .ok();
-    // send_option_operation_log_pair(operation_log_pair_option).await;
+    let operation_log_pair_option = generate_operation_user_delete_log(
+        &req.get_session(),
+        &CommonTableRecord::default().set_id(user_id as i64),
+    )
+    .ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
 
     if let Ok(conn) = pool.get() {
         let f_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
@@ -228,85 +233,79 @@ async fn delete_user(
     Json(UnifiedResponseMessages::<()>::error())
 }
 
-// FIXME:
-// #[handler]
+#[handler]
 
-// async fn login_user(
-//     req: &Request,
-//     Json(user_login): Json<model::UserAuthLogin>,
-//     session: Session,
-//     pool: Data<&db::ConnectionPool>,
-// ) -> impl IntoResponse {
-//     let login_result: UnifiedResponseMessages<()> =
-//         pre_login_user(req, user_login, session, pool).await.into();
+async fn login_user(
+    req: &Request,
+    Json(user_login): Json<model::UserAuthLogin>,
+    pool: Data<&db::ConnectionPool>,
+) -> impl IntoResponse {
+    let login_result: UnifiedResponseMessages<()> =
+        pre_login_user(req, user_login, pool).await.into();
 
-//     Json(login_result)
-// }
+    Json(login_result)
+}
 
 async fn pre_login_user(
-    _req: &Request,
+    req: &Request,
     model::UserAuthLogin {
-        login_type: _,
-        account: _,
-        password: _,
+        login_type,
+        account,
+        password,
     }: model::UserAuthLogin,
-    // session: Session,
-    _pool: Data<&db::ConnectionPool>,
+    pool: Data<&db::ConnectionPool>,
 ) -> Result<(), CommonError> {
-    
+    let client_ip = req
+        .remote_addr()
+        .as_socket_addr()
+        .map(|sock| sock.ip().to_string());
+    let mut new_user_login_log = NewUserLoginLog::default();
+    new_user_login_log
+        .set_lastip(client_ip)
+        .set_login_type(login_type);
 
-    // FIXME:
+    let conn = pool.get()?;
+    let user_package: (model::UserAuth, model::User) =
+        spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
+            let login_result = user_auth::table
+                .inner_join(user::table)
+                .select((user_auth::all_columns, user::all_columns))
+                .filter(user_auth::identity_type.eq(login_type))
+                .filter(user_auth::identifier.eq(&account))
+                .filter(
+                    user_auth::certificate
+                        .eq(get_encrypted_certificate_by_raw_certificate(&password)),
+                )
+                .first::<(model::UserAuth, model::User)>(&conn);
 
-    todo!();
-    // let connection = req.connection_info();
-    // let client_ip = connection.realip_remote_addr();
-    // let mut new_user_login_log = NewUserLoginLog::default();
-    // new_user_login_log
-    //     .set_lastip(client_ip)
-    //     .set_login_type(login_type);
+            login_result
+                .as_ref()
+                .map(|(_, user)| {
+                    new_user_login_log
+                        .set_user_name(user.user_name.clone())
+                        .set_user_id(user.id)
+                        .set_command(state::user_login_log::LoginCommand::LoginSuccess as u8);
+                })
+                .map_err(|_| {
+                    new_user_login_log
+                        .set_user_name(account)
+                        .set_command(state::user_login_log::LoginCommand::Logoutfailure as u8);
+                })
+                .ok();
 
-    // let conn = pool.get()?;
-    // let user_package: (model::UserAuth, model::User) =
-    //     spawn_blocking::<_,Result<_, diesel::result::Error>>(move || {
-    //         let login_result = user_auth::table
-    //             .inner_join(user::table)
-    //             .select((user_auth::all_columns, user::all_columns))
-    //             .filter(user_auth::identity_type.eq(login_type))
-    //             .filter(user_auth::identifier.eq(&account))
-    //             .filter(
-    //                 user_auth::certificate
-    //                     .eq(get_encrypted_certificate_by_raw_certificate(&password)),
-    //             )
-    //             .first::<(model::UserAuth, model::User)>(&conn);
+            diesel::insert_into(user_login_log::table)
+                .values(&new_user_login_log)
+                .execute(&conn)
+                .ok();
 
-    //         login_result
-    //             .as_ref()
-    //             .map(|(_, user)| {
-    //                 new_user_login_log
-    //                     .set_user_name(user.user_name.clone())
-    //                     .set_user_id(user.id)
-    //                     .set_command(state::user_login_log::LoginCommand::LoginSuccess as u8);
-    //             })
-    //             .map_err(|_| {
-    //                 new_user_login_log
-    //                     .set_user_name(account)
-    //                     .set_command(state::user_login_log::LoginCommand::Logoutfailure as u8);
-    //             })
-    //             .ok();
-
-    //         diesel::insert_into(user_login_log::table)
-    //             .values(&new_user_login_log)
-    //             .execute(&conn)
-    //             .ok();
-
-    //         login_result
-    //     })
-    //     .await?;
-    // save_session(session, user_package)
+            login_result
+        })
+        .await??;
+    save_session(req, user_package)
 }
 
 fn save_session(
-    // session: Session,
+    req: &Request,
     (_, _user): (model::UserAuth, model::User),
 ) -> Result<(), CommonError> {
     // FIXME:
@@ -319,59 +318,61 @@ fn save_session(
     todo!();
 }
 
-// FIXME:
+#[handler]
 
-// #[handler]
+async fn check_user(req: &Request, pool: Data<&db::ConnectionPool>) -> impl IntoResponse {
+    let check_result = pre_check_user(req, pool).await;
+    if let Ok(user) = check_result {
+        return Json(UnifiedResponseMessages::<model::User>::success_with_data(
+            user,
+        ))
+        .into_response();
+    };
 
-// async fn check_user(session: Session, pool: Data<&db::ConnectionPool>) -> impl IntoResponse {
-//     let check_result = pre_check_user(session, pool).await;
-//     if let Ok(user) = check_result {
-//         return Json(UnifiedResponseMessages::<model::User>::success_with_data(
-//             user,
-//         ));
-//     };
+    Json(
+        UnifiedResponseMessages::<()>::error()
+            .customized_error_msg(check_result.expect_err("").to_string()),
+    )
+    .into_response()
+}
 
-//     // FIXME:
-//     todo!();
-//     // Json(
-//     //     UnifiedResponseMessages::<()>::error()
-//     //         .customized_error_msg(check_result.expect_err("").to_string()),
-//     // )
-// }
+async fn pre_check_user(
+    req: &Request,
+    pool: Data<&db::ConnectionPool>,
+) -> Result<model::User, CommonError> {
+    let session = req.get_session();
+    let conn = pool.get()?;
+    let user_id = session
+        .get("user_id")
+        .map(|c| c.value::<u64>())
+        .transpose()?
+        .ok_or_else(|| CommonError::DisPass("Without set `user_id` .".into()))?;
 
-// FIXME:
+    let user = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
+        let user = user::table
+            .select(user::all_columns)
+            .find(user_id)
+            .first::<model::User>(&conn)?;
 
-// async fn pre_check_user(
-//     session: Session,
-//     pool: Data<&db::ConnectionPool>,
-// ) -> Result<model::User, CommonError> {
-//     let conn = pool.get()?;
-//     let user_id = session
-//         .get::<u64>("user_id")?
-//         .ok_or_else(|| CommonError::DisPass("Without set `user_id` .".into()))?;
+        Ok(user)
+    })
+    .await??;
 
-//     let user = spawn_blocking::<_,Result<_, diesel::result::Error>>(move || {
-//         let user = user::table
-//             .select(user::all_columns)
-//             .find(user_id)
-//             .first::<model::User>(&conn)?;
+    Ok(user)
+}
 
-//         Ok(user)
-//     })
-//     .await?;
+#[handler]
 
-//     Ok(user)
-// }
-
-// FIXME:
-// #[handler]
-
-// async fn logout_user(session: Session) -> impl IntoResponse {
-//     Json({
-//         session.clear();
-//         UnifiedResponseMessages::<()>::success()
-//     })
-// }
+async fn logout_user(req: &Request) -> impl IntoResponse {
+    let session = req.extensions().get::<CookieJar>();
+    match session {
+        Some(c) => Json({
+            c.reset_delta();
+            UnifiedResponseMessages::<()>::success()
+        }),
+        None => Json(UnifiedResponseMessages::<()>::error()),
+    }
+}
 
 #[handler]
 
@@ -407,15 +408,13 @@ async fn permissions(
 #[handler]
 
 async fn append_role(
-    _req: &Request,
+    req: &Request,
     enforcer: Data<&RwLock<Enforcer>>,
     Json(user_and_roles): Json<UserAndRoles>,
 ) -> impl IntoResponse {
-    // FIXME:
-
-    // let operation_log_pair_option =
-    //     generate_operation_user_role_addtion_log(&req.get_session(), &user_and_roles).ok();
-    // send_option_operation_log_pair(operation_log_pair_option).await;
+    let operation_log_pair_option =
+        generate_operation_user_role_addtion_log(&req.get_session(), &user_and_roles).ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
 
     let UserAndRoles {
         user_name,
@@ -445,15 +444,13 @@ async fn append_role(
 #[handler]
 
 async fn delete_role(
-    _req: &Request,
+    req: &Request,
     enforcer: Data<&RwLock<Enforcer>>,
     Json(user_and_roles): Json<UserAndRoles>,
 ) -> impl IntoResponse {
-    // FIXME:
-
-    // let operation_log_pair_option =
-    //     generate_operation_user_role_delete_log(&req.get_session(), &user_and_roles).ok();
-    // send_option_operation_log_pair(operation_log_pair_option).await;
+    let operation_log_pair_option =
+        generate_operation_user_role_delete_log(&req.get_session(), &user_and_roles).ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
 
     let UserAndRoles {
         user_name,
@@ -488,16 +485,14 @@ async fn delete_role(
 #[handler]
 
 async fn append_permission(
-    _req: &Request,
+    req: &Request,
     enforcer: Data<&RwLock<Enforcer>>,
     Json(user_and_permissions): Json<UserAndPermissions>,
 ) -> impl IntoResponse {
-    // FIXME:
-
-    // let operation_log_pair_option =
-    //     generate_operation_user_permission_addtion_log(&req.get_session(), &user_and_permissions)
-    //         .ok();
-    // send_option_operation_log_pair(operation_log_pair_option).await;
+    let operation_log_pair_option =
+        generate_operation_user_permission_addtion_log(&req.get_session(), &user_and_permissions)
+            .ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
 
     let UserAndPermissions {
         user_name,
@@ -514,16 +509,14 @@ async fn append_permission(
 
 #[handler]
 async fn delete_permission(
-    _req: &Request,
+    req: &Request,
     enforcer: Data<&RwLock<Enforcer>>,
     Json(user_and_permissions): Json<UserAndPermissions>,
 ) -> impl IntoResponse {
-    // FIXME:
-
-    // let operation_log_pair_option =
-    //     generate_operation_user_permission_delete_log(&req.get_session(), &user_and_permissions)
-    //         .ok();
-    // send_option_operation_log_pair(operation_log_pair_option).await;
+    let operation_log_pair_option =
+        generate_operation_user_permission_delete_log(&req.get_session(), &user_and_permissions)
+            .ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
 
     let UserAndPermissions {
         user_name,

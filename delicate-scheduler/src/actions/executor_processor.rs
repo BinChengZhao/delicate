@@ -19,25 +19,22 @@ pub(crate) fn config_route(route: Route) -> Route {
             "/api/executor_processor/delete",
             post(delete_executor_processor),
         )
-
-    // FIXME:
-    // .at(
-    //     "/api/executor_processor/activate",
-    //     post(activate_executor_processor),
-    // )
+        .at(
+            "/api/executor_processor/activate",
+            post(activate_executor_processor),
+        )
 }
 
 #[handler]
 async fn create_executor_processor(
-    _req: &Request,
+    req: &Request,
     Json(executor_processor): Json<model::NewExecutorProcessor>,
     pool: Data<&db::ConnectionPool>,
 ) -> impl IntoResponse {
-    // FIXME:
-    // let operation_log_pair_option =
-    //     generate_operation_executor_processor_addtion_log(&req.get_session(), &executor_processor)
-    //         .ok();
-    // send_option_operation_log_pair(operation_log_pair_option).await;
+    let operation_log_pair_option =
+        generate_operation_executor_processor_addtion_log(&req.get_session(), &executor_processor)
+            .ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
 
     if let Ok(conn) = pool.get() {
         let f_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
@@ -107,15 +104,14 @@ async fn show_executor_processors(
 
 #[handler]
 async fn update_executor_processor(
-    _req: &Request,
+    req: &Request,
     Json(executor_processor): Json<model::UpdateExecutorProcessor>,
     pool: Data<&db::ConnectionPool>,
 ) -> impl IntoResponse {
-    // FIXME:
-    // let operation_log_pair_option =
-    //     generate_operation_executor_processor_modify_log(&req.get_session(), &executor_processor)
-    //         .ok();
-    // send_option_operation_log_pair(operation_log_pair_option).await;
+    let operation_log_pair_option =
+        generate_operation_executor_processor_modify_log(&req.get_session(), &executor_processor)
+            .ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
 
     if let Ok(conn) = pool.get() {
         let f_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
@@ -138,7 +134,7 @@ async fn update_executor_processor(
 
 #[handler]
 async fn delete_executor_processor(
-    _req: &Request,
+    req: &Request,
     Json(model::ExecutorProcessorId {
         executor_processor_id,
     }): Json<model::ExecutorProcessorId>,
@@ -146,14 +142,12 @@ async fn delete_executor_processor(
 ) -> impl IntoResponse {
     use db::schema::executor_processor::dsl::*;
 
-    // FIXME:
-
-    // let operation_log_pair_option = generate_operation_executor_processor_delete_log(
-    //     &req.get_session(),
-    //     &CommonTableRecord::default().set_id(executor_processor_id),
-    // )
-    // .ok();
-    // send_option_operation_log_pair(operation_log_pair_option).await;
+    let operation_log_pair_option = generate_operation_executor_processor_delete_log(
+        &req.get_session(),
+        &CommonTableRecord::default().set_id(executor_processor_id),
+    )
+    .ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
 
     if let Ok(conn) = pool.get() {
         let f_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
@@ -172,34 +166,33 @@ async fn delete_executor_processor(
     Json(UnifiedResponseMessages::<usize>::error())
 }
 
-// Update `status` and `token`.
-
-// FIXME:
-
-// #[handler]
-// async fn activate_executor_processor(
-//     Json(model::ExecutorProcessorId {
-//         executor_processor_id,
-//     }): Json<model::ExecutorProcessorId>,
-//     pool: Data<&db::ConnectionPool>,
-//     scheduler: Data<&SchedulerMetaInfo>,
-// ) -> impl IntoResponse {
-//     let uniform_data: UnifiedResponseMessages<()> =
-//         do_activate(pool, executor_processor_id, scheduler)
-//             .await
-//             .into();
-//     Json(uniform_data)
-// }
+#[handler]
+async fn activate_executor_processor(
+    req: &Request,
+    Json(model::ExecutorProcessorId {
+        executor_processor_id,
+    }): Json<model::ExecutorProcessorId>,
+    pool: Data<&db::ConnectionPool>,
+    scheduler: Data<&SchedulerMetaInfo>,
+) -> impl IntoResponse {
+    let uniform_data: UnifiedResponseMessages<()> =
+        do_activate(req, pool, executor_processor_id, scheduler)
+            .await
+            .into();
+    Json(uniform_data)
+}
 async fn do_activate(
+    req: &Request,
     pool: Data<&db::ConnectionPool>,
     executor_processor_id: i64,
     scheduler: Data<&SchedulerMetaInfo>,
 ) -> Result<(), CommonError> {
-    let bind_info = activate_executor(pool.get()?, executor_processor_id, scheduler).await?;
+    let bind_info = activate_executor(req, pool.get()?, executor_processor_id, scheduler).await?;
     activate_executor_row(pool.get()?, executor_processor_id, bind_info).await?;
     Ok(())
 }
 async fn activate_executor(
+    req: &Request,
     conn: db::PoolConnection,
     executor_processor_id: i64,
     scheduler: Data<&SchedulerMetaInfo>,
@@ -227,12 +220,15 @@ async fn activate_executor(
         ..
     }: model::UpdateExecutorProcessor = query;
 
-    let _client = RequestClient::default();
-    let _url = "http://".to_string() + (host.deref()) + "/api/executor/bind";
+    let request_client = req
+        .extensions()
+        .get::<RequestClient>()
+        .expect("Missing Components `RequestClient`");
+    let url = "http://".to_string() + (host.deref()) + "/api/executor/bind";
 
     let private_key = scheduler.get_app_security_key();
     let scheduler_host = scheduler.get_app_host_name().clone();
-    let _signed_scheduler = service_binding::BindRequest::default()
+    let signed_scheduler = service_binding::BindRequest::default()
         .set_scheduler_host(scheduler_host)
         .set_executor_processor_id(id)
         .set_executor_processor_host(host)
@@ -241,17 +237,16 @@ async fn activate_executor(
         .set_time(get_timestamp())
         .sign(private_key)?;
 
-    // FIXME:
-    todo!();
-    // let response: Result<service_binding::EncryptedBindResponse, CommonError> = client
-    //     .post(url)
-    //     .send_json(&signed_scheduler)
-    //     .await?
-    //     .json::<UnifiedResponseMessages<service_binding::EncryptedBindResponse>>()
-    //     .await?
-    //     .into();
+    let response: Result<service_binding::EncryptedBindResponse, CommonError> = request_client
+        .post(url)
+        .json(&signed_scheduler)
+        .send()
+        .await?
+        .json::<UnifiedResponseMessages<service_binding::EncryptedBindResponse>>()
+        .await?
+        .into();
 
-    // Ok(response?.decrypt_self(private_key)?)
+    Ok(response?.decrypt_self(private_key)?)
 }
 
 async fn activate_executor_row(

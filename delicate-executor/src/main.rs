@@ -159,36 +159,34 @@ async fn health_screen(
     executor_conf: Data<&ExecutorSecurityConf>,
     system_mirror: Data<&SystemMirror>,
 ) -> Json<UnifiedResponseMessages<HealthCheckPackage>> {
-    // FIXME:
-    todo!();
-    // let guard = executor_conf.get_bind_scheduler_token_ref().await;
-    // let token = guard.as_ref().map(|s| s.deref());
+    let guard = executor_conf.get_bind_scheduler_token_ref().await;
+    let token = guard.as_ref().map(|s| s.deref());
 
-    // let verify_result = signed_health_screen_unit.get_health_screen_unit_after_verify(token);
-    // if let Ok(health_screen_unit) = verify_result {
-    // let ip = req.remote_addr();
-    // info!("From: {}, Request-time:{}", ip, health_screen_unit);
+    let verify_result = signed_health_screen_unit.get_health_screen_unit_after_verify(token);
+    if let Ok(health_screen_unit) = verify_result {
+        let ip = req.remote_addr();
+        info!("From: {}, Request-time:{}", ip, health_screen_unit);
 
-    //     let system_snapshot = system_mirror.refresh_all().await;
-    //     let bind_request = executor_conf
-    //         .get_bind_scheduler_inner_ref()
-    //         .await
-    //         .clone()
-    //         .unwrap_or_default();
+        let system_snapshot = system_mirror.refresh_all().await;
+        let bind_request = executor_conf
+            .get_bind_scheduler_inner_ref()
+            .await
+            .clone()
+            .unwrap_or_default();
 
-    //     let health_check_package = HealthCheckPackage {
-    //         system_snapshot,
-    //         bind_request,
-    //     };
-    //     return Json(
-    //         UnifiedResponseMessages::<HealthCheckPackage>::success_with_data(health_check_package),
-    //     );
-    // }
+        let health_check_package = HealthCheckPackage {
+            system_snapshot,
+            bind_request,
+        };
+        return Json(
+            UnifiedResponseMessages::<HealthCheckPackage>::success_with_data(health_check_package),
+        );
+    }
 
-    // Json(
-    //     UnifiedResponseMessages::<HealthCheckPackage>::error()
-    //         .customized_error_msg(verify_result.expect_err("").to_string()),
-    // )
+    Json(
+        UnifiedResponseMessages::<HealthCheckPackage>::error()
+            .customized_error_msg(verify_result.expect_err("").to_string()),
+    )
 }
 
 #[handler]
@@ -201,46 +199,54 @@ async fn bind_executor(
 ) -> Json<UnifiedResponseMessages<EncryptedBindResponse>> {
     info!("{}", &request_bind_scheduler.bind_request);
 
-    // FIXME:
+    let verify_result = request_bind_scheduler.verify(security_conf.get_rsa_public_key());
+    if verify_result.is_ok() {
+        let SignedBindRequest { bind_request, .. } = request_bind_scheduler;
 
-    // let verify_result = request_bind_scheduler.verify(security_conf.get_rsa_public_key());
-    // if verify_result.is_ok() {
-    //     let SignedBindRequest { bind_request, .. } = request_bind_scheduler;
+        let token: Option<String> = security_conf.generate_token();
 
-    //     let token: Option<String> = security_conf.generate_token();
+        // Take 10 bits from executor_machine_id and do machine_id and node_id in two groups.
 
-    //     // Take 10 bits from executor_machine_id and do machine_id and node_id in two groups.
+        let executor_machine_id = bind_request.executor_machine_id;
+        let extractor: i16 = 0b00_0001_1111;
+        let node_id = executor_machine_id & extractor;
+        let machine_id = (executor_machine_id >> 5) & extractor;
 
-    //     let executor_machine_id = bind_request.executor_machine_id;
-    //     let extractor: i16 = 0b00_0001_1111;
-    //     let node_id = executor_machine_id & extractor;
-    //     let machine_id = (executor_machine_id >> 5) & extractor;
+        shared_delay_timer.update_id_generator_conf(machine_id as i32, node_id as i32);
 
-    //     shared_delay_timer.update_id_generator_conf(machine_id as i32, node_id as i32);
+        *security_conf.get_bind_scheduler_inner_mut().await = Some(bind_request);
+        *security_conf.get_bind_scheduler_token_mut().await = token.clone();
 
-    //     *security_conf.get_bind_scheduler_inner_mut().await = Some(bind_request);
-    //     *security_conf.get_bind_scheduler_token_mut().await = token.clone();
+        let bind_response = BindResponse {
+            time: get_timestamp() as i64,
+            token,
+        }
+        .encrypt_self(security_conf.get_rsa_public_key());
 
-    // let bind_response = BindResponse {
-    //     time: get_timestamp() as i64,
-    //     token,
-    // }
-    // .encrypt_self(security_conf.get_rsa_public_key());
+        let response: UnifiedResponseMessages<EncryptedBindResponse> = Into::into(bind_response);
+        return Json(response);
+    }
 
-    // let response: UnifiedResponseMessages<EncryptedBindResponse> = Into::into(bind_response);
-    // return Json(response);
-    // }
-
-    // Json(
-    //     UnifiedResponseMessages::<EncryptedBindResponse>::error()
-    //         .customized_error_msg(verify_result.expect_err("").to_string()),
-    // )
-    todo!();
+    Json(
+        UnifiedResponseMessages::<EncryptedBindResponse>::error()
+            .customized_error_msg(verify_result.expect_err("").to_string()),
+    )
 }
 
 fn main() -> AnyResult<()> {
     // Loads environment variables.
     dotenv().ok();
+
+    let log_level: Level =
+        FromStr::from_str(&env::var("LOG_LEVEL").unwrap_or_else(|_| String::from("info")))
+            .expect("Log level acquired fail.");
+
+    FmtSubscriber::builder()
+        // will be written to stdout.
+        .with_max_level(log_level)
+        .with_thread_names(true)
+        // completes the builder.
+        .init();
 
     let raw_runtime = Builder::new_multi_thread()
         .thread_name_fn(|| {
@@ -256,30 +262,6 @@ fn main() -> AnyResult<()> {
     let arc_runtime_cloned = arc_runtime.clone();
 
     let block_result: AnyResult<()> = arc_runtime.block_on(async move {
-        let log_level: Level =
-            FromStr::from_str(&env::var("LOG_LEVEL").unwrap_or_else(|_| String::from("info")))
-                .expect("Log level acquired fail.");
-
-        FmtSubscriber::builder()
-            // will be written to stdout.
-            .with_max_level(log_level)
-            .with_thread_names(true)
-            // completes the builder.
-            .init();
-
-        let arc_security_conf = Arc::new(ExecutorSecurityConf::default());
-        let shared_security_conf: AddData<Arc<ExecutorSecurityConf>> =
-            AddData::new(arc_security_conf.clone());
-
-        let shared_system_mirror: AddData<Arc<SystemMirror>> =
-            AddData::new(Arc::new(SystemMirror::default()));
-
-        let mut delay_timer = DelayTimerBuilder::default()
-            .tokio_runtime_shared_by_custom(arc_runtime_cloned)
-            .enable_status_report()
-            .build();
-        launch_status_reporter(&mut delay_timer, arc_security_conf);
-        let shared_delay_timer: AddData<Arc<DelayTimer>> = AddData::new(Arc::new(delay_timer));
         let route = Route::new()
             .at("/api/task/update", post(update_task))
             .at("/api/task/create", post(create_task))
@@ -287,72 +269,93 @@ fn main() -> AnyResult<()> {
             .at("/api/task/advance", post(advance_task))
             .at("/api/task_instance/kill", post(cancel_task))
             .at("/api/executor/health_screen", post(health_screen))
-            .at("/api/executor/bind", post(bind_executor))
-            .with(shared_delay_timer)
-            .with(shared_security_conf);
+            .at("/api/executor/bind", post(bind_executor));
 
+        let app = init_executor(route, arc_runtime_cloned).await;
         let address = env::var("EXECUTOR_LISTENING_ADDRESS")
             .expect("Without `EXECUTOR_LISTENING_ADDRESS` set in .env");
         let listener = TcpListener::bind(address);
         let server = Server::new(listener).await?;
-        Ok(server.run(route).await?)
+        Ok(server.run(app).await?)
     });
 
     block_result
 }
 
+async fn init_executor(app: Route, arc_runtime: Arc<Runtime>) -> impl Endpoint {
+    let arc_security_conf = Arc::new(ExecutorSecurityConf::default());
+    let shared_security_conf: AddData<Arc<ExecutorSecurityConf>> =
+        AddData::new(arc_security_conf.clone());
+
+    let shared_system_mirror: AddData<Arc<SystemMirror>> =
+        AddData::new(Arc::new(SystemMirror::default()));
+
+    let mut delay_timer = DelayTimerBuilder::default()
+        .tokio_runtime_shared_by_custom(arc_runtime)
+        .enable_status_report()
+        .build();
+    let request_client = RequestClient::new();
+    let shared_request_client = AddData::new(request_client.clone());
+    launch_status_reporter(&mut delay_timer, arc_security_conf, request_client);
+    let shared_delay_timer: AddData<Arc<DelayTimer>> = AddData::new(Arc::new(delay_timer));
+
+    app.with(shared_delay_timer)
+        .with(shared_security_conf)
+        .with(shared_system_mirror)
+        .with(shared_request_client)
+}
 fn launch_status_reporter(
     delay_timer: &mut DelayTimer,
     shared_security_conf: Arc<ExecutorSecurityConf>,
+    client: RequestClient,
 ) {
     let status_reporter_option = delay_timer.take_status_reporter();
 
-    // if let Some(status_reporter) = status_reporter_option {
-    //     tokio_spawn(async move {
-    //         // After taking the lock, get the resource quickly and release the lock.
+    if let Some(status_reporter) = status_reporter_option {
+        tokio_spawn(async move {
+            // After taking the lock, get the resource quickly and release the lock.
 
-    //         let mut token: Option<String> = None;
-    //         let mut scheduler: Option<BindRequest> = None;
-    //         let client = RequestClient::new();
+            let mut token: Option<String> = None;
+            let mut scheduler: Option<BindRequest> = None;
 
-    //         loop {
-    //             let f = async {
-    //                 fresh_scheduler_conf(&shared_security_conf, &mut token, &mut scheduler).await;
+            loop {
+                let f = async {
+                    fresh_scheduler_conf(&shared_security_conf, &mut token, &mut scheduler).await;
 
-    //                 let events = collect_events(&status_reporter, scheduler.as_ref()).await?;
+                    let events = collect_events(&status_reporter, scheduler.as_ref()).await?;
 
-    //                 if events.is_empty() {
-    //                     return Ok(());
-    //                 }
+                    if events.is_empty() {
+                        return Ok(());
+                    }
 
-    //                 if let Ok(executor_event_collection) =
-    //                     Into::<ExecutorEventCollection>::into(events).sign(token.as_deref())
-    //                 {
-    //                     send_event_collection(
-    //                         scheduler.as_ref(),
-    //                         executor_event_collection,
-    //                         &client,
-    //                     )
-    //                     .await;
-    //                 }
+                    if let Ok(executor_event_collection) =
+                        Into::<ExecutorEventCollection>::into(events).sign(token.as_deref())
+                    {
+                        send_event_collection(
+                            scheduler.as_ref(),
+                            executor_event_collection,
+                            &client,
+                        )
+                        .await;
+                    }
 
-    //                 Ok(())
-    //             };
-    //             let f_result: Result<(), NewCommonError> = f
-    //                 .instrument(span!(
-    //                     Level::INFO,
-    //                     "status-reporter",
-    //                     log_id = get_unique_id_string().deref()
-    //                 ))
-    //                 .await;
+                    Ok(())
+                };
+                let f_result: Result<(), NewCommonError> = f
+                    .instrument(span!(
+                        Level::INFO,
+                        "status-reporter",
+                        log_id = get_unique_id_string().deref()
+                    ))
+                    .await;
 
-    //             if let Err(e) = f_result {
-    //                 error!("{}", e);
-    //                 return;
-    //             }
-    //         }
-    //     });
-    // }
+                if let Err(e) = f_result {
+                    error!("{}", e);
+                    return;
+                }
+            }
+        });
+    }
 }
 async fn fresh_scheduler_conf(
     shared_security_conf: &ExecutorSecurityConf,

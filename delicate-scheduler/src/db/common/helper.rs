@@ -18,6 +18,15 @@ pub trait SeekTableId {
     }
 }
 
+pub trait CookieSession {
+    fn get_session(&self) -> SignedCookieJar<'_>;
+}
+
+impl CookieSession for Request {
+    fn get_session(&self) -> SignedCookieJar<'_> {
+        self.extensions().get::<CookieJar>().expect("").signed()
+    }
+}
 #[derive(Copy, Clone, Default, Debug, Serialize, Deserialize)]
 pub struct CommonTableRecord {
     pub id: i64,
@@ -104,7 +113,7 @@ impl_seek_table_id_unify!(NewTaskLog=>0, NewTask=>0, NewUser=>0, NewTaskBind=>0,
 #[inline(always)]
 pub(crate) fn generate_operation_log(
     operation_name: impl ToString,
-    session: &CookieJar,
+    session: &SignedCookieJar,
     operation_type: OperationType,
     value: impl Serialize + SeekTableId,
     column_comment: impl Serialize,
@@ -143,7 +152,7 @@ pub(crate) fn generate_operation_log(
 #[inline(always)]
 pub(crate) fn generate_operation_addtion_log(
     operation_name: impl ToString,
-    session: &CookieJar,
+    session: &SignedCookieJar,
     values: impl Serialize + SeekTableId,
     column_comment: impl Serialize,
 ) -> Result<(NewOperationLog, NewOperationLogDetail), CommonError> {
@@ -159,7 +168,7 @@ pub(crate) fn generate_operation_addtion_log(
 #[inline(always)]
 pub(crate) fn generate_operation_modify_log(
     operation_name: impl ToString,
-    session: &CookieJar,
+    session: &SignedCookieJar,
     values: impl Serialize + SeekTableId,
     column_comment: impl Serialize,
 ) -> Result<(NewOperationLog, NewOperationLogDetail), CommonError> {
@@ -175,7 +184,7 @@ pub(crate) fn generate_operation_modify_log(
 #[inline(always)]
 pub(crate) fn generate_operation_delete_log(
     operation_name: impl ToString,
-    session: &CookieJar,
+    session: &SignedCookieJar,
     values: impl Serialize + SeekTableId,
     column_comment: impl Serialize,
 ) -> Result<(NewOperationLog, NewOperationLogDetail), CommonError> {
@@ -193,7 +202,7 @@ macro_rules! generate_operation_log_fn{
        $(
             concat_idents!(fn_name = generate_operation_, $operation_name, _, "addtion", _log {
                #[allow(dead_code)]
-               pub(crate) fn fn_name(session: &CookieJar, values: impl Serialize + SeekTableId)
+               pub(crate) fn fn_name(session: &SignedCookieJar, values: impl Serialize + SeekTableId)
                -> Result<(NewOperationLog, NewOperationLogDetail), CommonError> {
                    generate_operation_addtion_log($operation_name, session, values, $column_comment)
                }
@@ -201,7 +210,7 @@ macro_rules! generate_operation_log_fn{
 
             concat_idents!(fn_name = generate_operation_, $operation_name, _, "modify", _log {
                 #[allow(dead_code)]
-                pub(crate) fn fn_name(session: &CookieJar, values: impl Serialize + SeekTableId)
+                pub(crate) fn fn_name(session: &SignedCookieJar, values: impl Serialize + SeekTableId)
                 -> Result<(NewOperationLog, NewOperationLogDetail), CommonError> {
                     generate_operation_modify_log($operation_name, session, values, $column_comment)
                 }
@@ -209,7 +218,7 @@ macro_rules! generate_operation_log_fn{
 
              concat_idents!(fn_name = generate_operation_, $operation_name, _, "delete", _log {
                 #[allow(dead_code)]
-                pub(crate) fn fn_name(session: &CookieJar, values: impl Serialize + SeekTableId)
+                pub(crate) fn fn_name(session: &SignedCookieJar, values: impl Serialize + SeekTableId)
                 -> Result<(NewOperationLog, NewOperationLogDetail), CommonError> {
                     generate_operation_delete_log($operation_name, session, values, $column_comment)
                 }

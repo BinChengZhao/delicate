@@ -23,6 +23,10 @@ pub enum CommonError {
     DisAuth(#[from] AuthServiceError),
     #[error("Blocking running fail.")]
     JoinError(#[from] JoinError),
+    #[error("request fail.")]
+    RequestError(#[from] reqwest::Error),
+    #[error("Parse Cookie fail.")]
+    ParseCookieError(#[from] poem::error::ParseCookieError),
 }
 
 #[derive(ThisError, Debug)]
