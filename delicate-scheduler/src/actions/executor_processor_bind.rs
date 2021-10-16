@@ -25,7 +25,7 @@ pub(crate) fn config_route(route: Route) -> Route {
 async fn create_executor_processor_bind(
     req: &Request,
     Json(executor_processor_binds): Json<model::NewExecutorProcessorBinds>,
-    pool: Data<&db::ConnectionPool>,
+    pool: Data<&Arc<db::ConnectionPool>>,
 ) -> impl IntoResponse {
     use db::schema::executor_processor_bind;
 
@@ -70,7 +70,7 @@ async fn create_executor_processor_bind(
 
 async fn show_executor_processor_binds(
     Json(query_params): Json<model::QueryParamsExecutorProcessorBind>,
-    pool: Data<&db::ConnectionPool>,
+    pool: Data<&Arc<db::ConnectionPool>>,
 ) -> impl IntoResponse {
     if let Ok(conn) = pool.get() {
         let f_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
@@ -117,7 +117,7 @@ async fn show_executor_processor_binds(
 async fn update_executor_processor_bind(
     req: &Request,
     Json(executor_processor_bind): Json<model::UpdateExecutorProcessorBind>,
-    pool: Data<&db::ConnectionPool>,
+    pool: Data<&Arc<db::ConnectionPool>>,
 ) -> impl IntoResponse {
     return Json(Into::<UnifiedResponseMessages<()>>::into(
         pre_update_executor_processor_bind(req, executor_processor_bind, pool).await,
@@ -127,7 +127,7 @@ async fn update_executor_processor_bind(
 async fn pre_update_executor_processor_bind(
     req: &Request,
     executor_processor_bind: model::UpdateExecutorProcessorBind,
-    pool: Data<&db::ConnectionPool>,
+    pool: Data<&Arc<db::ConnectionPool>>,
 ) -> Result<(), CommonError> {
     use db::schema::{executor_processor, executor_processor_bind, task, task_bind};
     use delicate_utils_task::{TaskPackage, TaskUnit};
@@ -246,7 +246,7 @@ async fn delete_executor_processor_bind(
     Json(model::ExecutorProcessorBindId {
         executor_processor_bind_id,
     }): Json<model::ExecutorProcessorBindId>,
-    pool: Data<&db::ConnectionPool>,
+    pool: Data<&Arc<db::ConnectionPool>>,
 ) -> impl IntoResponse {
     use db::schema::executor_processor_bind::dsl::*;
 

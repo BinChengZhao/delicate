@@ -10,7 +10,7 @@ pub(crate) fn config_route(route: Route) -> Route {
 }
 
 #[handler]
-async fn binding_list(pool: Data<&db::ConnectionPool>) -> impl IntoResponse {
+async fn binding_list(pool: Data<&Arc<db::ConnectionPool>>) -> impl IntoResponse {
     use model::{BindingSelection, ExecutorProcessorBindQueryBuilder};
 
     if let Ok(conn) = pool.get() {
@@ -34,7 +34,7 @@ async fn binding_list(pool: Data<&db::ConnectionPool>) -> impl IntoResponse {
 }
 
 #[handler]
-async fn executor_list(pool: Data<&db::ConnectionPool>) -> impl IntoResponse {
+async fn executor_list(pool: Data<&Arc<db::ConnectionPool>>) -> impl IntoResponse {
     use model::{ExecutorProcessorQueryBuilder, ExecutorSelection};
 
     if let Ok(conn) = pool.get() {
@@ -58,7 +58,7 @@ async fn executor_list(pool: Data<&db::ConnectionPool>) -> impl IntoResponse {
 }
 
 #[handler]
-async fn permission_list(pool: Data<&db::ConnectionPool>) -> impl IntoResponse {
+async fn permission_list(pool: Data<&Arc<db::ConnectionPool>>) -> impl IntoResponse {
     use db::schema::casbin_rule;
 
     // TODO: Awaiting follow-up adjustment.

@@ -29,7 +29,7 @@ pub(crate) fn config_route(route: Route) -> Route {
 async fn create_executor_processor(
     req: &Request,
     Json(executor_processor): Json<model::NewExecutorProcessor>,
-    pool: Data<&db::ConnectionPool>,
+    pool: Data<&Arc<db::ConnectionPool>>,
 ) -> impl IntoResponse {
     let operation_log_pair_option =
         generate_operation_executor_processor_addtion_log(&req.get_session(), &executor_processor)
@@ -58,7 +58,7 @@ async fn create_executor_processor(
 #[handler]
 async fn show_executor_processors(
     Json(query_params): Json<model::QueryParamsExecutorProcessor>,
-    pool: Data<&db::ConnectionPool>,
+    pool: Data<&Arc<db::ConnectionPool>>,
 ) -> impl IntoResponse {
     if let Ok(conn) = pool.get() {
         let f_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
@@ -106,7 +106,7 @@ async fn show_executor_processors(
 async fn update_executor_processor(
     req: &Request,
     Json(executor_processor): Json<model::UpdateExecutorProcessor>,
-    pool: Data<&db::ConnectionPool>,
+    pool: Data<&Arc<db::ConnectionPool>>,
 ) -> impl IntoResponse {
     let operation_log_pair_option =
         generate_operation_executor_processor_modify_log(&req.get_session(), &executor_processor)
@@ -138,7 +138,7 @@ async fn delete_executor_processor(
     Json(model::ExecutorProcessorId {
         executor_processor_id,
     }): Json<model::ExecutorProcessorId>,
-    pool: Data<&db::ConnectionPool>,
+    pool: Data<&Arc<db::ConnectionPool>>,
 ) -> impl IntoResponse {
     use db::schema::executor_processor::dsl::*;
 
@@ -172,7 +172,7 @@ async fn activate_executor_processor(
     Json(model::ExecutorProcessorId {
         executor_processor_id,
     }): Json<model::ExecutorProcessorId>,
-    pool: Data<&db::ConnectionPool>,
+    pool: Data<&Arc<db::ConnectionPool>>,
     scheduler: Data<&SchedulerMetaInfo>,
 ) -> impl IntoResponse {
     let uniform_data: UnifiedResponseMessages<()> =
@@ -183,7 +183,7 @@ async fn activate_executor_processor(
 }
 async fn do_activate(
     req: &Request,
-    pool: Data<&db::ConnectionPool>,
+    pool: Data<&Arc<db::ConnectionPool>>,
     executor_processor_id: i64,
     scheduler: Data<&SchedulerMetaInfo>,
 ) -> Result<(), CommonError> {

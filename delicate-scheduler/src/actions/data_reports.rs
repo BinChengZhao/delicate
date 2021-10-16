@@ -5,7 +5,7 @@ pub(crate) fn config_route(route: Route) -> Route {
 }
 
 #[handler]
-async fn show_one_day_tasks_state(pool: Data<&db::ConnectionPool>) -> impl IntoResponse {
+async fn show_one_day_tasks_state(pool: Data<&Arc<db::ConnectionPool>>) -> impl IntoResponse {
     use db::schema::task_log;
     use state::task_log::State;
 

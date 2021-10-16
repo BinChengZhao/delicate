@@ -16,7 +16,7 @@ pub(crate) fn config_route(route: Route) -> Route {
 async fn create_executor_group(
     req: &Request,
     Json(executor_group): Json<model::NewExecutorGroup>,
-    pool: Data<&db::ConnectionPool>,
+    pool: Data<&Arc<db::ConnectionPool>>,
 ) -> impl IntoResponse {
     use db::schema::executor_group;
 
@@ -49,7 +49,7 @@ async fn create_executor_group(
 #[handler]
 async fn show_executor_groups(
     Json(query_params): Json<model::QueryParamsExecutorGroup>,
-    pool: Data<&db::ConnectionPool>,
+    pool: Data<&Arc<db::ConnectionPool>>,
 ) -> impl IntoResponse {
     if let Ok(conn) = pool.get() {
         let f_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
@@ -94,7 +94,7 @@ async fn show_executor_groups(
 #[handler]
 async fn show_executor_group_detail(
     Json(model::ExecutorGroupId { executor_group_id }): Json<model::ExecutorGroupId>,
-    pool: Data<&db::ConnectionPool>,
+    pool: Data<&Arc<db::ConnectionPool>>,
 ) -> impl IntoResponse {
     let executor_group_detail_result =
         pre_show_executor_group_detail(executor_group_id, pool).await;
@@ -116,7 +116,7 @@ async fn show_executor_group_detail(
 
 async fn pre_show_executor_group_detail(
     executor_group_id: i64,
-    pool: Data<&db::ConnectionPool>,
+    pool: Data<&Arc<db::ConnectionPool>>,
 ) -> Result<model::ExecutorGroupDetail, CommonError> {
     use db::schema::{executor_group, executor_processor, executor_processor_bind};
 
@@ -156,7 +156,7 @@ async fn pre_show_executor_group_detail(
 async fn update_executor_group(
     req: &Request,
     Json(executor_group): Json<model::UpdateExecutorGroup>,
-    pool: Data<&db::ConnectionPool>,
+    pool: Data<&Arc<db::ConnectionPool>>,
 ) -> impl IntoResponse {
     let operation_log_pair_option =
         generate_operation_executor_group_modify_log(&req.get_session(), &executor_group).ok();
@@ -186,7 +186,7 @@ async fn update_executor_group(
 async fn delete_executor_group(
     req: &Request,
     Json(model::ExecutorGroupId { executor_group_id }): Json<model::ExecutorGroupId>,
-    pool: Data<&db::ConnectionPool>,
+    pool: Data<&Arc<db::ConnectionPool>>,
 ) -> impl IntoResponse {
     use db::schema::executor_group::dsl::*;
 

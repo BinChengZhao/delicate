@@ -15,7 +15,7 @@ pub(crate) fn config_route(route: Route) -> Route {
 
 async fn create_task_logs(
     Json(events_collection): Json<delicate_utils_task_log::SignedExecutorEventCollection>,
-    pool: Data<&db::ConnectionPool>,
+    pool: Data<&Arc<db::ConnectionPool>>,
 ) -> impl IntoResponse {
     let r = async {
         debug!(
@@ -38,7 +38,7 @@ async fn create_task_logs(
 
 async fn pre_create_task_logs(
     events_collection: delicate_utils_task_log::SignedExecutorEventCollection,
-    pool: Data<&db::ConnectionPool>,
+    pool: Data<&Arc<db::ConnectionPool>>,
 ) -> Result<usize, CommonError> {
     use delicate_utils_task_log::EventType;
 
@@ -88,7 +88,7 @@ async fn pre_create_task_logs(
 
 async fn show_task_logs(
     Json(query_params): Json<model::QueryParamsTaskLog>,
-    pool: Data<&db::ConnectionPool>,
+    pool: Data<&Arc<db::ConnectionPool>>,
 ) -> impl IntoResponse {
     if let Ok(conn) = pool.get() {
         let f_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
@@ -139,7 +139,7 @@ async fn show_task_logs(
 
 async fn show_task_log_detail(
     Json(query_params): Json<model::RecordId>,
-    pool: Data<&db::ConnectionPool>,
+    pool: Data<&Arc<db::ConnectionPool>>,
 ) -> impl IntoResponse {
     use db::schema::task_log_extend;
 
@@ -172,7 +172,7 @@ async fn show_task_log_detail(
 async fn kill_task_instance(
     req: &Request,
     Json(task_record): Json<model::TaskRecord>,
-    pool: Data<&db::ConnectionPool>,
+    pool: Data<&Arc<db::ConnectionPool>>,
 ) -> impl IntoResponse {
     let response_result = kill_one_task_instance(req, pool, task_record).await;
 
@@ -246,7 +246,7 @@ fn batch_update_task_logs(
 
 async fn kill_one_task_instance(
     req: &Request,
-    pool: Data<&db::ConnectionPool>,
+    pool: Data<&Arc<db::ConnectionPool>>,
     model::TaskRecord {
         task_id,
         record_id,
@@ -310,7 +310,7 @@ async fn kill_one_task_instance(
 async fn delete_task_log(
     req: &Request,
     Json(delete_params): Json<model::DeleteParamsTaskLog>,
-    pool: Data<&db::ConnectionPool>,
+    pool: Data<&Arc<db::ConnectionPool>>,
 ) -> impl IntoResponse {
     let operation_log_pair_option =
         generate_operation_task_delete_log(&req.get_session(), &delete_params).ok();

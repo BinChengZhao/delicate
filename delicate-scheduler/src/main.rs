@@ -27,34 +27,13 @@ fn main() -> AnyResut<()> {
     // Loads environment variables.
     dotenv().ok();
 
+    // Automatic execution of database migration
     db::init();
 
-    let log_level: Level =
-        FromStr::from_str(&env::var("LOG_LEVEL").unwrap_or_else(|_| String::from("info")))
-            .expect("Log level acquired fail.");
+    // Automatic initialization of log consumers
+    let _fw_handle = init_logger();
 
-    // Prepare a `FileLogWriter` and a handle to it, and keep the handle alive
-    // until the program ends (it will flush and shutdown the `FileLogWriter` when dropped).
-    // For the `FileLogWriter`, use the settings that fit your needs
-    let (file_writer, _fw_handle) = FileLogWriter::builder(FileSpec::default())
-        .rotate(
-            // If the program runs long enough,
-            Criterion::Age(Age::Day),  // - create a new file every day
-            Naming::Timestamps,        // - let the rotated files have a timestamp in their name
-            Cleanup::KeepLogFiles(15), // - keep at most seven log files
-        )
-        .write_mode(WriteMode::Async)
-        .try_build_with_handle()
-        .expect("flexi_logger init failed");
-
-    FmtSubscriber::builder()
-        // will be written to file_writer.
-        .with_max_level(log_level)
-        .with_thread_names(true)
-        .with_writer(move || file_writer.clone())
-        // completes the builder.
-        .init();
-
+    // Initialize custom asynchronous runtime
     let raw_runtime = Builder::new_multi_thread()
         .thread_name_fn(|| {
             static ATOMIC_ID: AtomicUsize = AtomicUsize::new(0);
@@ -62,6 +41,7 @@ fn main() -> AnyResut<()> {
             format!("executor-{}", id)
         })
         .thread_stack_size(4 * 1024 * 1024)
+        .enable_all()
         .build()
         .expect("Init Tokio runtime failed.");
     let arc_runtime = Arc::new(raw_runtime);
@@ -92,6 +72,36 @@ fn main() -> AnyResut<()> {
         let server = Server::new(listener).await?;
         Ok(server.run(app).await?)
     })
+}
+
+fn init_logger() -> FileLogWriterHandle {
+    let log_level: Level =
+        FromStr::from_str(&env::var("LOG_LEVEL").unwrap_or_else(|_| String::from("info")))
+            .expect("Log level acquired fail.");
+
+    // Prepare a `FileLogWriter` and a handle to it, and keep the handle alive
+    // until the program ends (it will flush and shutdown the `FileLogWriter` when dropped).
+    // For the `FileLogWriter`, use the settings that fit your needs
+    let (file_writer, _fw_handle) = FileLogWriter::builder(FileSpec::default())
+        .rotate(
+            // If the program runs long enough,
+            Criterion::Age(Age::Day),  // - create a new file every day
+            Naming::Timestamps,        // - let the rotated files have a timestamp in their name
+            Cleanup::KeepLogFiles(15), // - keep at most seven log files
+        )
+        .write_mode(WriteMode::Async)
+        .try_build_with_handle()
+        .expect("flexi_logger init failed");
+
+    FmtSubscriber::builder()
+        // will be written to file_writer.
+        .with_max_level(log_level)
+        .with_thread_names(true)
+        .with_writer(move || file_writer.clone())
+        // completes the builder.
+        .init();
+
+    _fw_handle
 }
 
 async fn init_scheduler(app: Route, arc_runtime_cloned: Arc<Runtime>) -> impl Endpoint {
@@ -125,15 +135,14 @@ async fn init_scheduler(app: Route, arc_runtime_cloned: Arc<Runtime>) -> impl En
     let shared_request_client = AddData::new(request_client.clone());
 
     #[cfg(AUTH_CASBIN)]
-    {
-        let enforcer = get_casbin_enforcer(shared_connection_pool.clone()).await;
-        let shared_enforcer = AddData::new(RwLock::new(enforcer));
+    let enforcer = get_casbin_enforcer(arc_connection_pool.clone()).await;
+    #[cfg(AUTH_CASBIN)]
+    let shared_enforcer = Arc::new(RwLock::new(enforcer));
 
-        let app = app
-            .configure(actions::role::config_route)
-            .wrap(CasbinService)
-            .app_data(shared_enforcer.clone());
-    }
+    #[cfg(AUTH_CASBIN)]
+    let app = app
+        .with(CasbinService)
+        .with(AddData::new(shared_enforcer.clone()));
 
     // All ready work when the delicate-application starts.
     launch_ready_operation(
@@ -170,7 +179,7 @@ async fn init_scheduler(app: Route, arc_runtime_cloned: Arc<Runtime>) -> impl En
 async fn launch_ready_operation(
     pool: Arc<db::ConnectionPool>,
     request_client: RequestClient,
-    #[cfg(AUTH_CASBIN)] enforcer: AddData<RwLock<Enforcer>>,
+    #[cfg(AUTH_CASBIN)] enforcer: Arc<RwLock<Enforcer>>,
 ) {
     launch_health_check(pool.clone(), request_client);
     launch_operation_log_consumer(pool);

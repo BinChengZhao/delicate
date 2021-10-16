@@ -7,7 +7,7 @@ pub(crate) fn config_route(route: Route) -> Route {
 #[handler]
 async fn show_user_login_log(
     Json(query_params): Json<model::QueryParamsUserLoginLog>,
-    pool: Data<&db::ConnectionPool>,
+    pool: Data<&Arc<db::ConnectionPool>>,
 ) -> impl IntoResponse {
     if let Ok(conn) = pool.get() {
         let f_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {

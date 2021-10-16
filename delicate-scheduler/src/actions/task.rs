@@ -16,7 +16,7 @@ pub(crate) fn config_route(route: Route) -> Route {
 async fn create_task(
     req: &Request,
     Json(model::NewTaskBody { task, binding_ids }): Json<model::NewTaskBody>,
-    pool: Data<&db::ConnectionPool>,
+    pool: Data<&Arc<db::ConnectionPool>>,
 ) -> impl IntoResponse {
     use db::schema::{task, task_bind};
 
@@ -59,7 +59,7 @@ async fn create_task(
 
 async fn show_tasks(
     Json(query_params): Json<model::QueryParamsTask>,
-    pool: Data<&db::ConnectionPool>,
+    pool: Data<&Arc<db::ConnectionPool>>,
 ) -> impl IntoResponse {
     use db::schema::task_bind;
 
@@ -130,7 +130,7 @@ async fn show_tasks(
 async fn update_task(
     req: &Request,
     Json(update_task_body): Json<model::UpdateTaskBody>,
-    pool: Data<&db::ConnectionPool>,
+    pool: Data<&Arc<db::ConnectionPool>>,
 ) -> impl IntoResponse {
     let respose: UnifiedResponseMessages<()> = pre_update_task(req, update_task_body, pool)
         .instrument(span!(Level::INFO, "update-task"))
@@ -142,7 +142,7 @@ async fn update_task(
 pub async fn pre_update_task(
     req: &Request,
     model::UpdateTaskBody { task, binding_ids }: model::UpdateTaskBody,
-    pool: Data<&db::ConnectionPool>,
+    pool: Data<&Arc<db::ConnectionPool>>,
 ) -> Result<(), CommonError> {
     let task_id = task.id;
     let conn = pool.get()?;
@@ -395,7 +395,7 @@ pub async fn pre_update_task_sevice(
 async fn delete_task(
     req: &Request,
     Json(model::TaskId { task_id }): Json<model::TaskId>,
-    pool: Data<&db::ConnectionPool>,
+    pool: Data<&Arc<db::ConnectionPool>>,
 ) -> impl IntoResponse {
     use db::schema::{task, task_bind};
 

@@ -28,7 +28,7 @@ pub(crate) fn config_route(route: Route) -> Route {
 async fn create_user(
     req: &Request,
     Json(user): Json<model::QueryNewUser>,
-    pool: Data<&db::ConnectionPool>,
+    pool: Data<&Arc<db::ConnectionPool>>,
 ) -> impl IntoResponse {
     let validate_result: Result<(), ValidationErrors> = user.validate();
     if validate_result.is_err() {
@@ -77,7 +77,7 @@ async fn create_user(
 
 async fn show_users(
     Json(query_params): Json<model::QueryParamsUser>,
-    pool: Data<&db::ConnectionPool>,
+    pool: Data<&Arc<db::ConnectionPool>>,
 ) -> impl IntoResponse {
     if let Ok(conn) = pool.get() {
         let f_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
@@ -122,7 +122,7 @@ async fn show_users(
 async fn update_user(
     req: &Request,
     Json(user_value): Json<model::UpdateUser>,
-    pool: Data<&db::ConnectionPool>,
+    pool: Data<&Arc<db::ConnectionPool>>,
 ) -> impl IntoResponse {
     let operation_log_pair_option =
         generate_operation_user_modify_log(&req.get_session(), &user_value).ok();
@@ -150,7 +150,7 @@ async fn update_user(
 async fn change_password(
     req: &Request,
     Json(user_value): Json<model::UserChangePassword>,
-    pool: Data<&db::ConnectionPool>,
+    pool: Data<&Arc<db::ConnectionPool>>,
 ) -> impl IntoResponse {
     let session = req.get_session();
     let user_id = session
@@ -201,7 +201,7 @@ async fn change_password(
 async fn delete_user(
     req: &Request,
     Json(model::UserId { user_id }): Json<model::UserId>,
-    pool: Data<&db::ConnectionPool>,
+    pool: Data<&Arc<db::ConnectionPool>>,
 ) -> impl IntoResponse {
     let operation_log_pair_option = generate_operation_user_delete_log(
         &req.get_session(),
@@ -238,7 +238,7 @@ async fn delete_user(
 async fn login_user(
     req: &Request,
     Json(user_login): Json<model::UserAuthLogin>,
-    pool: Data<&db::ConnectionPool>,
+    pool: Data<&Arc<db::ConnectionPool>>,
 ) -> impl IntoResponse {
     let login_result: UnifiedResponseMessages<()> =
         pre_login_user(req, user_login, pool).await.into();
@@ -253,7 +253,7 @@ async fn pre_login_user(
         account,
         password,
     }: model::UserAuthLogin,
-    pool: Data<&db::ConnectionPool>,
+    pool: Data<&Arc<db::ConnectionPool>>,
 ) -> Result<(), CommonError> {
     let client_ip = req
         .remote_addr()
@@ -305,22 +305,45 @@ async fn pre_login_user(
 }
 
 fn save_session(
-    _req: &Request,
-    (_, _user): (model::UserAuth, model::User),
+    req: &Request,
+    (_, user): (model::UserAuth, model::User),
 ) -> Result<(), CommonError> {
-    // FIXME:
+    let session = req.get_session();
 
-    // session.set("login_time", get_timestamp())?;
-    // session.set("user_id", user.id)?;
-    // session.set("user_name", user.user_name)?;
-    // session.set("nick_name", user.nick_name)?;
-    // Ok(())
-    todo!();
+    let meta_info = req
+        .extensions()
+        .get::<SchedulerMetaInfo>()
+        .ok_or(CommonError::DisPass("Cannot get SchedulerMetaInfo".into()))?;
+    let security_conf = meta_info.get_app_security_conf();
+
+    let mut cookie = Cookie::new("login_time", get_timestamp());
+    cookie.set_domain(&security_conf.cookie_conf.domain);
+    cookie.set_http_only(security_conf.cookie_conf.http_only);
+    cookie.set_secure(security_conf.cookie_conf.secure);
+
+    session.add(cookie.clone());
+
+    session.add({
+        cookie.set_name("user_id");
+        cookie.set_value(user.id);
+        cookie.clone()
+    });
+    session.add({
+        cookie.set_name("user_name");
+        cookie.set_value(user.user_name);
+        cookie.clone()
+    });
+    session.add({
+        cookie.set_name("nick_name");
+        cookie.set_value(user.nick_name);
+        cookie
+    });
+    Ok(())
 }
 
 #[handler]
 
-async fn check_user(req: &Request, pool: Data<&db::ConnectionPool>) -> impl IntoResponse {
+async fn check_user(req: &Request, pool: Data<&Arc<db::ConnectionPool>>) -> impl IntoResponse {
     let check_result = pre_check_user(req, pool).await;
     if let Ok(user) = check_result {
         return Json(UnifiedResponseMessages::<model::User>::success_with_data(
@@ -338,7 +361,7 @@ async fn check_user(req: &Request, pool: Data<&db::ConnectionPool>) -> impl Into
 
 async fn pre_check_user(
     req: &Request,
-    pool: Data<&db::ConnectionPool>,
+    pool: Data<&Arc<db::ConnectionPool>>,
 ) -> Result<model::User, CommonError> {
     let session = req.get_session();
     let conn = pool.get()?;

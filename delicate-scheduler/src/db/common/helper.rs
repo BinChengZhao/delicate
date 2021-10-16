@@ -24,7 +24,7 @@ pub trait CookieSession {
 
 impl CookieSession for Request {
     fn get_session(&self) -> SignedCookieJar<'_> {
-        self.extensions().get::<CookieJar>().expect("").signed()
+        self.extensions().get::<CookieJar>().expect("Cannot be acquired CookieJar! ").signed()
     }
 }
 #[derive(Copy, Clone, Default, Debug, Serialize, Deserialize)]

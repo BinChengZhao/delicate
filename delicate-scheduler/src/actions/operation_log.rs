@@ -10,7 +10,7 @@ pub(crate) fn config_route(route: Route) -> Route {
 
 async fn show_operation_log(
     Json(query_params): Json<model::QueryParamsOperationLog>,
-    pool: Data<&db::ConnectionPool>,
+    pool: Data<&Arc<db::ConnectionPool>>,
 ) -> impl IntoResponse {
     if let Ok(conn) = pool.get() {
         let f_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
@@ -60,7 +60,7 @@ async fn show_operation_log(
 
 async fn show_operation_log_detail(
     Json(query_params): Json<model::OperationLogId>,
-    pool: Data<&db::ConnectionPool>,
+    pool: Data<&Arc<db::ConnectionPool>>,
 ) -> impl IntoResponse {
     use db::schema::operation_log_detail;
 
