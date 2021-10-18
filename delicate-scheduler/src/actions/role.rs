@@ -16,7 +16,7 @@ async fn list() -> impl IntoResponse {
 
 #[handler]
 async fn permission_detail(
-    enforcer: Data<&RwLock<Enforcer>>,
+    enforcer: Data<&Arc<RwLock<Enforcer>>>,
     Json(RoleId { role_id }): Json<RoleId>,
 ) -> impl IntoResponse {
     // [
@@ -36,7 +36,7 @@ async fn permission_detail(
 #[handler]
 
 async fn users(
-    enforcer: Data<&RwLock<Enforcer>>,
+    enforcer: Data<&Arc<RwLock<Enforcer>>>,
     Json(RoleId { role_id }): Json<RoleId>,
 ) -> impl IntoResponse {
     if let Some(role_name) = ROLES.get(role_id) {

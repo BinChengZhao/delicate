@@ -98,12 +98,10 @@ impl<E: Endpoint> Endpoint for CasbinAuthMiddleware<E> {
     async fn call(&self, req: Request) -> Self::Output {
         let enforcer = req
             .extensions()
-            .get::<Data<Arc<RwLock<Enforcer>>>>()
+            .get::<Arc<RwLock<Enforcer>>>()
             .expect("Casbin's enforcer acquisition failed");
         let extensions = req.extensions();
-        let session = extensions
-            .get::<CookieJar>()
-            .expect("CookieJar acquisition failed");
+        let session = req.cookie();
         let path = req.uri().path().to_string();
         let auth_part = path.split('/').into_iter().collect::<Vec<&str>>();
 

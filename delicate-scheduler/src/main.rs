@@ -38,7 +38,7 @@ fn main() -> AnyResut<()> {
         .thread_name_fn(|| {
             static ATOMIC_ID: AtomicUsize = AtomicUsize::new(0);
             let id = ATOMIC_ID.fetch_add(1, Ordering::SeqCst);
-            format!("executor-{}", id)
+            format!("scheduler-{}", id)
         })
         .thread_stack_size(4 * 1024 * 1024)
         .enable_all()
@@ -107,18 +107,15 @@ fn init_logger() -> FileLogWriterHandle {
 async fn init_scheduler(app: Route, arc_runtime_cloned: Arc<Runtime>) -> impl Endpoint {
     let scheduler_front_end_domain: String = env::var("SCHEDULER_FRONT_END_DOMAIN")
         .expect("Without `SCHEDULER_FRONT_END_DOMAIN` set in .env");
+
     let request_client = RequestClient::new();
 
     let cors = Cors::new()
         .allow_origin(&scheduler_front_end_domain)
-        .allow_method(Method::GET)
-        .allow_method(Method::POST)
-        .allow_header("*")
+        .allow_method("*")
+        .allow_header("content-type")
         .allow_credentials(true)
         .max_age(3600);
-
-    #[cfg(APP_DEBUG_MODE)]
-    let cors = cors.allow_origin("*");
 
     let delay_timer = DelayTimerBuilder::default()
         .tokio_runtime_shared_by_custom(arc_runtime_cloned)

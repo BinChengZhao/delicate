@@ -7,8 +7,8 @@ use prelude::*;
 #[instrument(skip(executor_conf, shared_delay_timer, signed_task_package), fields(task_package = signed_task_package.task_package.id))]
 async fn create_task(
     Json(signed_task_package): Json<SignedTaskPackage>,
-    shared_delay_timer: Data<&DelayTimer>,
-    executor_conf: Data<&ExecutorSecurityConf>,
+    shared_delay_timer: Data<&Arc<DelayTimer>>,
+    executor_conf: Data<&Arc<ExecutorSecurityConf>>,
 ) -> Json<UnitUnifiedResponseMessages> {
     let response: UnitUnifiedResponseMessages =
         Into::into(pre_create_task(signed_task_package, shared_delay_timer, executor_conf).await);
@@ -18,8 +18,8 @@ async fn create_task(
 
 pub async fn pre_create_task(
     signed_task_package: SignedTaskPackage,
-    shared_delay_timer: Data<&DelayTimer>,
-    executor_conf: Data<&ExecutorSecurityConf>,
+    shared_delay_timer: Data<&Arc<DelayTimer>>,
+    executor_conf: Data<&Arc<ExecutorSecurityConf>>,
 ) -> Result<(), CommonError> {
     info!("pre_create_task: {}", &signed_task_package.task_package);
     let guard = executor_conf.get_bind_scheduler_token_ref().await;
@@ -35,8 +35,8 @@ pub async fn pre_create_task(
 #[instrument(skip(executor_conf, shared_delay_timer, signed_task_package), fields(task_package = signed_task_package.task_package.id))]
 async fn update_task(
     Json(signed_task_package): Json<SignedTaskPackage>,
-    shared_delay_timer: Data<&DelayTimer>,
-    executor_conf: Data<&ExecutorSecurityConf>,
+    shared_delay_timer: Data<&Arc<DelayTimer>>,
+    executor_conf: Data<&Arc<ExecutorSecurityConf>>,
 ) -> Json<UnitUnifiedResponseMessages> {
     let response: UnitUnifiedResponseMessages =
         Into::into(pre_update_task(signed_task_package, shared_delay_timer, executor_conf).await);
@@ -46,8 +46,8 @@ async fn update_task(
 
 pub async fn pre_update_task(
     signed_task_package: SignedTaskPackage,
-    shared_delay_timer: Data<&DelayTimer>,
-    executor_conf: Data<&ExecutorSecurityConf>,
+    shared_delay_timer: Data<&Arc<DelayTimer>>,
+    executor_conf: Data<&Arc<ExecutorSecurityConf>>,
 ) -> Result<(), CommonError> {
     info!("pre_update_task: {}", &signed_task_package.task_package);
     let guard = executor_conf.get_bind_scheduler_token_ref().await;
@@ -63,8 +63,8 @@ pub async fn pre_update_task(
 #[instrument(skip(executor_conf, shared_delay_timer, signed_task_unit), fields(task_id = signed_task_unit.task_unit.task_id))]
 async fn remove_task(
     Json(signed_task_unit): Json<SignedTaskUnit>,
-    shared_delay_timer: Data<&DelayTimer>,
-    executor_conf: Data<&ExecutorSecurityConf>,
+    shared_delay_timer: Data<&Arc<DelayTimer>>,
+    executor_conf: Data<&Arc<ExecutorSecurityConf>>,
 ) -> Json<UnitUnifiedResponseMessages> {
     let response: UnitUnifiedResponseMessages =
         pre_remove_task(signed_task_unit, shared_delay_timer, executor_conf)
@@ -75,8 +75,8 @@ async fn remove_task(
 
 pub async fn pre_remove_task(
     signed_task_unit: SignedTaskUnit,
-    shared_delay_timer: Data<&DelayTimer>,
-    executor_conf: Data<&ExecutorSecurityConf>,
+    shared_delay_timer: Data<&Arc<DelayTimer>>,
+    executor_conf: Data<&Arc<ExecutorSecurityConf>>,
 ) -> Result<(), CommonError> {
     info!("pre_remove_task: {}", &signed_task_unit);
 
@@ -90,8 +90,8 @@ pub async fn pre_remove_task(
 #[instrument(skip(executor_conf, shared_delay_timer, signed_task_unit), fields(task_id = signed_task_unit.task_unit.task_id))]
 async fn advance_task(
     Json(signed_task_unit): Json<SignedTaskUnit>,
-    shared_delay_timer: Data<&DelayTimer>,
-    executor_conf: Data<&ExecutorSecurityConf>,
+    shared_delay_timer: Data<&Arc<DelayTimer>>,
+    executor_conf: Data<&Arc<ExecutorSecurityConf>>,
 ) -> Json<UnitUnifiedResponseMessages> {
     let response: UnitUnifiedResponseMessages =
         pre_advance_task(signed_task_unit, shared_delay_timer, executor_conf)
@@ -102,8 +102,8 @@ async fn advance_task(
 
 pub async fn pre_advance_task(
     signed_task_unit: SignedTaskUnit,
-    shared_delay_timer: Data<&DelayTimer>,
-    executor_conf: Data<&ExecutorSecurityConf>,
+    shared_delay_timer: Data<&Arc<DelayTimer>>,
+    executor_conf: Data<&Arc<ExecutorSecurityConf>>,
 ) -> Result<(), CommonError> {
     info!("pre_advance_task: {}", &signed_task_unit);
     let guard = executor_conf.get_bind_scheduler_token_ref().await;
@@ -116,8 +116,8 @@ pub async fn pre_advance_task(
 #[instrument(skip(executor_conf, shared_delay_timer, signed_cancel_task_record), fields(cancel_task_record = signed_cancel_task_record.cancel_task_record.to_string().deref()))]
 async fn cancel_task(
     Json(signed_cancel_task_record): Json<SignedCancelTaskRecord>,
-    shared_delay_timer: Data<&DelayTimer>,
-    executor_conf: Data<&ExecutorSecurityConf>,
+    shared_delay_timer: Data<&Arc<DelayTimer>>,
+    executor_conf: Data<&Arc<ExecutorSecurityConf>>,
 ) -> Json<UnitUnifiedResponseMessages> {
     let response: UnitUnifiedResponseMessages =
         pre_cancel_task(signed_cancel_task_record, shared_delay_timer, executor_conf)
@@ -128,8 +128,8 @@ async fn cancel_task(
 
 pub async fn pre_cancel_task(
     signed_cancel_task_record: SignedCancelTaskRecord,
-    shared_delay_timer: Data<&DelayTimer>,
-    executor_conf: Data<&ExecutorSecurityConf>,
+    shared_delay_timer: Data<&Arc<DelayTimer>>,
+    executor_conf: Data<&Arc<ExecutorSecurityConf>>,
 ) -> Result<(), CommonError> {
     info!("pre_cancel_task: {}", &signed_cancel_task_record);
 
@@ -144,7 +144,9 @@ pub async fn pre_cancel_task(
 }
 
 #[allow(dead_code)]
-async fn maintenance(shared_delay_timer: Data<&DelayTimer>) -> Json<UnitUnifiedResponseMessages> {
+async fn maintenance(
+    shared_delay_timer: Data<&Arc<DelayTimer>>,
+) -> Json<UnitUnifiedResponseMessages> {
     Json(Into::<UnitUnifiedResponseMessages>::into(
         shared_delay_timer.stop_delay_timer(),
     ))
@@ -156,8 +158,8 @@ async fn maintenance(shared_delay_timer: Data<&DelayTimer>) -> Json<UnitUnifiedR
 async fn health_screen(
     req: &Request,
     Json(signed_health_screen_unit): Json<SignedHealthScreenUnit>,
-    executor_conf: Data<&ExecutorSecurityConf>,
-    system_mirror: Data<&SystemMirror>,
+    executor_conf: Data<&Arc<ExecutorSecurityConf>>,
+    system_mirror: Data<&Arc<SystemMirror>>,
 ) -> Json<UnifiedResponseMessages<HealthCheckPackage>> {
     let guard = executor_conf.get_bind_scheduler_token_ref().await;
     let token = guard.as_ref().map(|s| s.deref());
@@ -194,8 +196,8 @@ async fn health_screen(
 // Or set security level, no authentication at level 0, public and private keys required at level 1.
 async fn bind_executor(
     Json(request_bind_scheduler): Json<SignedBindRequest>,
-    security_conf: Data<&ExecutorSecurityConf>,
-    shared_delay_timer: Data<&DelayTimer>,
+    security_conf: Data<&Arc<ExecutorSecurityConf>>,
+    shared_delay_timer: Data<&Arc<DelayTimer>>,
 ) -> Json<UnifiedResponseMessages<EncryptedBindResponse>> {
     info!("{}", &request_bind_scheduler.bind_request);
 
@@ -236,17 +238,7 @@ async fn bind_executor(
 fn main() -> AnyResult<()> {
     // Loads environment variables.
     dotenv().ok();
-
-    let log_level: Level =
-        FromStr::from_str(&env::var("LOG_LEVEL").unwrap_or_else(|_| String::from("info")))
-            .expect("Log level acquired fail.");
-
-    FmtSubscriber::builder()
-        // will be written to stdout.
-        .with_max_level(log_level)
-        .with_thread_names(true)
-        // completes the builder.
-        .init();
+    init_logger();
 
     let raw_runtime = Builder::new_multi_thread()
         .thread_name_fn(|| {
@@ -255,6 +247,7 @@ fn main() -> AnyResult<()> {
             format!("executor-{}", id)
         })
         .thread_stack_size(4 * 1024 * 1024)
+        .enable_all()
         .build()
         .expect("Init Tokio runtime failed.");
 
@@ -282,19 +275,30 @@ fn main() -> AnyResult<()> {
     block_result
 }
 
+fn init_logger() {
+    let log_level: Level =
+        FromStr::from_str(&env::var("LOG_LEVEL").unwrap_or_else(|_| String::from("info")))
+            .expect("Log level acquired fail.");
+
+    FmtSubscriber::builder()
+        // will be written to stdout.
+        .with_max_level(log_level)
+        .with_thread_names(true)
+        // completes the builder.
+        .init();
+}
 async fn init_executor(app: Route, arc_runtime: Arc<Runtime>) -> impl Endpoint {
-    let arc_security_conf = Arc::new(ExecutorSecurityConf::default());
-    let shared_security_conf: AddData<Arc<ExecutorSecurityConf>> =
-        AddData::new(arc_security_conf.clone());
-
-    let shared_system_mirror: AddData<Arc<SystemMirror>> =
-        AddData::new(Arc::new(SystemMirror::default()));
-
     let mut delay_timer = DelayTimerBuilder::default()
         .tokio_runtime_shared_by_custom(arc_runtime)
         .enable_status_report()
         .build();
     let request_client = RequestClient::new();
+    let arc_security_conf = Arc::new(ExecutorSecurityConf::default());
+
+    let shared_security_conf: AddData<Arc<ExecutorSecurityConf>> =
+        AddData::new(arc_security_conf.clone());
+    let shared_system_mirror: AddData<Arc<SystemMirror>> =
+        AddData::new(Arc::new(SystemMirror::default()));
     let shared_request_client = AddData::new(request_client.clone());
     launch_status_reporter(&mut delay_timer, arc_security_conf, request_client);
     let shared_delay_timer: AddData<Arc<DelayTimer>> = AddData::new(Arc::new(delay_timer));

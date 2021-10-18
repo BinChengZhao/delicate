@@ -187,3 +187,16 @@ impl<T: UniformData> IntoResponse for &UnifiedResponseMessages<T> {
         )
     }
 }
+
+impl<T: UniformData> IntoResponse for UnifiedResponseMessages<T> {
+    #[inline(always)]
+    fn into_response(self) -> Response {
+        Response::builder().content_type("application/json").body(
+            to_json_string(&self)
+                .map_err(|e| {
+                    error!("into_response happened error: {}", e);
+                })
+                .unwrap_or_default(),
+        )
+    }
+}

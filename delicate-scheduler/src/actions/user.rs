@@ -312,7 +312,7 @@ fn save_session(
 
     let meta_info = req
         .extensions()
-        .get::<SchedulerMetaInfo>()
+        .get::<Arc<SchedulerMetaInfo>>()
         .ok_or(CommonError::DisPass("Cannot get SchedulerMetaInfo".into()))?;
     let security_conf = meta_info.get_app_security_conf();
 
@@ -387,20 +387,15 @@ async fn pre_check_user(
 #[handler]
 
 async fn logout_user(req: &Request) -> impl IntoResponse {
-    let session = req.extensions().get::<CookieJar>();
-    match session {
-        Some(c) => Json({
-            c.reset_delta();
-            UnifiedResponseMessages::<()>::success()
-        }),
-        None => Json(UnifiedResponseMessages::<()>::error()),
-    }
+    let session = req.cookie();
+    session.reset_delta();
+    UnifiedResponseMessages::<()>::success()
 }
 
 #[handler]
 
 async fn roles(
-    enforcer: Data<&RwLock<Enforcer>>,
+    enforcer: Data<&Arc<RwLock<Enforcer>>>,
     Json(UserName { user_name }): Json<UserName>,
 ) -> impl IntoResponse {
     let mut enforcer_guard = enforcer.write().await;
@@ -416,7 +411,7 @@ async fn roles(
 #[handler]
 
 async fn permissions(
-    enforcer: Data<&RwLock<Enforcer>>,
+    enforcer: Data<&Arc<RwLock<Enforcer>>>,
     Json(UserName { user_name }): Json<UserName>,
 ) -> impl IntoResponse {
     let mut enforcer_guard = enforcer.write().await;
@@ -432,7 +427,7 @@ async fn permissions(
 
 async fn append_role(
     req: &Request,
-    enforcer: Data<&RwLock<Enforcer>>,
+    enforcer: Data<&Arc<RwLock<Enforcer>>>,
     Json(user_and_roles): Json<UserAndRoles>,
 ) -> impl IntoResponse {
     let operation_log_pair_option =
@@ -468,7 +463,7 @@ async fn append_role(
 
 async fn delete_role(
     req: &Request,
-    enforcer: Data<&RwLock<Enforcer>>,
+    enforcer: Data<&Arc<RwLock<Enforcer>>>,
     Json(user_and_roles): Json<UserAndRoles>,
 ) -> impl IntoResponse {
     let operation_log_pair_option =
@@ -509,7 +504,7 @@ async fn delete_role(
 
 async fn append_permission(
     req: &Request,
-    enforcer: Data<&RwLock<Enforcer>>,
+    enforcer: Data<&Arc<RwLock<Enforcer>>>,
     Json(user_and_permissions): Json<UserAndPermissions>,
 ) -> impl IntoResponse {
     let operation_log_pair_option =
@@ -533,7 +528,7 @@ async fn append_permission(
 #[handler]
 async fn delete_permission(
     req: &Request,
-    enforcer: Data<&RwLock<Enforcer>>,
+    enforcer: Data<&Arc<RwLock<Enforcer>>>,
     Json(user_and_permissions): Json<UserAndPermissions>,
 ) -> impl IntoResponse {
     let operation_log_pair_option =

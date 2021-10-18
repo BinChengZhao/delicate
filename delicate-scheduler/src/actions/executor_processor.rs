@@ -173,7 +173,7 @@ async fn activate_executor_processor(
         executor_processor_id,
     }): Json<model::ExecutorProcessorId>,
     pool: Data<&Arc<db::ConnectionPool>>,
-    scheduler: Data<&SchedulerMetaInfo>,
+    scheduler: Data<&Arc<SchedulerMetaInfo>>,
 ) -> impl IntoResponse {
     let uniform_data: UnifiedResponseMessages<()> =
         do_activate(req, pool, executor_processor_id, scheduler)
@@ -185,7 +185,7 @@ async fn do_activate(
     req: &Request,
     pool: Data<&Arc<db::ConnectionPool>>,
     executor_processor_id: i64,
-    scheduler: Data<&SchedulerMetaInfo>,
+    scheduler: Data<&Arc<SchedulerMetaInfo>>,
 ) -> Result<(), CommonError> {
     let bind_info = activate_executor(req, pool.get()?, executor_processor_id, scheduler).await?;
     activate_executor_row(pool.get()?, executor_processor_id, bind_info).await?;
@@ -195,7 +195,7 @@ async fn activate_executor(
     req: &Request,
     conn: db::PoolConnection,
     executor_processor_id: i64,
-    scheduler: Data<&SchedulerMetaInfo>,
+    scheduler: Data<&Arc<SchedulerMetaInfo>>,
 ) -> Result<service_binding::BindResponse, CommonError> {
     let query = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
         executor_processor::table
