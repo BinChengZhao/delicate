@@ -39,7 +39,7 @@ async fn create_user(
     let new_user = Into::<model::NewUser>::into(&user);
 
     let operation_log_pair_option =
-        generate_operation_user_addtion_log(&req.get_session(), &new_user).ok();
+        generate_operation_user_addtion_log(req.get_session(), &new_user).ok();
     send_option_operation_log_pair(operation_log_pair_option).await;
 
     if let Ok(conn) = pool.get() {
@@ -126,7 +126,7 @@ async fn update_user(
     pool: Data<&Arc<db::ConnectionPool>>,
 ) -> impl IntoResponse {
     let operation_log_pair_option =
-        generate_operation_user_modify_log(&req.get_session(), &user_value).ok();
+        generate_operation_user_modify_log(req.get_session(), &user_value).ok();
     send_option_operation_log_pair(operation_log_pair_option).await;
 
     if let Ok(conn) = pool.get() {
@@ -201,7 +201,7 @@ async fn delete_user(
     pool: Data<&Arc<db::ConnectionPool>>,
 ) -> impl IntoResponse {
     let operation_log_pair_option = generate_operation_user_delete_log(
-        &req.get_session(),
+        req.get_session(),
         &CommonTableRecord::default().set_id(user_id as i64),
     )
     .ok();
@@ -403,7 +403,7 @@ async fn append_role(
     Json(user_and_roles): Json<UserAndRoles>,
 ) -> impl IntoResponse {
     let operation_log_pair_option =
-        generate_operation_user_role_addtion_log(&req.get_session(), &user_and_roles).ok();
+        generate_operation_user_role_addtion_log(req.get_session(), &user_and_roles).ok();
     send_option_operation_log_pair(operation_log_pair_option).await;
 
     let UserAndRoles {
@@ -439,7 +439,7 @@ async fn delete_role(
     Json(user_and_roles): Json<UserAndRoles>,
 ) -> impl IntoResponse {
     let operation_log_pair_option =
-        generate_operation_user_role_delete_log(&req.get_session(), &user_and_roles).ok();
+        generate_operation_user_role_delete_log(req.get_session(), &user_and_roles).ok();
     send_option_operation_log_pair(operation_log_pair_option).await;
 
     let UserAndRoles {
@@ -480,7 +480,7 @@ async fn append_permission(
     Json(user_and_permissions): Json<UserAndPermissions>,
 ) -> impl IntoResponse {
     let operation_log_pair_option =
-        generate_operation_user_permission_addtion_log(&req.get_session(), &user_and_permissions)
+        generate_operation_user_permission_addtion_log(req.get_session(), &user_and_permissions)
             .ok();
     send_option_operation_log_pair(operation_log_pair_option).await;
 
@@ -504,7 +504,7 @@ async fn delete_permission(
     Json(user_and_permissions): Json<UserAndPermissions>,
 ) -> impl IntoResponse {
     let operation_log_pair_option =
-        generate_operation_user_permission_delete_log(&req.get_session(), &user_and_permissions)
+        generate_operation_user_permission_delete_log(req.get_session(), &user_and_permissions)
             .ok();
     send_option_operation_log_pair(operation_log_pair_option).await;
 

@@ -33,7 +33,7 @@ async fn create_executor_processor(
     pool: Data<&Arc<db::ConnectionPool>>,
 ) -> impl IntoResponse {
     let operation_log_pair_option =
-        generate_operation_executor_processor_addtion_log(&req.get_session(), &executor_processor)
+        generate_operation_executor_processor_addtion_log(req.get_session(), &executor_processor)
             .ok();
     send_option_operation_log_pair(operation_log_pair_option).await;
 
@@ -110,7 +110,7 @@ async fn update_executor_processor(
     pool: Data<&Arc<db::ConnectionPool>>,
 ) -> impl IntoResponse {
     let operation_log_pair_option =
-        generate_operation_executor_processor_modify_log(&req.get_session(), &executor_processor)
+        generate_operation_executor_processor_modify_log(req.get_session(), &executor_processor)
             .ok();
     send_option_operation_log_pair(operation_log_pair_option).await;
 
@@ -144,7 +144,7 @@ async fn delete_executor_processor(
     use db::schema::executor_processor::dsl::*;
 
     let operation_log_pair_option = generate_operation_executor_processor_delete_log(
-        &req.get_session(),
+        req.get_session(),
         &CommonTableRecord::default().set_id(executor_processor_id),
     )
     .ok();

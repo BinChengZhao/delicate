@@ -23,7 +23,7 @@ async fn create_task(
 
     if let Ok(conn) = pool.get() {
         let operation_log_pair_option =
-            generate_operation_task_addtion_log(&req.get_session(), &task).ok();
+            generate_operation_task_addtion_log(req.get_session(), &task).ok();
         send_option_operation_log_pair(operation_log_pair_option).await;
 
         let f_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
@@ -148,7 +148,7 @@ pub async fn pre_update_task(
     let task_id = task.id;
     let conn = pool.get()?;
     let operation_log_pair_option =
-        generate_operation_task_modify_log(&req.get_session(), &task).ok();
+        generate_operation_task_modify_log(req.get_session(), &task).ok();
     send_option_operation_log_pair(operation_log_pair_option).await;
 
     let task_binds_pair = pre_update_task_row(conn, task, binding_ids).await?;
@@ -401,7 +401,7 @@ async fn delete_task(
     use db::schema::{task, task_bind};
 
     let operation_log_pair_option = generate_operation_task_delete_log(
-        &req.get_session(),
+        req.get_session(),
         &CommonTableRecord::default().set_id(task_id),
     )
     .ok();
@@ -491,7 +491,7 @@ async fn pre_run_task(
         .expect("Missing Components `RequestClient`");
 
     let operation_log_pair_option = generate_operation_task_modify_log(
-        &req.get_session(),
+        req.get_session(),
         &CommonTableRecord::default()
             .set_id(task_id)
             .set_description("Run task"),
@@ -570,7 +570,7 @@ async fn pre_operate_task(
     let conn = pool.get()?;
 
     let operation_log_pair_option = generate_operation_task_modify_log(
-        &req.get_session(),
+        req.get_session(),
         &CommonTableRecord::default()
             .set_id(task_id)
             .set_description(action),

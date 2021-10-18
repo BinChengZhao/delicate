@@ -253,7 +253,7 @@ async fn kill_one_task_instance(
     use db::schema::task_log;
 
     let operation_log_pair_option = generate_operation_task_log_modify_log(
-        &req.get_session(),
+        req.get_session(),
         &CommonTableRecord::default()
             .set_id(record_id.0)
             .set_description("kill task instance."),
@@ -310,7 +310,7 @@ async fn delete_task_log(
     pool: Data<&Arc<db::ConnectionPool>>,
 ) -> impl IntoResponse {
     let operation_log_pair_option =
-        generate_operation_task_delete_log(&req.get_session(), &delete_params).ok();
+        generate_operation_task_delete_log(req.get_session(), &delete_params).ok();
     send_option_operation_log_pair(operation_log_pair_option).await;
 
     if let Ok(conn) = pool.get() {

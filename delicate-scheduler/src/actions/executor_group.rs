@@ -22,7 +22,7 @@ async fn create_executor_group(
     use db::schema::executor_group;
 
     let operation_log_pair_option =
-        generate_operation_executor_group_addtion_log(&req.get_session(), &executor_group).ok();
+        generate_operation_executor_group_addtion_log(req.get_session(), &executor_group).ok();
     send_option_operation_log_pair(operation_log_pair_option).await;
 
     if let Ok(conn) = pool.get() {
@@ -160,7 +160,7 @@ async fn update_executor_group(
     pool: Data<&Arc<db::ConnectionPool>>,
 ) -> impl IntoResponse {
     let operation_log_pair_option =
-        generate_operation_executor_group_modify_log(&req.get_session(), &executor_group).ok();
+        generate_operation_executor_group_modify_log(req.get_session(), &executor_group).ok();
     send_option_operation_log_pair(operation_log_pair_option).await;
 
     if let Ok(conn) = pool.get() {
@@ -192,7 +192,7 @@ async fn delete_executor_group(
     use db::schema::executor_group::dsl::*;
 
     let operation_log_pair_option = generate_operation_executor_group_delete_log(
-        &req.get_session(),
+        req.get_session(),
         &CommonTableRecord::default().set_id(executor_group_id),
     )
     .ok();

@@ -78,7 +78,7 @@ impl<E: Endpoint> Endpoint for SessionAuthMiddleware<E> {
             }
             _ => {
                 let user_id = session.get::<u64>("user_id");
-                if let Some(_) = user_id {
+                if user_id.is_some() {
                     self.ep.call(req).await.into_response()
                 } else {
                     UnifiedResponseMessages::<()>::error()
