@@ -51,20 +51,42 @@ fn main() -> AnyResut<()> {
         .expect("Without `SCHEDULER_LISTENING_ADDRESS` set in .env");
 
     arc_runtime.block_on(async {
-        // FIXME: Reference poem/routes.rs
-        let app = Some(Route::new())
-            .map(actions::task::config_route)
-            .map(actions::user::config_route)
-            .map(actions::task_log::config_route)
-            .map(actions::executor_group::config_route)
-            .map(actions::executor_processor::config_route)
-            .map(actions::executor_processor_bind::config_route)
-            .map(actions::data_reports::config_route)
-            .map(actions::components::config_route)
-            .map(actions::operation_log::config_route)
-            .map(actions::user_login_log::config_route)
-            .map(actions::role::config_route)
-            .expect("");
+        let app = Route::new().nest_no_strip(
+            "/api",
+            Route::new()
+                .nest_no_strip("/api/task", actions::task::route_config())
+                .nest_no_strip("/api/user", actions::user::route_config())
+                .nest_no_strip("/api/task_log", actions::task_log::route_config())
+                .nest_no_strip("/api/task_instance", actions::task_instance::route_config())
+                .nest_no_strip(
+                    "/api/executor_group",
+                    actions::executor_group::route_config(),
+                )
+                .nest_no_strip(
+                    "/api/executor_processor",
+                    actions::executor_processor::route_config(),
+                )
+                .nest_no_strip(
+                    "/api/executor_processor_bind",
+                    actions::executor_processor_bind::route_config(),
+                )
+                .nest_no_strip("/api/tasks_state", actions::data_reports::route_config())
+                .nest_no_strip("/api/binding", actions::components::binding::route_config())
+                .nest_no_strip(
+                    "/api/executor",
+                    actions::components::executor::route_config(),
+                )
+                .nest_no_strip(
+                    "/api/permission",
+                    actions::components::permission::route_config(),
+                )
+                .nest_no_strip("/api/operation_log", actions::operation_log::route_config())
+                .nest_no_strip(
+                    "/api/user_login_log",
+                    actions::user_login_log::route_config(),
+                )
+                .nest_no_strip("/api/role", actions::role::route_config()),
+        );
 
         let app = init_scheduler(app, arc_runtime_cloned).await;
 
@@ -155,21 +177,10 @@ async fn init_scheduler(app: Route, arc_runtime_cloned: Arc<Runtime>) -> impl En
         .with(shared_scheduler_meta_info)
         .with(shared_request_client)
         .with(components::session::auth_middleware())
+        .with(components::session::cookie_middleware())
         .with(components::session::session_middleware())
         .with(cors)
-    //         .wrap(MiddlewareLogger::default())
-    //         .wrap_fn(|req, srv| {
-    //             let unique_id = get_unique_id_string();
-    //             let unique_id_str = unique_id.deref();
-    //             let fut = srv
-    //                 .call(req)
-    //                 .instrument(info_span!("log-id: ", unique_id_str));
-    //             async {
-    //                 let res = fut.await?;
-    //                 Ok(res)
-    //             }
-    //         })
-    // })
+        .with(components::logger_id::logger_id_middleware())
 }
 
 // All ready work when the delicate-application starts.

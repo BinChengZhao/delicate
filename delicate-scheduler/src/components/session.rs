@@ -8,23 +8,25 @@ use super::prelude::*;
 // And when the request is processed `CookieSession` gets the latest state content
 // in the `Session` and sets it to the client
 // (all this is done in the middleware of `CookieSession`).
-// pub(crate) fn session_middleware() -> CookieSession {
-// CookieSession::signed(
-//     &env::var("SESSION_TOKEN")
-//         .expect("Without `SESSION_TOKEN` set in .env")
-//         .into_bytes(),
-// )
-// .domain(
-//     env::var("SCHEDULER_COOKIE_DOMAIN").expect("Without `SCHEDULER_COOKIE_DOMAIN` set in .env"),
-// )
-// .name(env::var("SCHEDULER_NAME").expect("Without `SCHEDULER_NAME` set in .env"))
-// .http_only(true)
-// .secure(false)
-// }
+pub(crate) fn session_middleware() -> CookieSession {
+    // Be sure to use a uniform `SESSION_TOKEN` here,
+    // If each server generates a random key, it will cause inconsistency and the login status will continue to fail.
+    let token_bytes = env::var("SESSION_TOKEN")
+        .expect("Without `SESSION_TOKEN` set in .env")
+        .into_bytes();
 
-// Register authentication middleware to check login status based on `CookieSession`.
+    let cookie_config = CookieConfig::signed(CookieKey::derive_from(&token_bytes))
+        .domain(
+            env::var("SCHEDULER_COOKIE_DOMAIN")
+                .expect("Without `SCHEDULER_COOKIE_DOMAIN` set in .env"),
+        )
+        .name(env::var("SCHEDULER_NAME").expect("Without `SCHEDULER_NAME` set in .env"))
+        .http_only(true)
+        .secure(false);
+    CookieSession::new(cookie_config)
+}
 
-pub(crate) fn session_middleware() -> CookieJarManager {
+pub(crate) fn cookie_middleware() -> CookieJarManager {
     // Be sure to use a uniform `SESSION_TOKEN` here,
     // If each server generates a random key, it will cause inconsistency and the login status will continue to fail.
     let token_bytes = env::var("SESSION_TOKEN")
@@ -75,8 +77,8 @@ impl<E: Endpoint> Endpoint for SessionAuthMiddleware<E> {
                 self.ep.call(req).await.into_response()
             }
             _ => {
-                let user_id = session.get("user_id").map(|c| c.value::<u64>());
-                if let Some(Ok(_)) = user_id {
+                let user_id = session.get::<u64>("user_id");
+                if let Some(_) = user_id {
                     self.ep.call(req).await.into_response()
                 } else {
                     UnifiedResponseMessages::<()>::error()

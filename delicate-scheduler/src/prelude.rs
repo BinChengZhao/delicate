@@ -82,7 +82,7 @@ pub(crate) use tokio::spawn as tokio_spawn;
 pub(crate) use tokio::task::spawn_blocking;
 pub(crate) use tokio::time::{interval, sleep};
 pub(crate) use tokio::time::{timeout as tokio_timeout, Timeout as TokioTimeout};
-pub(crate) use tracing::{debug, error, info, span, Instrument, Level};
+pub(crate) use tracing::{debug, error, info, info_span, span, Instrument, Level};
 pub(crate) use tracing_subscriber::FmtSubscriber;
 
 pub(crate) use regex::Regex;
@@ -98,12 +98,12 @@ pub(crate) use strum::IntoEnumIterator;
 pub(crate) use strum_macros::{AsRefStr, EnumIter, IntoStaticStr, ToString as StrumToString};
 pub(crate) use validator::{Validate, ValidationErrors};
 
-pub(crate) use poem::http::Method;
 pub(crate) use poem::listener::TcpListener;
 pub(crate) use poem::middleware::{AddData, CookieJarManager};
 
 pub(crate) use poem::middleware::Cors;
-pub(crate) use poem::web::cookie::{Cookie, CookieJar, CookieKey, SignedCookieJar};
+pub(crate) use poem::session::{CookieConfig, CookieSession, Session};
+pub(crate) use poem::web::cookie::CookieKey;
 pub(crate) use poem::web::{Data, IntoResponse, Json};
 pub(crate) use poem::{
     get, handler, post, Endpoint, EndpointExt, Middleware, Request, Response, Route, Server,

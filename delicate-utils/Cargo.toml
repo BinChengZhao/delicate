@@ -19,7 +19,8 @@ flexi_logger = {version = "0.19", features = ["trc"]}
 reqwest = { version = "0.11", features = ["json"] }
 hex = {version = "^0.4", features = ["serde"]}
 log = "^0.4"
-poem = {version = "1.0.1", features = ["cookie", "tower-compat"]}
+# FIXME: Waiting for poem to release the latest version.
+poem = { path = "/home/open/project/rust/repo/myself/poem/poem", version = "1.0.1", features = ["session", "tower-compat"]}
 rand = "^0.8.3"
 ring = "^0.16.20"
 rsa = { version = "^0.4.0", features = ["std", "pem" ,"serde"] }

@@ -100,18 +100,14 @@ impl<E: Endpoint> Endpoint for CasbinAuthMiddleware<E> {
             .extensions()
             .get::<Arc<RwLock<Enforcer>>>()
             .expect("Casbin's enforcer acquisition failed");
-        let extensions = req.extensions();
-        let session = req.cookie();
+        let session = req.get_session();
         let path = req.uri().path().to_string();
         let auth_part = path.split('/').into_iter().collect::<Vec<&str>>();
 
         let resource = auth_part.get(2).map(|s| s.to_string()).unwrap_or_default();
         let action = auth_part.get(3).map(|s| s.to_string()).unwrap_or_default();
 
-        let username = session
-            .get("user_name")
-            .map(|c| c.value::<String>().unwrap_or_default())
-            .unwrap_or_default();
+        let username = session.get::<String>("user_name").unwrap_or_default();
 
         // Path in the whitelist do not need to be verified.
         if WHITE_LIST.contains(&path.deref()) {

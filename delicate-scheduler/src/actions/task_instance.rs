@@ -3,11 +3,7 @@ use super::prelude::*;
 pub(crate) fn route_config() -> Route {
     let route: Route = Route::new();
 
-    route
-        .at("/api/task_log/event_trigger", post(create_task_logs))
-        .at("/api/task_log/list", post(show_task_logs))
-        .at("/api/task_log/detail", post(show_task_log_detail))
-        .at("/api/task_log/delete", post(delete_task_log))
+    route.at("/api/task_instance/kill", post(kill_task_instance))
 }
 
 // Depending on the event, scheduler records/updates different logs.

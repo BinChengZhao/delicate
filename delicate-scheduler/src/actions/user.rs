@@ -5,7 +5,8 @@ use model::user::{
 };
 use model::user_login_log::NewUserLoginLog;
 
-pub(crate) fn config_route(route: Route) -> Route {
+pub(crate) fn route_config() -> Route {
+    let route: Route = Route::new();
     route
         .at("/api/user/create", post(create_user))
         .at("/api/user/list", post(show_users))
@@ -153,11 +154,7 @@ async fn change_password(
     pool: Data<&Arc<db::ConnectionPool>>,
 ) -> impl IntoResponse {
     let session = req.get_session();
-    let user_id = session
-        .get("user_id")
-        .map(|c| c.value::<u64>())
-        .map(|r| r.ok())
-        .unwrap_or_default();
+    let user_id = session.get::<u64>("user_id");
 
     if user_id.is_none() {
         return Json(UnifiedResponseMessages::<usize>::error());
@@ -310,34 +307,11 @@ fn save_session(
 ) -> Result<(), CommonError> {
     let session = req.get_session();
 
-    let meta_info = req
-        .extensions()
-        .get::<Arc<SchedulerMetaInfo>>()
-        .ok_or(CommonError::DisPass("Cannot get SchedulerMetaInfo".into()))?;
-    let security_conf = meta_info.get_app_security_conf();
+    session.set("login_time", get_timestamp());
+    session.set("user_id", user.id);
+    session.set("user_name", user.user_name);
+    session.set("nick_name", user.nick_name);
 
-    let mut cookie = Cookie::new("login_time", get_timestamp());
-    cookie.set_domain(&security_conf.cookie_conf.domain);
-    cookie.set_http_only(security_conf.cookie_conf.http_only);
-    cookie.set_secure(security_conf.cookie_conf.secure);
-
-    session.add(cookie.clone());
-
-    session.add({
-        cookie.set_name("user_id");
-        cookie.set_value(user.id);
-        cookie.clone()
-    });
-    session.add({
-        cookie.set_name("user_name");
-        cookie.set_value(user.user_name);
-        cookie.clone()
-    });
-    session.add({
-        cookie.set_name("nick_name");
-        cookie.set_value(user.nick_name);
-        cookie
-    });
     Ok(())
 }
 
@@ -366,9 +340,7 @@ async fn pre_check_user(
     let session = req.get_session();
     let conn = pool.get()?;
     let user_id = session
-        .get("user_id")
-        .map(|c| c.value::<u64>())
-        .transpose()?
+        .get::<u64>("user_id")
         .ok_or_else(|| CommonError::DisPass("Without set `user_id` .".into()))?;
 
     let user = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
@@ -387,8 +359,8 @@ async fn pre_check_user(
 #[handler]
 
 async fn logout_user(req: &Request) -> impl IntoResponse {
-    let session = req.cookie();
-    session.reset_delta();
+    let session = req.get_session();
+    session.clear();
     UnifiedResponseMessages::<()>::success()
 }
 
