@@ -134,7 +134,9 @@ async fn init_scheduler(app: Route, arc_runtime_cloned: Arc<Runtime>) -> impl En
 
     let cors = Cors::new()
         .allow_origin(&scheduler_front_end_domain)
-        .allow_method("*")
+        .allow_method(HttpMethod::GET)
+        .allow_method(HttpMethod::POST)
+        .allow_method(HttpMethod::OPTIONS)
         .allow_header("content-type")
         .allow_credentials(true)
         .max_age(3600);

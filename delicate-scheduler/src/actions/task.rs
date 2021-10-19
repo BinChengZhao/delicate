@@ -224,7 +224,14 @@ pub async fn pre_update_task_row(
                 .execute(&conn)?;
 
             let removed_task_binds_map: HashMap<i64, ()> =
-                removed_task_binds_set.map(|b| (*b, ())).collect();
+                removed_task_binds_set.clone().copied().map(|b| (b, ())).collect();
+            let removed_task_binds_vec: Vec<i64> = removed_task_binds_set.copied().collect();
+
+            diesel::delete(
+                task_bind::table
+                    .filter(task_bind::task_id.eq(task_id))
+                    .filter(task_bind::bind_id.eq_any(&removed_task_binds_vec[..])),
+            ).execute(&conn)?;
 
             let removed_bind_processors: Vec<BindProcessor> = original_bind_processors
                 .iter()
