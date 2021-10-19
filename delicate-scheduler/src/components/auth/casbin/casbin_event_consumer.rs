@@ -117,7 +117,7 @@ pub(crate) enum CasbinDynamicField {
 #[inline(always)]
 pub(crate) fn handle_event_for_watcher(event: CasbinEventData) {
     let delicate_auth_rule_event = match event {
-        EventData::AddPolicy(sec, ptype, dynamic_fields) => {
+        CasbinEventData::AddPolicy(sec, ptype, dynamic_fields) => {
             let operation = AuthAdapterEventOperation::AddPolicy;
             let dynamic_fields = CasbinDynamicField::Singlelayer(dynamic_fields);
             let casbin_event_model = CasbinEventModel {
@@ -128,7 +128,7 @@ pub(crate) fn handle_event_for_watcher(event: CasbinEventData) {
             };
             DelicateAuthRuleEvent::casbin_event(casbin_event_model)
         }
-        EventData::RemovePolicy(sec, ptype, dynamic_fields) => {
+        CasbinEventData::RemovePolicy(sec, ptype, dynamic_fields) => {
             let operation = AuthAdapterEventOperation::RemovePolicy;
             let dynamic_fields = CasbinDynamicField::Singlelayer(dynamic_fields);
             let casbin_event_model = CasbinEventModel {
@@ -139,7 +139,7 @@ pub(crate) fn handle_event_for_watcher(event: CasbinEventData) {
             };
             DelicateAuthRuleEvent::casbin_event(casbin_event_model)
         }
-        EventData::AddPolicies(sec, ptype, dynamic_fields) => {
+        CasbinEventData::AddPolicies(sec, ptype, dynamic_fields) => {
             let operation = AuthAdapterEventOperation::AddPolicy;
             let dynamic_fields = CasbinDynamicField::MultiLayer(dynamic_fields);
 
@@ -151,7 +151,7 @@ pub(crate) fn handle_event_for_watcher(event: CasbinEventData) {
             };
             DelicateAuthRuleEvent::casbin_event(casbin_event_model)
         }
-        EventData::RemovePolicies(sec, ptype, dynamic_fields) => {
+        CasbinEventData::RemovePolicies(sec, ptype, dynamic_fields) => {
             let operation = AuthAdapterEventOperation::RemovePolicy;
             let dynamic_fields = CasbinDynamicField::MultiLayer(dynamic_fields);
             let casbin_event_model = CasbinEventModel {
@@ -167,7 +167,7 @@ pub(crate) fn handle_event_for_watcher(event: CasbinEventData) {
         }
     };
 
-    rt_spawn(async move {
+    tokio_spawn(async move {
         DELICATE_AUTH_RULE_EVENT_CONSUMERS
             .0
             .send(delicate_auth_rule_event)
@@ -185,10 +185,10 @@ pub(crate) fn handle_event_for_watcher(event: CasbinEventData) {
 #[allow(dead_code)]
 pub(crate) fn launch_casbin_rule_events_consumer(
     redis_client: redis::Client,
-    enforcer: ShareData<RwLock<Enforcer>>,
+    enforcer: Arc<RwLock<Enforcer>>,
 ) {
-    rt_spawn(loop_publish_casbin_rule_events(redis_client.clone()));
-    rt_spawn(loop_subscribe_casbin_rule_events(redis_client, enforcer));
+    tokio_spawn(loop_publish_casbin_rule_events(redis_client.clone()));
+    tokio_spawn(loop_subscribe_casbin_rule_events(redis_client, enforcer));
 }
 
 pub(crate) async fn loop_publish_casbin_rule_events(redis_client: redis::Client) {
@@ -201,7 +201,7 @@ pub(crate) async fn loop_publish_casbin_rule_events(redis_client: redis::Client)
         }
 
         error!(target:"loop-publish-casbin-rule-events", "No available redis connection.");
-        rt_delay_for(Duration::from_secs(1)).await;
+        sleep(Duration::from_secs(1)).await;
     }
 }
 
@@ -220,7 +220,7 @@ pub(crate) async fn publish_casbin_rule_events(mut publish_conn: Connection) -> 
 
 pub(crate) async fn loop_subscribe_casbin_rule_events(
     redis_client: redis::Client,
-    enforcer: ShareData<RwLock<Enforcer>>,
+    enforcer: Arc<RwLock<Enforcer>>,
 ) {
     loop {
         let pubsub_conn_result = redis_client.get_async_connection().await;
@@ -233,13 +233,13 @@ pub(crate) async fn loop_subscribe_casbin_rule_events(
         }
 
         error!(target:"loop-subscribe-casbin-rule-events", "No available redis connection.");
-        rt_delay_for(Duration::from_secs(1)).await;
+        sleep(Duration::from_secs(1)).await;
     }
 }
 
 pub(crate) async fn subscribe_casbin_rule_events(
     conn: Connection,
-    enforcer: ShareData<RwLock<Enforcer>>,
+    enforcer: Arc<RwLock<Enforcer>>,
 ) -> Result<(), CommonError> {
     let mut pubsub_conn = conn.into_pubsub();
 

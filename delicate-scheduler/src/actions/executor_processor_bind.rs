@@ -1,104 +1,134 @@
 use super::prelude::*;
 
-pub(crate) fn config(cfg: &mut web::ServiceConfig) {
-    cfg.service(show_executor_processor_binds)
-        .service(create_executor_processor_bind)
-        .service(update_executor_processor_bind)
-        .service(delete_executor_processor_bind);
+pub(crate) fn route_config() -> Route {
+    let route: Route = Route::new();
+    route
+        .at(
+            "/api/executor_processor_bind/list",
+            post(show_executor_processor_binds),
+        )
+        .at(
+            "/api/executor_processor_bind/create",
+            post(create_executor_processor_bind),
+        )
+        .at(
+            "/api/executor_processor_bind/update",
+            post(update_executor_processor_bind),
+        )
+        .at(
+            "/api/executor_processor_bind/delete",
+            post(delete_executor_processor_bind),
+        )
 }
 
-#[post("/api/executor_processor_bind/create")]
+#[handler]
+
 async fn create_executor_processor_bind(
-    req: HttpRequest,
-    web::Json(executor_processor_binds): web::Json<model::NewExecutorProcessorBinds>,
-    pool: ShareData<db::ConnectionPool>,
-) -> HttpResponse {
+    req: &Request,
+    Json(executor_processor_binds): Json<model::NewExecutorProcessorBinds>,
+    pool: Data<&Arc<db::ConnectionPool>>,
+) -> impl IntoResponse {
     use db::schema::executor_processor_bind;
 
     let operation_log_pair_option = generate_operation_executor_processor_bind_addtion_log(
-        &req.get_session(),
+        req.get_session(),
         &executor_processor_binds,
     )
     .ok();
     send_option_operation_log_pair(operation_log_pair_option).await;
 
     if let Ok(conn) = pool.get() {
-        return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
-            web::block(move || {
-                let new_binds: Vec<model::NewExecutorProcessorBind> = executor_processor_binds
-                    .executor_ids
-                    .iter()
-                    .map(|executor_id| model::NewExecutorProcessorBind {
-                        name: executor_processor_binds.name.clone(),
-                        group_id: executor_processor_binds.group_id,
-                        executor_id: *executor_id,
-                        weight: executor_processor_binds.weight,
-                    })
-                    .collect();
+        let f_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
+            let new_binds: Vec<model::NewExecutorProcessorBind> = executor_processor_binds
+                .executor_ids
+                .iter()
+                .map(|executor_id| model::NewExecutorProcessorBind {
+                    name: executor_processor_binds.name.clone(),
+                    group_id: executor_processor_binds.group_id,
+                    executor_id: *executor_id,
+                    weight: executor_processor_binds.weight,
+                })
+                .collect();
 
-                diesel::insert_into(executor_processor_bind::table)
-                    .values(&new_binds[..])
-                    .execute(&conn)
-            })
-            .await,
-        ));
+            diesel::insert_into(executor_processor_bind::table)
+                .values(&new_binds[..])
+                .execute(&conn)
+        })
+        .await;
+
+        let count = f_result
+            .map(Into::<UnifiedResponseMessages<usize>>::into)
+            .unwrap_or_else(|e| {
+                UnifiedResponseMessages::<usize>::error().customized_error_msg(e.to_string())
+            });
+        return Json(count);
     }
 
-    HttpResponse::Ok().json(UnifiedResponseMessages::<()>::error())
+    Json(UnifiedResponseMessages::<usize>::error())
 }
 
-#[post("/api/executor_processor_bind/list")]
+#[handler]
+
 async fn show_executor_processor_binds(
-    web::Json(query_params): web::Json<model::QueryParamsExecutorProcessorBind>,
-    pool: ShareData<db::ConnectionPool>,
-) -> HttpResponse {
+    Json(query_params): Json<model::QueryParamsExecutorProcessorBind>,
+    pool: Data<&Arc<db::ConnectionPool>>,
+) -> impl IntoResponse {
     if let Ok(conn) = pool.get() {
-        return HttpResponse::Ok().json(Into::<
-            UnifiedResponseMessages<PaginateData<model::ExecutorProcessorBind>>,
-        >::into(
-            web::block::<_, _, diesel::result::Error>(move || {
-                let query_builder = model::ExecutorProcessorBindQueryBuilder::query_all_columns();
+        let f_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
+            let query_builder = model::ExecutorProcessorBindQueryBuilder::query_all_columns();
 
-                let executor_processor_binds = query_params
-                    .clone()
-                    .query_filter(query_builder)
-                    .paginate(query_params.page)
-                    .set_per_page(query_params.per_page)
-                    .load::<model::ExecutorProcessorBind>(&conn)?;
+            let executor_processor_binds = query_params
+                .clone()
+                .query_filter(query_builder)
+                .paginate(query_params.page)
+                .set_per_page(query_params.per_page)
+                .load::<model::ExecutorProcessorBind>(&conn)?;
 
-                let per_page = query_params.per_page;
-                let count_builder = model::ExecutorProcessorBindQueryBuilder::query_count();
-                let count = query_params
-                    .query_filter(count_builder)
-                    .get_result::<i64>(&conn)?;
+            let per_page = query_params.per_page;
+            let count_builder = model::ExecutorProcessorBindQueryBuilder::query_count();
+            let count = query_params
+                .query_filter(count_builder)
+                .get_result::<i64>(&conn)?;
 
-                Ok(PaginateData::<model::ExecutorProcessorBind>::default()
-                    .set_data_source(executor_processor_binds)
-                    .set_page_size(per_page)
-                    .set_total(count))
+            Ok(PaginateData::<model::ExecutorProcessorBind>::default()
+                .set_data_source(executor_processor_binds)
+                .set_page_size(per_page)
+                .set_total(count))
+        })
+        .await;
+
+        let binds = f_result
+            .map(|binds_result| {
+                Into::<UnifiedResponseMessages<PaginateData<model::ExecutorProcessorBind>>>::into(
+                    binds_result,
+                )
             })
-            .await,
-        ));
+            .unwrap_or_else(|e| {
+                UnifiedResponseMessages::<PaginateData<model::ExecutorProcessorBind>>::error()
+                    .customized_error_msg(e.to_string())
+            });
+        return Json(binds).into_response();
     }
 
-    HttpResponse::Ok().json(UnifiedResponseMessages::<PaginateData<()>>::error())
+    Json(UnifiedResponseMessages::<PaginateData<()>>::error()).into_response()
 }
 
-#[post("/api/executor_processor_bind/update")]
+#[handler]
+
 async fn update_executor_processor_bind(
-    req: HttpRequest,
-    web::Json(executor_processor_bind): web::Json<model::UpdateExecutorProcessorBind>,
-    pool: ShareData<db::ConnectionPool>,
-) -> HttpResponse {
-    return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<()>>::into(
+    req: &Request,
+    Json(executor_processor_bind): Json<model::UpdateExecutorProcessorBind>,
+    pool: Data<&Arc<db::ConnectionPool>>,
+) -> impl IntoResponse {
+    return Json(Into::<UnifiedResponseMessages<()>>::into(
         pre_update_executor_processor_bind(req, executor_processor_bind, pool).await,
     ));
 }
 
 async fn pre_update_executor_processor_bind(
-    req: HttpRequest,
+    req: &Request,
     executor_processor_bind: model::UpdateExecutorProcessorBind,
-    pool: ShareData<db::ConnectionPool>,
+    pool: Data<&Arc<db::ConnectionPool>>,
 ) -> Result<(), CommonError> {
     use db::schema::{executor_processor, executor_processor_bind, task, task_bind};
     use delicate_utils_task::{TaskPackage, TaskUnit};
@@ -107,16 +137,20 @@ async fn pre_update_executor_processor_bind(
     let conn = pool.get()?;
     let executor_processor_bind_id = executor_processor_bind.id;
     let executor_processor_bind_executor_id = executor_processor_bind.executor_id;
+    let request_client = req
+        .extensions()
+        .get::<RequestClient>()
+        .expect("Missing Components `RequestClient`");
 
     let operation_log_pair_option = generate_operation_executor_processor_bind_modify_log(
-        &req.get_session(),
+        req.get_session(),
         &executor_processor_bind,
     )
     .ok();
     send_option_operation_log_pair(operation_log_pair_option).await;
 
     let (older_executor_id, older_executor_host, older_executor_token) =
-        web::block::<_, _, diesel::result::Error>(move || {
+        spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
             let older_executor = executor_processor_bind::table
                 .inner_join(executor_processor::table)
                 .filter(executor_processor_bind::id.eq(executor_processor_bind.id))
@@ -132,7 +166,7 @@ async fn pre_update_executor_processor_bind(
                 .execute(&conn)?;
             Ok(older_executor)
         })
-        .await?;
+        .await??;
 
     if older_executor_id == executor_processor_bind_executor_id {
         return Ok(());
@@ -141,7 +175,7 @@ async fn pre_update_executor_processor_bind(
     // Task migration needs to be performed only when `executor_id` is modified.
     let conn = pool.get()?;
     let task_packages: Vec<(TaskPackage, (String, String))> =
-        web::block::<_, _, diesel::result::Error>(move || {
+        spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
             let task_packages: Vec<(TaskPackage, (String, String))> = task_bind::table
                 .inner_join(executor_processor_bind::table.inner_join(executor_processor::table))
                 .inner_join(task::table)
@@ -162,7 +196,7 @@ async fn pre_update_executor_processor_bind(
 
             Ok(task_packages)
         })
-        .await?;
+        .await??;
 
     let task_ids = task_packages.iter().map(|&(ref t, _)| t.id);
 
@@ -178,9 +212,10 @@ async fn pre_update_executor_processor_bind(
                 .ok()
         })
         .map(|(signed_task_unit, executor_host)| {
-            RequestClient::default()
+            request_client
                 .post(executor_host)
-                .send_json(&signed_task_unit)
+                .json(&signed_task_unit)
+                .send()
         })
         .collect();
 
@@ -191,31 +226,33 @@ async fn pre_update_executor_processor_bind(
             t.sign(Some(&token)).map(|t| (t, executor_host)).ok()
         })
         .map(|(signed_task_package, executor_host)| {
-            RequestClient::default()
+            request_client
                 .post(executor_host)
-                .send_json(&signed_task_package)
+                .json(&signed_task_package)
+                .send()
         })
         .collect();
 
     join(
-        handle_response::<UnifiedResponseMessages<()>>(remove_task_units),
-        handle_response::<UnifiedResponseMessages<()>>(create_task_packages),
+        handle_response::<_, UnifiedResponseMessages<()>>(remove_task_units),
+        handle_response::<_, UnifiedResponseMessages<()>>(create_task_packages),
     )
     .await;
     Ok(())
 }
-#[post("/api/executor_processor_bind/delete")]
+
+#[handler]
 async fn delete_executor_processor_bind(
-    req: HttpRequest,
-    web::Json(model::ExecutorProcessorBindId {
+    req: &Request,
+    Json(model::ExecutorProcessorBindId {
         executor_processor_bind_id,
-    }): web::Json<model::ExecutorProcessorBindId>,
-    pool: ShareData<db::ConnectionPool>,
-) -> HttpResponse {
+    }): Json<model::ExecutorProcessorBindId>,
+    pool: Data<&Arc<db::ConnectionPool>>,
+) -> impl IntoResponse {
     use db::schema::executor_processor_bind::dsl::*;
 
     let operation_log_pair_option = generate_operation_executor_processor_bind_delete_log(
-        &req.get_session(),
+        req.get_session(),
         &CommonTableRecord::default().set_id(executor_processor_bind_id),
     )
     .ok();
@@ -223,14 +260,19 @@ async fn delete_executor_processor_bind(
 
     // TODO: Check if there are associated tasks on the binding.
     if let Ok(conn) = pool.get() {
-        return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
-            web::block(move || {
-                diesel::delete(executor_processor_bind.find(executor_processor_bind_id))
-                    .execute(&conn)
-            })
-            .await,
-        ));
+        let f_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
+            diesel::delete(executor_processor_bind.find(executor_processor_bind_id)).execute(&conn)
+        })
+        .await;
+
+        let count = f_result
+            .map(Into::<UnifiedResponseMessages<usize>>::into)
+            .unwrap_or_else(|e| {
+                UnifiedResponseMessages::<usize>::error().customized_error_msg(e.to_string())
+            });
+
+        return Json(count);
     }
 
-    HttpResponse::Ok().json(UnifiedResponseMessages::<usize>::error())
+    Json(UnifiedResponseMessages::<usize>::error())
 }

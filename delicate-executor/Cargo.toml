@@ -7,14 +7,15 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-sysinfo = "^0.16.5"
-actix-web = "^3.3.2"
-futures = "^0.3"
-env_logger = "^0.8"
-serde = { version = "^1.0", features = ["derive"] }
-serde_json = "^1.0.62"
-json = "^0.12.4"
 anyhow = "^1.0.38"
 async-lock = "^2.3.0"
 dotenv = "^0.15.0"
+env_logger = "^0.8"
+futures = "^0.3"
+json = "^0.12.4"
+serde = { version = "^1.0", features = ["derive"] }
+serde_json = "^1.0.62"
+sysinfo = "^0.16.5"
+
+
 delicate-utils = { path = "../delicate-utils" }

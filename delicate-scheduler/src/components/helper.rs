@@ -1,13 +1,16 @@
 use super::prelude::*;
 
-pub(crate) async fn handle_response<T: DeserializeOwned + Trial>(
-    request_all: JoinAll<SendClientRequest>,
+pub(crate) async fn handle_response<
+    F: Future<Output = Result<RequestResponse, RequestError>>,
+    T: DeserializeOwned + Trial,
+>(
+    request_all: JoinAll<F>,
 ) -> Vec<T> {
-    let response_json_all: JoinAll<JsonBody<Decompress<Payload>, T>> = request_all
+    let response_json_all: JoinAll<_> = request_all
         .await
         .into_iter()
         .map(|response| match response {
-            Ok(mut r) => Some(r.json::<T>()),
+            Ok(r) => Some(r.json::<T>()),
             Err(e) => {
                 error!("SendRequestError : {}", e);
                 None
@@ -15,8 +18,6 @@ pub(crate) async fn handle_response<T: DeserializeOwned + Trial>(
         })
         .filter(|r| r.is_some())
         .map(|r| r.expect(""))
-        .collect::<Vec<JsonBody<Decompress<Payload>, T>>>()
-        .into_iter()
         .collect();
 
     response_json_all

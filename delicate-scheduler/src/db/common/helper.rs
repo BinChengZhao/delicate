@@ -18,6 +18,17 @@ pub trait SeekTableId {
     }
 }
 
+pub trait GetSession {
+    fn get_session(&self) -> &Session;
+}
+
+impl GetSession for Request {
+    fn get_session(&self) -> &Session {
+        self.extensions()
+            .get::<Session>()
+            .expect("To use the `Session` extractor, the `CookieSession` middleware is required.")
+    }
+}
 #[derive(Copy, Clone, Default, Debug, Serialize, Deserialize)]
 pub struct CommonTableRecord {
     pub id: i64,
@@ -112,8 +123,8 @@ pub(crate) fn generate_operation_log(
     let name = operation_name.to_string();
     let table_id = value.seek_table_id();
     let operation_type = operation_type as i8;
-    let user_id = session.get::<u64>("user_id")?.unwrap_or_default();
-    let user_name = session.get::<String>("user_name")?.unwrap_or_default();
+    let user_id = session.get::<u64>("user_id").unwrap_or_default();
+    let user_name = session.get::<String>("user_name").unwrap_or_default();
     let operation_log_id = 0;
     let column_comment = to_json_string(&column_comment)?;
     let values = to_json_string(&value)?;

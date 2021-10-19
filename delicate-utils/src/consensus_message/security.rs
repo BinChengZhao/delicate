@@ -25,13 +25,37 @@ impl SecurityRsaKey<RSAPublicKey> for SecurityeKey<RSAPublicKey> {}
 pub struct SecurityeKey<T>(pub T);
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CookieConf {
+    pub domain: String,
+    pub http_only: bool,
+    pub secure: bool,
+}
+
+impl Default for CookieConf {
+    fn default() -> Self {
+        let domain = env::var("SCHEDULER_COOKIE_DOMAIN")
+            .expect("Without `SCHEDULER_COOKIE_DOMAIN` set in .env");
+
+        let http_only = true;
+        let secure = false;
+        Self {
+            domain,
+            http_only,
+            secure,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SchedulerSecurityConf {
+    pub cookie_conf: CookieConf,
     pub security_level: SecurityLevel,
     pub rsa_private_key: Option<SecurityeKey<RSAPrivateKey>>,
 }
 
 impl Default for SchedulerSecurityConf {
     fn default() -> Self {
+        let cookie_conf = CookieConf::default();
         let security_level = SecurityLevel::get_app_security_level();
         let rsa_private_key =
             SecurityeKey::<RSAPrivateKey>::get_app_rsa_key("DELICATE_SECURITY_PRIVATE_KEY");
@@ -48,6 +72,7 @@ impl Default for SchedulerSecurityConf {
         }
 
         Self {
+            cookie_conf,
             security_level: SecurityLevel::get_app_security_level(),
             rsa_private_key: rsa_private_key.map(SecurityeKey).ok(),
         }

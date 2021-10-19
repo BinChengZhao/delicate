@@ -9,104 +9,81 @@ use super::prelude::*;
 // in the `Session` and sets it to the client
 // (all this is done in the middleware of `CookieSession`).
 pub(crate) fn session_middleware() -> CookieSession {
-    CookieSession::signed(
-        &env::var("SESSION_TOKEN")
-            .expect("Without `SESSION_TOKEN` set in .env")
-            .into_bytes(),
-    )
-    .domain(
-        env::var("SCHEDULER_COOKIE_DOMAIN").expect("Without `SCHEDULER_COOKIE_DOMAIN` set in .env"),
-    )
-    .name(env::var("SCHEDULER_NAME").expect("Without `SCHEDULER_NAME` set in .env"))
-    .http_only(true)
-    .secure(false)
+    // Be sure to use a uniform `SESSION_TOKEN` here,
+    // If each server generates a random key, it will cause inconsistency and the login status will continue to fail.
+    let token_bytes = env::var("SESSION_TOKEN")
+        .expect("Without `SESSION_TOKEN` set in .env")
+        .into_bytes();
+
+    let cookie_config = CookieConfig::signed(CookieKey::derive_from(&token_bytes))
+        .domain(
+            env::var("SCHEDULER_COOKIE_DOMAIN")
+                .expect("Without `SCHEDULER_COOKIE_DOMAIN` set in .env"),
+        )
+        .name(env::var("SCHEDULER_NAME").expect("Without `SCHEDULER_NAME` set in .env"))
+        .http_only(true)
+        .secure(false);
+    CookieSession::new(cookie_config)
 }
 
-// Register authentication middleware to check login status based on `CookieSession`.
+pub(crate) fn cookie_middleware() -> CookieJarManager {
+    // Be sure to use a uniform `SESSION_TOKEN` here,
+    // If each server generates a random key, it will cause inconsistency and the login status will continue to fail.
+    let token_bytes = env::var("SESSION_TOKEN")
+        .expect("Without `SESSION_TOKEN` set in .env")
+        .into_bytes();
+
+    CookieJarManager::with_key(CookieKey::derive_from(&token_bytes))
+}
+
 pub(crate) fn auth_middleware() -> SessionAuth {
     SessionAuth
 }
 
 pub struct SessionAuth;
 
-impl<S, B> Transform<S> for SessionAuth
-where
-    S: Service<Request = ServiceRequest, Response = ServiceResponse<B>, Error = ActixWebError>,
-    S::Future: 'static,
-    B: 'static,
-{
-    type Request = ServiceRequest;
-    type Response = ServiceResponse<B>;
-    type Error = ActixWebError;
-    type InitError = ();
-    type Transform = SessionAuthMiddleware<S>;
-    type Future = Ready<Result<Self::Transform, Self::InitError>>;
+impl<E: Endpoint> Middleware<E> for SessionAuth {
+    type Output = SessionAuthMiddleware<E>;
 
-    fn new_transform(&self, service: S) -> Self::Future {
-        ok(SessionAuthMiddleware { service })
+    fn transform(&self, ep: E) -> Self::Output {
+        SessionAuthMiddleware { ep }
     }
 }
 
-pub struct SessionAuthMiddleware<S> {
-    service: S,
+pub struct SessionAuthMiddleware<E> {
+    ep: E,
 }
 
-impl<S, B> Service for SessionAuthMiddleware<S>
-where
-    S: Service<Request = ServiceRequest, Response = ServiceResponse<B>, Error = ActixWebError>,
-    S::Future: 'static,
-    B: 'static,
-{
-    type Request = ServiceRequest;
-    type Response = ServiceResponse<B>;
-    type Error = ActixWebError;
-    type Future = MiddlewareFuture<Self::Response, Self::Error>;
+#[poem::async_trait]
+impl<E: Endpoint> Endpoint for SessionAuthMiddleware<E> {
+    type Output = Response;
 
-    fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-        self.service.poll_ready(cx)
-    }
-
-    fn call(&mut self, req: ServiceRequest) -> Self::Future {
+    async fn call(&self, req: Request) -> Self::Output {
         #[cfg(APP_DEBUG_MODE)]
         {
-            let fut = self.service.call(req);
-            return Box::pin(async move {
-                let res = fut.await?;
-                Ok(res)
-            });
+            return self.ep.call(req).await.into_response();
         }
+
         let session = req.get_session();
         let uri = req.uri();
         let path = uri.path();
 
+        // Use `CookieJar` as the backend of `Session`.
         // Judgment, if it is a special api will not check the token.
         // (for example: login-api, event-collection-api)
 
         match path {
-            "/api/user/login" | "/api/task_logs/event_trigger" => {
-                let fut = self.service.call(req);
-                Box::pin(async move {
-                    let res = fut.await?;
-                    Ok(res)
-                })
+            "/api/user/login" | "/api/task_log/event_trigger" => {
+                self.ep.call(req).await.into_response()
             }
             _ => {
-                if let Ok(Some(_)) = session.get::<u64>("user_id") {
-                    let fut = self.service.call(req);
-                    Box::pin(async move {
-                        let res = fut.await?;
-                        Ok(res)
-                    })
+                let user_id = session.get::<u64>("user_id");
+                if user_id.is_some() {
+                    self.ep.call(req).await.into_response()
                 } else {
-                    Box::pin(async move {
-                        Ok(req.error_response(
-                            HttpResponseBuilder::new(StatusCode::default()).json(
-                                UnifiedResponseMessages::<()>::error().customized_error_msg(
-                                    String::from("Please log in and operate."),
-                                ),
-                            ),
-                        ))
-                    })
+                    UnifiedResponseMessages::<()>::error()
+                        .customized_error_msg(String::from("Please log in and operate."))
+                        .into_response()
                 }
             }
         }

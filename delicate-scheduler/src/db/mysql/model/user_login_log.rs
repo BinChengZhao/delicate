@@ -75,9 +75,9 @@ impl NewUserLoginLog {
         self
     }
 
-    pub fn set_lastip(&mut self, lastip:Option<&str>) -> &mut Self{
+    pub fn set_lastip(&mut self, lastip:Option<String>) -> &mut Self{
         if let Some(ip) = lastip{
-            self.lastip = ip.to_string();
+            self.lastip = ip;
         }
         self
     }

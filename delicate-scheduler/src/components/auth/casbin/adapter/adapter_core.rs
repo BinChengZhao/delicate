@@ -2,18 +2,17 @@ use super::actions as adapter;
 use crate::db::model::casbin_rule::*;
 use crate::prelude::*;
 
-use actix_web::web::block as spawn_blocking;
 use async_trait::async_trait;
-use casbin::{Adapter, Error as CasbinError, Filter, Model};
+use casbin::{error::AdapterError, Adapter, Error as CasbinError, Filter, Model};
 
 pub struct DieselAdapter {
-    pool: ShareData<db::ConnectionPool>,
+    pool: Arc<db::ConnectionPool>,
     is_filtered: bool,
 }
 
 impl DieselAdapter {
     #[allow(dead_code)]
-    pub fn new(pool: ShareData<db::ConnectionPool>) -> Self {
+    pub fn new(pool: Arc<db::ConnectionPool>) -> Self {
         Self {
             pool,
             is_filtered: false,
@@ -121,9 +120,11 @@ impl Adapter for DieselAdapter {
             .get()
             .map_err(|e| casbin::error::AdapterError(Box::new(e)))?;
 
-        let rules = spawn_blocking(move || adapter::load_policy(conn))
-            .await
-            .map_err(|e| casbin::error::AdapterError(Box::new(e)))?;
+        let rules =
+            spawn_blocking::<_, Result<_, AuthServiceError>>(move || adapter::load_policy(conn))
+                .await
+                .map_err(|e| casbin::error::AdapterError(Box::new(e)))?
+                .map_err(|e| AdapterError(Box::new(e)))?;
 
         for casbin_rule in &rules {
             let rule = load_policy_line(casbin_rule);
@@ -148,9 +149,12 @@ impl Adapter for DieselAdapter {
             .get()
             .map_err(|e| casbin::error::AdapterError(Box::new(e)))?;
 
-        Ok(spawn_blocking(move || adapter::clear_policy(conn))
-            .await
-            .map_err(|e| casbin::error::AdapterError(Box::new(e)))?)
+        Ok(
+            spawn_blocking::<_, Result<_, AuthServiceError>>(move || adapter::clear_policy(conn))
+                .await
+                .map_err(|e| casbin::error::AdapterError(Box::new(e)))?
+                .map_err(|e| AdapterError(Box::new(e)))?,
+        )
     }
 
     async fn load_filtered_policy<'a>(
@@ -163,9 +167,11 @@ impl Adapter for DieselAdapter {
             .get()
             .map_err(|e| casbin::error::AdapterError(Box::new(e)))?;
 
-        let rules = spawn_blocking(move || adapter::load_policy(conn))
-            .await
-            .map_err(|e| casbin::error::AdapterError(Box::new(e)))?;
+        let rules =
+            spawn_blocking::<_, Result<_, AuthServiceError>>(move || adapter::load_policy(conn))
+                .await
+                .map_err(|e| casbin::error::AdapterError(Box::new(e)))?
+                .map_err(|e| AdapterError(Box::new(e)))?;
 
         for casbin_rule in &rules {
             let rule = load_filtered_policy_line(casbin_rule, &f);
@@ -217,9 +223,12 @@ impl Adapter for DieselAdapter {
             }
         }
 
-        Ok(spawn_blocking(move || adapter::save_policy(conn, rules))
-            .await
-            .map_err(|e| casbin::error::AdapterError(Box::new(e)))?)
+        Ok(spawn_blocking::<_, Result<_, AuthServiceError>>(move || {
+            adapter::save_policy(conn, rules)
+        })
+        .await
+        .map_err(|e| casbin::error::AdapterError(Box::new(e)))?
+        .map_err(|e| AdapterError(Box::new(e)))?)
     }
 
     async fn add_policy(
@@ -234,14 +243,15 @@ impl Adapter for DieselAdapter {
             .map_err(|e| casbin::error::AdapterError(Box::new(e)))?;
         let ptype_c = ptype.to_string();
 
-        Ok(spawn_blocking(move || {
+        Ok(spawn_blocking::<_, Result<_, AuthServiceError>>(move || {
             if let Some(new_rule) = save_policy_line(&ptype_c, &rule) {
                 return adapter::add_policy(conn, new_rule);
             }
             Ok(false)
         })
         .await
-        .map_err(|e| casbin::error::AdapterError(Box::new(e)))?)
+        .map_err(|e| casbin::error::AdapterError(Box::new(e)))?
+        .map_err(|e| AdapterError(Box::new(e)))?)
     }
 
     async fn add_policies(
@@ -256,7 +266,7 @@ impl Adapter for DieselAdapter {
             .map_err(|e| casbin::error::AdapterError(Box::new(e)))?;
         let ptype_c = ptype.to_string();
 
-        Ok(spawn_blocking(move || {
+        Ok(spawn_blocking::<_, Result<_, AuthServiceError>>(move || {
             let new_rules = rules
                 .iter()
                 .filter_map(|x: &Vec<String>| save_policy_line(&ptype_c, x))
@@ -264,7 +274,8 @@ impl Adapter for DieselAdapter {
             adapter::add_policies(conn, new_rules)
         })
         .await
-        .map_err(|e| casbin::error::AdapterError(Box::new(e)))?)
+        .map_err(|e| casbin::error::AdapterError(Box::new(e)))?
+        .map_err(|e| AdapterError(Box::new(e)))?)
     }
 
     async fn remove_policy(
@@ -279,11 +290,12 @@ impl Adapter for DieselAdapter {
             .map_err(|e| casbin::error::AdapterError(Box::new(e)))?;
         let ptype_c = pt.to_string();
 
-        Ok(
-            spawn_blocking(move || adapter::remove_policy(conn, &ptype_c, rule))
-                .await
-                .map_err(|e| casbin::error::AdapterError(Box::new(e)))?,
-        )
+        Ok(spawn_blocking::<_, Result<_, AuthServiceError>>(move || {
+            adapter::remove_policy(conn, &ptype_c, rule)
+        })
+        .await
+        .map_err(|e| casbin::error::AdapterError(Box::new(e)))?
+        .map_err(|e| AdapterError(Box::new(e)))?)
     }
 
     async fn remove_policies(
@@ -298,11 +310,12 @@ impl Adapter for DieselAdapter {
             .map_err(|e| casbin::error::AdapterError(Box::new(e)))?;
         let ptype_c = pt.to_string();
 
-        Ok(
-            spawn_blocking(move || adapter::remove_policies(conn, &ptype_c, rules))
-                .await
-                .map_err(|e| casbin::error::AdapterError(Box::new(e)))?,
-        )
+        Ok(spawn_blocking::<_, Result<_, AuthServiceError>>(move || {
+            adapter::remove_policies(conn, &ptype_c, rules)
+        })
+        .await
+        .map_err(|e| casbin::error::AdapterError(Box::new(e)))?
+        .map_err(|e| AdapterError(Box::new(e)))?)
     }
 
     async fn remove_filtered_policy(
@@ -319,11 +332,12 @@ impl Adapter for DieselAdapter {
                 .map_err(|e| casbin::error::AdapterError(Box::new(e)))?;
             let ptype_c = pt.to_string();
 
-            Ok(spawn_blocking(move || {
+            Ok(spawn_blocking::<_, Result<_, AuthServiceError>>(move || {
                 adapter::remove_filtered_policy(conn, &ptype_c, field_index, field_values)
             })
             .await
-            .map_err(|e| casbin::error::AdapterError(Box::new(e)))?)
+            .map_err(|e| casbin::error::AdapterError(Box::new(e)))?
+            .map_err(|e| AdapterError(Box::new(e)))?)
         } else {
             Ok(false)
         }
@@ -357,7 +371,7 @@ mod tests {
         let mut e = Enforcer::new(m, file_adapter).await.unwrap();
         let mut adapter = DieselAdapter::new({
             let connection_pool = db::get_connection_pool();
-            ShareData::new(connection_pool)
+            Arc::new(connection_pool)
         });
 
         assert!(adapter.save_policy(e.get_mut_model()).await.is_ok());

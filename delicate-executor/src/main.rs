@@ -3,23 +3,23 @@ mod component;
 mod prelude;
 use prelude::*;
 
-#[post("/api/task/create")]
+#[handler]
 #[instrument(skip(executor_conf, shared_delay_timer, signed_task_package), fields(task_package = signed_task_package.task_package.id))]
 async fn create_task(
-    web::Json(signed_task_package): web::Json<SignedTaskPackage>,
-    shared_delay_timer: SharedDelayTimer,
-    executor_conf: SharedExecutorSecurityConf,
-) -> impl Responder {
+    Json(signed_task_package): Json<SignedTaskPackage>,
+    shared_delay_timer: Data<&Arc<DelayTimer>>,
+    executor_conf: Data<&Arc<ExecutorSecurityConf>>,
+) -> Json<UnitUnifiedResponseMessages> {
     let response: UnitUnifiedResponseMessages =
         Into::into(pre_create_task(signed_task_package, shared_delay_timer, executor_conf).await);
 
-    HttpResponse::Ok().json(response)
+    Json(response)
 }
 
 pub async fn pre_create_task(
     signed_task_package: SignedTaskPackage,
-    shared_delay_timer: SharedDelayTimer,
-    executor_conf: SharedExecutorSecurityConf,
+    shared_delay_timer: Data<&Arc<DelayTimer>>,
+    executor_conf: Data<&Arc<ExecutorSecurityConf>>,
 ) -> Result<(), CommonError> {
     info!("pre_create_task: {}", &signed_task_package.task_package);
     let guard = executor_conf.get_bind_scheduler_token_ref().await;
@@ -31,23 +31,23 @@ pub async fn pre_create_task(
     Ok(shared_delay_timer.add_task(task)?)
 }
 
-#[post("/api/task/update")]
+#[handler]
 #[instrument(skip(executor_conf, shared_delay_timer, signed_task_package), fields(task_package = signed_task_package.task_package.id))]
 async fn update_task(
-    web::Json(signed_task_package): web::Json<SignedTaskPackage>,
-    shared_delay_timer: SharedDelayTimer,
-    executor_conf: SharedExecutorSecurityConf,
-) -> impl Responder {
+    Json(signed_task_package): Json<SignedTaskPackage>,
+    shared_delay_timer: Data<&Arc<DelayTimer>>,
+    executor_conf: Data<&Arc<ExecutorSecurityConf>>,
+) -> Json<UnitUnifiedResponseMessages> {
     let response: UnitUnifiedResponseMessages =
         Into::into(pre_update_task(signed_task_package, shared_delay_timer, executor_conf).await);
 
-    HttpResponse::Ok().json(response)
+    Json(response)
 }
 
 pub async fn pre_update_task(
     signed_task_package: SignedTaskPackage,
-    shared_delay_timer: SharedDelayTimer,
-    executor_conf: SharedExecutorSecurityConf,
+    shared_delay_timer: Data<&Arc<DelayTimer>>,
+    executor_conf: Data<&Arc<ExecutorSecurityConf>>,
 ) -> Result<(), CommonError> {
     info!("pre_update_task: {}", &signed_task_package.task_package);
     let guard = executor_conf.get_bind_scheduler_token_ref().await;
@@ -59,24 +59,24 @@ pub async fn pre_update_task(
     Ok(shared_delay_timer.update_task(task)?)
 }
 
-#[post("/api/task/remove")]
+#[handler]
 #[instrument(skip(executor_conf, shared_delay_timer, signed_task_unit), fields(task_id = signed_task_unit.task_unit.task_id))]
 async fn remove_task(
-    web::Json(signed_task_unit): web::Json<SignedTaskUnit>,
-    shared_delay_timer: SharedDelayTimer,
-    executor_conf: SharedExecutorSecurityConf,
-) -> HttpResponse {
+    Json(signed_task_unit): Json<SignedTaskUnit>,
+    shared_delay_timer: Data<&Arc<DelayTimer>>,
+    executor_conf: Data<&Arc<ExecutorSecurityConf>>,
+) -> Json<UnitUnifiedResponseMessages> {
     let response: UnitUnifiedResponseMessages =
         pre_remove_task(signed_task_unit, shared_delay_timer, executor_conf)
             .await
             .into();
-    HttpResponse::Ok().json(response)
+    Json(response)
 }
 
 pub async fn pre_remove_task(
     signed_task_unit: SignedTaskUnit,
-    shared_delay_timer: SharedDelayTimer,
-    executor_conf: SharedExecutorSecurityConf,
+    shared_delay_timer: Data<&Arc<DelayTimer>>,
+    executor_conf: Data<&Arc<ExecutorSecurityConf>>,
 ) -> Result<(), CommonError> {
     info!("pre_remove_task: {}", &signed_task_unit);
 
@@ -86,24 +86,24 @@ pub async fn pre_remove_task(
     Ok(shared_delay_timer.remove_task(task_unit.task_id as u64)?)
 }
 
-#[post("/api/task/advance")]
+#[handler]
 #[instrument(skip(executor_conf, shared_delay_timer, signed_task_unit), fields(task_id = signed_task_unit.task_unit.task_id))]
 async fn advance_task(
-    web::Json(signed_task_unit): web::Json<SignedTaskUnit>,
-    shared_delay_timer: SharedDelayTimer,
-    executor_conf: SharedExecutorSecurityConf,
-) -> HttpResponse {
+    Json(signed_task_unit): Json<SignedTaskUnit>,
+    shared_delay_timer: Data<&Arc<DelayTimer>>,
+    executor_conf: Data<&Arc<ExecutorSecurityConf>>,
+) -> Json<UnitUnifiedResponseMessages> {
     let response: UnitUnifiedResponseMessages =
         pre_advance_task(signed_task_unit, shared_delay_timer, executor_conf)
             .await
             .into();
-    HttpResponse::Ok().json(response)
+    Json(response)
 }
 
 pub async fn pre_advance_task(
     signed_task_unit: SignedTaskUnit,
-    shared_delay_timer: SharedDelayTimer,
-    executor_conf: SharedExecutorSecurityConf,
+    shared_delay_timer: Data<&Arc<DelayTimer>>,
+    executor_conf: Data<&Arc<ExecutorSecurityConf>>,
 ) -> Result<(), CommonError> {
     info!("pre_advance_task: {}", &signed_task_unit);
     let guard = executor_conf.get_bind_scheduler_token_ref().await;
@@ -112,24 +112,24 @@ pub async fn pre_advance_task(
     Ok(shared_delay_timer.advance_task(task_unit.task_id as u64)?)
 }
 
-#[post("/api/task_instance/kill")]
+#[handler]
 #[instrument(skip(executor_conf, shared_delay_timer, signed_cancel_task_record), fields(cancel_task_record = signed_cancel_task_record.cancel_task_record.to_string().deref()))]
 async fn cancel_task(
-    web::Json(signed_cancel_task_record): web::Json<SignedCancelTaskRecord>,
-    shared_delay_timer: SharedDelayTimer,
-    executor_conf: SharedExecutorSecurityConf,
-) -> HttpResponse {
+    Json(signed_cancel_task_record): Json<SignedCancelTaskRecord>,
+    shared_delay_timer: Data<&Arc<DelayTimer>>,
+    executor_conf: Data<&Arc<ExecutorSecurityConf>>,
+) -> Json<UnitUnifiedResponseMessages> {
     let response: UnitUnifiedResponseMessages =
         pre_cancel_task(signed_cancel_task_record, shared_delay_timer, executor_conf)
             .await
             .into();
-    HttpResponse::Ok().json(response)
+    Json(response)
 }
 
 pub async fn pre_cancel_task(
     signed_cancel_task_record: SignedCancelTaskRecord,
-    shared_delay_timer: SharedDelayTimer,
-    executor_conf: SharedExecutorSecurityConf,
+    shared_delay_timer: Data<&Arc<DelayTimer>>,
+    executor_conf: Data<&Arc<ExecutorSecurityConf>>,
 ) -> Result<(), CommonError> {
     info!("pre_cancel_task: {}", &signed_cancel_task_record);
 
@@ -144,29 +144,29 @@ pub async fn pre_cancel_task(
 }
 
 #[allow(dead_code)]
-async fn maintenance(shared_delay_timer: SharedDelayTimer) -> impl Responder {
-    HttpResponse::Ok().json(Into::<UnitUnifiedResponseMessages>::into(
+async fn maintenance(
+    shared_delay_timer: Data<&Arc<DelayTimer>>,
+) -> Json<UnitUnifiedResponseMessages> {
+    Json(Into::<UnitUnifiedResponseMessages>::into(
         shared_delay_timer.stop_delay_timer(),
     ))
 }
 
 // Health Screening
-
-#[post("/api/executor/health_screen")]
+#[handler]
 #[instrument(skip(req, signed_health_screen_unit, executor_conf, system_mirror), fields(time = signed_health_screen_unit.health_screen_unit.time))]
 async fn health_screen(
-    req: HttpRequest,
-    web::Json(signed_health_screen_unit): web::Json<SignedHealthScreenUnit>,
-    executor_conf: SharedExecutorSecurityConf,
-    system_mirror: SharedSystemMirror,
-) -> impl Responder {
+    req: &Request,
+    Json(signed_health_screen_unit): Json<SignedHealthScreenUnit>,
+    executor_conf: Data<&Arc<ExecutorSecurityConf>>,
+    system_mirror: Data<&Arc<SystemMirror>>,
+) -> Json<UnifiedResponseMessages<HealthCheckPackage>> {
     let guard = executor_conf.get_bind_scheduler_token_ref().await;
     let token = guard.as_ref().map(|s| s.deref());
 
     let verify_result = signed_health_screen_unit.get_health_screen_unit_after_verify(token);
     if let Ok(health_screen_unit) = verify_result {
-        let connection = req.connection_info();
-        let ip = connection.realip_remote_addr().unwrap_or_default();
+        let ip = req.remote_addr();
         info!("From: {}, Request-time:{}", ip, health_screen_unit);
 
         let system_snapshot = system_mirror.refresh_all().await;
@@ -180,28 +180,28 @@ async fn health_screen(
             system_snapshot,
             bind_request,
         };
-        return HttpResponse::Ok().json(
+        return Json(
             UnifiedResponseMessages::<HealthCheckPackage>::success_with_data(health_check_package),
         );
     }
 
-    HttpResponse::Ok().json(
-        UnitUnifiedResponseMessages::error()
+    Json(
+        UnifiedResponseMessages::<HealthCheckPackage>::error()
             .customized_error_msg(verify_result.expect_err("").to_string()),
     )
 }
 
-#[post("/api/executor/bind")]
+#[handler]
 #[instrument(skip(request_bind_scheduler, security_conf, shared_delay_timer), fields(bind_scheduler = request_bind_scheduler.bind_request.to_string().deref()))]
 // Or set security level, no authentication at level 0, public and private keys required at level 1.
 async fn bind_executor(
-    web::Json(request_bind_scheduler): web::Json<SignedBindRequest>,
-    security_conf: web::Data<ExecutorSecurityConf>,
-    shared_delay_timer: SharedDelayTimer,
-) -> impl Responder {
+    Json(request_bind_scheduler): Json<SignedBindRequest>,
+    security_conf: Data<&Arc<ExecutorSecurityConf>>,
+    shared_delay_timer: Data<&Arc<DelayTimer>>,
+) -> Json<UnifiedResponseMessages<EncryptedBindResponse>> {
     info!("{}", &request_bind_scheduler.bind_request);
 
-    let verify_result = request_bind_scheduler.verify(security_conf.get_ref().get_rsa_public_key());
+    let verify_result = request_bind_scheduler.verify(security_conf.get_rsa_public_key());
     if verify_result.is_ok() {
         let SignedBindRequest { bind_request, .. } = request_bind_scheduler;
 
@@ -226,20 +226,56 @@ async fn bind_executor(
         .encrypt_self(security_conf.get_rsa_public_key());
 
         let response: UnifiedResponseMessages<EncryptedBindResponse> = Into::into(bind_response);
-        return HttpResponse::Ok().json(response);
+        return Json(response);
     }
 
-    HttpResponse::Ok().json(
+    Json(
         UnifiedResponseMessages::<EncryptedBindResponse>::error()
             .customized_error_msg(verify_result.expect_err("").to_string()),
     )
 }
 
-#[actix_web::main]
-async fn main() -> AnyResult<()> {
+fn main() -> AnyResult<()> {
     // Loads environment variables.
     dotenv().ok();
+    init_logger();
 
+    let raw_runtime = Builder::new_multi_thread()
+        .thread_name_fn(|| {
+            static ATOMIC_ID: AtomicUsize = AtomicUsize::new(0);
+            let id = ATOMIC_ID.fetch_add(1, Ordering::SeqCst);
+            format!("executor-{}", id)
+        })
+        .thread_stack_size(4 * 1024 * 1024)
+        .enable_all()
+        .build()
+        .expect("Init Tokio runtime failed.");
+
+    let arc_runtime = Arc::new(raw_runtime);
+    let arc_runtime_cloned = arc_runtime.clone();
+
+    let block_result: AnyResult<()> = arc_runtime.block_on(async move {
+        let route = Route::new()
+            .at("/api/task/update", post(update_task))
+            .at("/api/task/create", post(create_task))
+            .at("/api/task/remove", post(remove_task))
+            .at("/api/task/advance", post(advance_task))
+            .at("/api/task_instance/kill", post(cancel_task))
+            .at("/api/executor/health_screen", post(health_screen))
+            .at("/api/executor/bind", post(bind_executor));
+
+        let app = init_executor(route, arc_runtime_cloned).await;
+        let address = env::var("EXECUTOR_LISTENING_ADDRESS")
+            .expect("Without `EXECUTOR_LISTENING_ADDRESS` set in .env");
+        let listener = TcpListener::bind(address);
+        let server = Server::new(listener).await?;
+        Ok(server.run(app).await?)
+    });
+
+    block_result
+}
+
+fn init_logger() {
     let log_level: Level =
         FromStr::from_str(&env::var("LOG_LEVEL").unwrap_or_else(|_| String::from("info")))
             .expect("Log level acquired fail.");
@@ -250,47 +286,37 @@ async fn main() -> AnyResult<()> {
         .with_thread_names(true)
         // completes the builder.
         .init();
-
-    let shared_security_conf: SharedExecutorSecurityConf =
-        ShareData::new(ExecutorSecurityConf::default());
-
-    let shared_system_mirror: SharedSystemMirror = ShareData::new(SystemMirror::default());
-
-    let mut delay_timer = DelayTimerBuilder::default().enable_status_report().build();
-    launch_status_reporter(&mut delay_timer, shared_security_conf.clone());
-    let shared_delay_timer: SharedDelayTimer = ShareData::new(delay_timer);
-
-    HttpServer::new(move || {
-        App::new()
-            .service(bind_executor)
-            .service(create_task)
-            .service(remove_task)
-            .service(cancel_task)
-            .service(advance_task)
-            .service(health_screen)
-            .app_data(shared_delay_timer.clone())
-            .app_data(shared_security_conf.clone())
-            .app_data(shared_system_mirror.clone())
-            .wrap(MiddlewareLogger::default())
-    })
-    .bind(
-        env::var("EXECUTOR_LISTENING_ADDRESS")
-            .expect("Without `EXECUTOR_LISTENING_ADDRESS` set in .env"),
-    )?
-    .run()
-    .await?;
-
-    Ok(())
 }
+async fn init_executor(app: Route, arc_runtime: Arc<Runtime>) -> impl Endpoint {
+    let mut delay_timer = DelayTimerBuilder::default()
+        .tokio_runtime_shared_by_custom(arc_runtime)
+        .enable_status_report()
+        .build();
+    let request_client = RequestClient::new();
+    let arc_security_conf = Arc::new(ExecutorSecurityConf::default());
 
+    let shared_security_conf: AddData<Arc<ExecutorSecurityConf>> =
+        AddData::new(arc_security_conf.clone());
+    let shared_system_mirror: AddData<Arc<SystemMirror>> =
+        AddData::new(Arc::new(SystemMirror::default()));
+    let shared_request_client = AddData::new(request_client.clone());
+    launch_status_reporter(&mut delay_timer, arc_security_conf, request_client);
+    let shared_delay_timer: AddData<Arc<DelayTimer>> = AddData::new(Arc::new(delay_timer));
+
+    app.with(shared_delay_timer)
+        .with(shared_security_conf)
+        .with(shared_system_mirror)
+        .with(shared_request_client)
+}
 fn launch_status_reporter(
     delay_timer: &mut DelayTimer,
-    shared_security_conf: SharedExecutorSecurityConf,
+    shared_security_conf: Arc<ExecutorSecurityConf>,
+    client: RequestClient,
 ) {
     let status_reporter_option = delay_timer.take_status_reporter();
 
     if let Some(status_reporter) = status_reporter_option {
-        rt_spawn(async move {
+        tokio_spawn(async move {
             // After taking the lock, get the resource quickly and release the lock.
 
             let mut token: Option<String> = None;
@@ -302,17 +328,24 @@ fn launch_status_reporter(
 
                     let events = collect_events(&status_reporter, scheduler.as_ref()).await?;
 
-                    if !events.is_empty() {
+                    if events.is_empty() {
+                        return Ok(());
+                    }
+
+                    if let Ok(executor_event_collection) =
+                        Into::<ExecutorEventCollection>::into(events).sign(token.as_deref())
+                    {
                         send_event_collection(
                             scheduler.as_ref(),
-                            Into::<ExecutorEventCollection>::into(events).sign(token.as_deref()),
+                            executor_event_collection,
+                            &client,
                         )
                         .await;
                     }
 
                     Ok(())
                 };
-                let f_result: Result<(), CommonError> = f
+                let f_result: Result<(), NewCommonError> = f
                     .instrument(span!(
                         Level::INFO,
                         "status-reporter",
@@ -325,11 +358,11 @@ fn launch_status_reporter(
                     return;
                 }
             }
-        })
+        });
     }
 }
 async fn fresh_scheduler_conf(
-    shared_security_conf: &SharedExecutorSecurityConf,
+    shared_security_conf: &ExecutorSecurityConf,
     token: &mut Option<String>,
     scheduler: &mut Option<BindRequest>,
 ) {
@@ -349,9 +382,9 @@ async fn fresh_scheduler_conf(
             scheduler.clone_from(&fresh_scheduler);
 
             // Adjust the internal host to avoid the need to clone String when calling RequestClient::post.
-            //+ "/api/task_logs/event_trigger"
+            //+ "/api/task_log/event_trigger"
             if let Some(scheduler_mut_ref) = scheduler.as_mut() {
-                scheduler_mut_ref.scheduler_host += "/api/task_logs/event_trigger";
+                scheduler_mut_ref.scheduler_host += "/api/task_log/event_trigger";
             }
         }
     }
@@ -360,10 +393,10 @@ async fn fresh_scheduler_conf(
 async fn collect_events(
     status_reporter: &StatusReporter,
     scheduler: Option<&BindRequest>,
-) -> Result<Vec<ExecutorEvent>, CommonError> {
+) -> Result<Vec<ExecutorEvent>, NewCommonError> {
     let mut events: Vec<ExecutorEvent> = Vec::new();
     for _i in 0..10 {
-        let event_future: RtTimeout<_> = rt_timeout(
+        let event_future: TokioTimeout<_> = tokio_timeout(
             Duration::from_secs(3),
             status_reporter.next_public_event_with_async_wait(),
         );
@@ -373,7 +406,7 @@ async fn collect_events(
             Err(_) => break,
             // Internal runtime exception.
             Ok(Err(_)) => {
-                return Err(CommonError::DisPass(
+                return Err(NewCommonError::DisPass(
                     "Internal runtime exception".to_string(),
                 ));
             }
@@ -388,28 +421,32 @@ async fn collect_events(
 
 async fn send_event_collection(
     scheduler: Option<&BindRequest>,
-    executor_event_collection_result: Result<SignedExecutorEventCollection, CommonError>,
+    executor_event_collection: SignedExecutorEventCollection,
+    client: &RequestClient,
 ) {
     if let Some(scheduler_ref) = scheduler.as_ref() {
-        if let Ok(executor_event_collection) = executor_event_collection_result {
-            debug!(
-                "Event collection - {:?}",
-                &executor_event_collection.event_collection
-            );
+        debug!(
+            "Event collection - {:?}",
+            &executor_event_collection.event_collection
+        );
 
-            if let Ok(mut response) = RequestClient::new()
-                .post(&scheduler_ref.scheduler_host)
-                .send_json(&executor_event_collection)
+        if let Ok(response) = client
+            .post(&scheduler_ref.scheduler_host)
+            .json(&executor_event_collection)
+            .send()
+            .await
+            .map_err(|e| {
+                error!(
+                    "Failed to send the event collection: {} - {} - {:?}",
+                    e, &scheduler_ref, &executor_event_collection.event_collection
+                )
+            })
+        {
+            response
+                .bytes()
                 .await
-                .map_err(|e| {
-                    error!(
-                        "Failed to send the event collection: {} - {} - {:?}",
-                        e, &scheduler_ref, &executor_event_collection.event_collection
-                    )
-                })
-            {
-                debug!("delicate-schduler response: {:?}", response.body().await)
-            }
+                .map(|b| debug!("delicate-schduler response: {:?}", b))
+                .ok();
         }
     }
 }

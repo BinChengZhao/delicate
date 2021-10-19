@@ -1,21 +1,25 @@
 use super::prelude::*;
 use db::model::casbin_rule::RoleId;
 
-#[allow(dead_code)]
-pub(crate) fn config(cfg: &mut web::ServiceConfig) {
-    cfg.service(list).service(permission_detail).service(users);
+pub(crate) fn route_config() -> Route {
+    let route: Route = Route::new();
+    route
+        .at("/api/role/list", get(list))
+        .at("/api/role/permission_detail", post(permission_detail))
+        .at("/api/role/users", post(users))
 }
 
-#[get("/api/role/list")]
-async fn list() -> HttpResponse {
-    HttpResponse::Ok().json(UnifiedResponseMessages::<[&'static str; 7]>::success_with_data(ROLES))
+#[handler]
+
+async fn list() -> impl IntoResponse {
+    Json(UnifiedResponseMessages::<[&'static str; 7]>::success_with_data(ROLES))
 }
 
-#[post("/api/role/permission_detail")]
+#[handler]
 async fn permission_detail(
-    enforcer: ShareData<RwLock<Enforcer>>,
-    web::Json(RoleId { role_id }): web::Json<RoleId>,
-) -> HttpResponse {
+    enforcer: Data<&Arc<RwLock<Enforcer>>>,
+    Json(RoleId { role_id }): Json<RoleId>,
+) -> impl IntoResponse {
     // [
     //   ["role_name", "business", "action"]
     // ]
@@ -24,23 +28,23 @@ async fn permission_detail(
             .read()
             .await
             .get_filtered_policy(0, vec![role_name.to_string()]);
-        return HttpResponse::Ok()
-            .json(UnifiedResponseMessages::<Vec<Vec<String>>>::success_with_data(permissions));
+        return Json(UnifiedResponseMessages::<Vec<Vec<String>>>::success_with_data(permissions));
     }
 
-    HttpResponse::Ok().json(UnifiedResponseMessages::<()>::error())
+    Json(UnifiedResponseMessages::<Vec<Vec<String>>>::error())
 }
 
-#[post("/api/role/users")]
+#[handler]
+
 async fn users(
-    enforcer: ShareData<RwLock<Enforcer>>,
-    web::Json(RoleId { role_id }): web::Json<RoleId>,
-) -> HttpResponse {
+    enforcer: Data<&Arc<RwLock<Enforcer>>>,
+    Json(RoleId { role_id }): Json<RoleId>,
+) -> impl IntoResponse {
     if let Some(role_name) = ROLES.get(role_id) {
         let users = enforcer.read().await.get_users_for_role(role_name, None);
-        return HttpResponse::Ok().json(UnifiedResponseMessages::<Vec<String>>::success_with_data(
+        return Json(UnifiedResponseMessages::<Vec<String>>::success_with_data(
             users,
         ));
     }
-    HttpResponse::Ok().json(UnifiedResponseMessages::<()>::error())
+    Json(UnifiedResponseMessages::<Vec<String>>::error())
 }
