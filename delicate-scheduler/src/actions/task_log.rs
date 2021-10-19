@@ -1,9 +1,7 @@
 use super::prelude::*;
 
 pub(crate) fn route_config() -> Route {
-    let route: Route = Route::new();
-
-    route
+    Route::new()
         .at("/api/task_log/event_trigger", post(create_task_logs))
         .at("/api/task_log/list", post(show_task_logs))
         .at("/api/task_log/detail", post(show_task_log_detail))

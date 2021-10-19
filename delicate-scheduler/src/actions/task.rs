@@ -1,15 +1,14 @@
 use super::prelude::*;
 
 pub(crate) fn route_config() -> Route {
-    let route: Route = Route::new();
-    route
-        .at("/api/task/create", post(create_task))
-        .at("/api/task/list", post(show_tasks))
-        .at("/api/task/update", post(update_task))
+    Route::new()
         .at("/api/task/run", post(run_task))
+        .at("/api/task/list", post(show_tasks))
+        .at("/api/task/delete", post(delete_task))
+        .at("/api/task/create", post(create_task))
+        .at("/api/task/update", post(update_task))
         .at("/api/task/suspend", post(suspend_task))
         .at("/api/task/advance", post(advance_task))
-        .at("/api/task/delete", post(delete_task))
 }
 
 #[handler]

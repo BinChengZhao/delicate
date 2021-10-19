@@ -6,8 +6,7 @@ use model::user::{
 use model::user_login_log::NewUserLoginLog;
 
 pub(crate) fn route_config() -> Route {
-    let route: Route = Route::new();
-    route
+    Route::new()
         .at("/api/user/create", post(create_user))
         .at("/api/user/list", post(show_users))
         .at("/api/user/update", post(update_user))

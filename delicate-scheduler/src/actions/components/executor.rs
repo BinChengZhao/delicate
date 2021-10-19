@@ -3,8 +3,7 @@
 use crate::prelude::*;
 
 pub(crate) fn route_config() -> Route {
-    let route: Route = Route::new();
-    route.at("/api/executor/list", get(executor_list))
+    Route::new().at("/api/executor/list", get(executor_list))
 }
 
 #[handler]

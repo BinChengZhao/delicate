@@ -1,8 +1,7 @@
 use super::prelude::*;
 
 pub(crate) fn route_config() -> Route {
-    let route: Route = Route::new();
-    route
+    Route::new()
         .at(
             "/api/executor_processor_bind/list",
             post(show_executor_processor_binds),
