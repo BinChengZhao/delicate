@@ -203,14 +203,14 @@ pub async fn pre_update_task_row(
                 .map(|bind_id| model::NewTaskBind { task_id, bind_id })
                 .collect();
 
-            for model::NewTaskBind { task_id, bind_id } in removed_task_binds.iter() {
-                diesel::delete(
-                    task_bind::table
-                        .filter(task_bind::task_id.eq(task_id))
-                        .filter(task_bind::bind_id.eq(bind_id)),
-                )
-                .execute(&conn)?;
-            }
+            let removed_task_binds_vec: Vec<i64> =
+                removed_task_binds.iter().map(|b| b.bind_id).collect();
+            diesel::delete(
+                task_bind::table
+                    .filter(task_bind::task_id.eq(task_id))
+                    .filter(task_bind::bind_id.eq_any(&removed_task_binds_vec[..])),
+            )
+            .execute(&conn)?;
 
             let append_task_binds: Vec<model::NewTaskBind> = current_task_binds
                 .difference(&original_task_binds)
@@ -223,15 +223,11 @@ pub async fn pre_update_task_row(
                 .values(&append_task_binds[..])
                 .execute(&conn)?;
 
-            let removed_task_binds_map: HashMap<i64, ()> =
-                removed_task_binds_set.clone().copied().map(|b| (b, ())).collect();
-            let removed_task_binds_vec: Vec<i64> = removed_task_binds_set.copied().collect();
-
-            diesel::delete(
-                task_bind::table
-                    .filter(task_bind::task_id.eq(task_id))
-                    .filter(task_bind::bind_id.eq_any(&removed_task_binds_vec[..])),
-            ).execute(&conn)?;
+            let removed_task_binds_map: HashMap<i64, ()> = removed_task_binds_set
+                .clone()
+                .copied()
+                .map(|b| (b, ()))
+                .collect();
 
             let removed_bind_processors: Vec<BindProcessor> = original_bind_processors
                 .iter()
