@@ -98,6 +98,7 @@ pub(crate) use strum::IntoEnumIterator;
 pub(crate) use strum_macros::{AsRefStr, EnumIter, IntoStaticStr, ToString as StrumToString};
 pub(crate) use validator::{Validate, ValidationErrors};
 
+pub(crate) use poem::http::Method as HttpMethod;
 pub(crate) use poem::listener::TcpListener;
 pub(crate) use poem::middleware::{AddData, CookieJarManager};
 

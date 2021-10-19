@@ -1,149 +1,143 @@
-`delicate` Project Background.
+## Title: Migration of Rust production projects from `actix-web` to `poem`.
 
- Distributed scheduling system. [delicate](https://github.com/BinChengZhao/delicate)
+### Some background on the `delicate` project.
+
+[delicate](https://github.com/BinChengZhao/delicate) A lightweight, distributed task scheduling platform. 
 
 
 <a href="">
     <img src="https://delicate-rs-1301941387.cos.ap-beijing.myqcloud.com/delicate-rs/delicate_logo.png"
-         alt="delicate logo" title="delicate" height="125" width="125"  align="right"/>
+         alt="delicate logo" title="delicate" height="125" width="125" align="right"/>
 </a>
 
 
+1. project size: 5w lines of code + documentation.
+2. main language is Rust + js. 3.
+3. The migration involved 45 file changes and 4000 lines of code changes (2500 lines added and 1579 lines removed).
 
-1. 5w lines of code + documentation, etc.
-2. main language is Rust + js.
+### Technology stack
 
-The migration involved 45 file changes and 4000 lines of code changes (2500 additions and 1579 deletions), which were completed in 20 hours.
+* Backend ( scheduler & executor ): Rust  
 
-For more details please check:
+* Original main dependencies: (actix-web & diesel & delay-timer & serde & tracing)
 
-Why migrate to `poem`?
+* Current main dependencies: (poem & tokio & diesel & delay-timer & serde & tracing)
 
-The iterative progress of actix-web is not keeping up with the current needs.
+* Frontend: antd-admin (React)
 
-Brief background on `poem`.
+* Ui: Ant Design
 
-1. The framework has an extremely fast performance, consistent philosophy, and clean implementation.
-2. based on `hyper`, combined with `tokio` users have more control.
-
-
-The focus of the migration.
-
-1. recombination of web components. 
-
-2. api level modifications to avoid business logic adjustments.
-
-etc...
+* Database: mysql , postgres (plan support)
 
 
-*. handle in poem, is an asynchronous state machine, using tokio it can be computed efficiently in a multi-threaded runtime.
-   This is not the case with actix-web, which is single-threaded. Because of this subtle difference, the handle previously used for actix-web
-   The difference here is that the handle previously used for actix-web cannot be used for `poem`, because the values across .await need to be kept in Send, which is a lot of work.
+### Why migrate to `poem`?
 
-*. poem's route, a root route, and then multiple mods constantly at inside, different from the original actix-web config.
+* While using actix-web, because actix-web 4 stable version, was never officially released and I wanted to use a library compatible with `tokio` 1.0 has been an urgent problem to solve, when `poem` was released I knew the opportunity was here.
 
-*. poem's error supports Send, actix-web's error does not support Send, which makes cross-threading difficult.
-
-Need to modify all middleware implementations, need to revamp all handlers, need to adjust all global state.
-
-I am also grateful to the actix-web community for such a great piece of work, and I decided to migrate to `poem` because of technical selection issues.
-
-
-在使用 actix-web时，因为actix-web 4 稳定版，一直没有出来，我想使用兼容tokio 1.0 的库一直是一个很难的问题。
-
-当使用 poem 且 透明的依赖tokio时，我感到了前所未有的灵活性。
-直接使用tokio生态的组件，去代替原来 actix-web 的一些组件,并且把大量的依赖进行了升级，
-再也不用自己人工制作补丁，或者使用陈旧的依赖。
-
-When using actix-web, it has been a difficult problem to use the tokio 1.0 compatible library because actix-web 4 stable version has not been officially released.
-
-When using poem and transparently relying on tokio, I felt more flexibility than ever before.
+* I felt more flexibility than ever before in using `poem` and transparently relying on tokio.
 I was able to replace some of the original actix-web components directly with tokio eco-components, and upgrade a lot of dependencies.
 No more manual patching, or using old dependencies.
 
+#### A brief background on `poem`.
+
+1. the framework has a very fast performance , consistent philosophy , and a clear implementation .
+2. based on `hyper`, combined with `tokio`, users have more control.
 
 
-1. `actix-web` 相关依赖的移除，替换为 `poem` & `tokio`.
-2. 在直接依赖 `tokio` 1.0 的情况下升级多处依赖。
-3. 全局所有中间件的改造。
-4. 应用风格从 `actix-web` 转变到 `poem` & `tokio` 的组合风格。
-5. 全链路的测试，并编写迁移纪要。
+#### The migration focuses on.
 
-1. `actix-web` related dependencies are removed and replaced with `poem` & `tokio`.
-2. upgrade multiple dependencies with direct dependencies on `tokio` 1.0.
-3. global modification of all middleware. 4.
-4. application style change from `actix-web` to `poem` & `tokio` combined style.
-5. full link testing and writing migration logs.
+1. regrouping of web components, different style of maintaining application state.
 
-poem 中有一些相通 tower-Service的概念， Endpoint 
-
-代码对比。
+2. api-level modifications to avoid business logic adjustments.
 
 
-poem的中间件很轻量。
+#### Basic pre-migration grooming.
 
-下面是一些 `poem` & `actix-web` 的对比:
+* `handler` in poem generates a `Future` and the collaboration between the framework and `tokio` allows the request to be computed efficiently in a multi-threaded runtime.
 
-actix-web 之前的大量路由组通过config，去注册：
-![actix-app](./doc/src/_media/migrate_to_poem/actix_app.png)
-![actix-config](./doc/src/_media/migrate_to_poem/actix_config.png)
+   This is not the case with actix-web, which is internally composed of multiple single-threaded `Runtime`s.
+   Because of this subtle difference, the `handler` previously used for actix-web cannot be used directly for `poem`, because it is necessary to ensure that each `handler` is used for the same request.
+   Because of the need to ensure the input state of each `handler` and to ensure that the values across .await need to all Send.
 
-在 poem 中大量路由组通过Route去组织，可以多重嵌套：
-![poem-routes](./doc/src/_media/migrate_to_poem/poem_routes.png)
-![poem-route-config](./doc/src/_media/migrate_to_poem/poem_route_config.png)
+* poem's routing is a nestable `Endpoint` data structure, unlike the original actix-web configuration.
 
-也可以制作一个跟Route去不断地at：
-![poem-app](./doc/src/_media/migrate_to_poem/poem_app.png)
-![poem-config](./doc/src/_media/migrate_to_poem/poem_config.png)
+* Most of poem's exposed data structures support Send, allowing efficient use of thread resources, as opposed to `actix-web`.
 
-poem 中的handler
-![poem-handler](./doc/src/_media/migrate_to_poem/poem_handler.png)
+* All middleware implementations need to be modified, all backend Tasks need to be revamped, and all global state needs to be adjusted.
 
+* Upgrade multiple dependencies with direct dependencies on `tokio` 1.0.
 
-Endpoint
-The endpoint can handle HTTP requests. You can implement the Endpoint trait to create your own endpoint. Poem also provides some convenient functions to easily create a custom endpoint type.
-
-In the previous chapter, we learned how to use the handler macro to convert a function to an endpoint.
-
-Now let's see how to create your own endpoint by implementing the Endpoint trait.
-
-This is the definition of the Endpoint trait, you need to specify the type of Output and implement the call method.
-
-![poem-endpoint](./doc/src/_media/migrate_to_poem/poem_endpoint.png)
-
-poem 的Endpoint 哲学，跟tower中的Service 非常相似，但是poem更简洁一些
-![tower-service](./doc/src/_media/migrate_to_poem/tower_service.png)
-
-All types that can be converted to HTTP response Response should implement IntoResponse, and they can be used as the return value of the handler function.
-![poem-into-response](./doc/src/_media/migrate_to_poem/poem_into_response.png)
-
-使用poem制作中间件非常的轻松，如下是一个给请求增加 logger-id 的middlware的实例
-![poem-middleware-logger](./doc/src/_media/migrate_to_poem/poem_middleware_logger.png)
-
-如下是actix-web 实现middlware的模板示例,模板代码确实稍有冗长
-![actix-middlware](./doc/src/_media/migrate_to_poem/actix_middlware.png)
+* Testing of the full link and writing migration chronicles.
 
 
+### Here are some `poem` & `actix-web` comparisons:
 
-## 感谢
+#### routing side
+Previous implementation based on `actix-web`, with a large number of routing groups going through configure to register.
+![actix-app](. /doc/src/_media/migrate_to_poem/actix_app.png)
+![actix-config](. /doc/src/_media/migrate_to_poem/actix_config.png)
 
-谢谢你
+Now based on the `poem` implementation, a large number of route groups are organized by routes, which can be multi-nested: !
+![poem-routes](. /doc/src/_media/migrate_to_poem/poem_routes.png)
+![poem-route-config](. /doc/src/_media/migrate_to_poem/poem_route_config.png)
 
-我们要感谢整个社区和代码贡献者。特别是`poem`的作者:
-[油条哥](https://github.com/sunli829)
+It is also possible to make a root Route to constantly at.
+![poem-app](. /doc/src/_media/migrate_to_poem/poem_app.png)
+![poem-config](. /doc/src/_media/migrate_to_poem/poem_config.png)
 
-
-感谢用户报告文档中的拼写错误, 这非常感谢大家。
-感谢用户加入我们，提供反馈，讨论功能，并获得帮助!
-
-
-在迁移过程中，我也有一些需求使用poem是无法处理的，比如 `CookieSession`
-
-随后，我在 poem 上打开了一个issues，不到一天内就与作者沟通完成，并在poem支持了该功能。
+#### handler
+The handler in `poem`, not much different from the original one, just need to adjust some `extractor`, for some blocking task, switch to tokio's api to compute
+![poem-handler](. /doc/src/_media/migrate_to_poem/poem_handler.png)
 
 
+#### Endpoint
+`Endpoint` abstracts the HTTP request trait.
 
-// 写完投稿给张老师，油条哥预览下
-// poem 中加一个宣传栏。
+You can implement `Endpoint` to create your own `Endpoint` handler.
+Here is the definition of `Endpoint`:
+![poem-endpoint](. /doc/src/_media/migrate_to_poem/poem_endpoint.png)
 
-##### I've been away from work for a while, and I'm ready to find a new job. If you are interested in my work or need a Rust engineer, please contact me `binchengZhao@outlook.com` .
+The `Endpoint` philosophy of `poem` is very similar to that of `Service` in tower, but poem is a bit more concise, and `poem` is also compatible with `tower` to reuse its ecology and components.
+![tower-service](. /doc/src/_media/migrate_to_poem/tower_service.png)
+
+#### IntoResponse
+`IntoResponse` is an abstraction of the response data. 
+
+All Response types that can be converted to HTTP responses should implement IntoResponse, and they can be used as return values for `handler`.
+![poem-into-response](. /doc/src/_media/migrate_to_poem/poem_into_response.png)
+
+#### middleware
+
+Making middleware with `poem` is very easy, here is an example of middlware that adds logger-id to a request
+![poem-middleware-logger](. /doc/src/_media/migrate_to_poem/poem_middleware_logger.png)
+
+The following is a sample template for the actix-web implementation of middlware, the template code is indeed a bit long and intriguing.
+![actix-middlware](. /doc/src/_media/migrate_to_poem/actix_middlware.png)
+
+
+## Thanks
+
+During the migration process, I had some requirements that could not be handled directly using `poem`
+Then I opened a few issues on `poem` and within a day I was able to communicate with the author and support the feature in `poem`.
+
+I would like to thank the whole community and the code contributors. Especially the author of `poem`:
+[sunli829](https://github.com/sunli829)
+
+Thank you!
+
+
+Thanks to users for reporting spelling errors in the documentation, which is greatly appreciated by everyone.
+Thanks to users for joining us, providing feedback, discussing features, and getting help!
+I also appreciate such a good work from the `actix-web` community, as I decided to migrate to `poem` due to technical selection issues.
+
+
+
+### Repos:
+
+[poem](https://github.com/poem-web/poem)
+
+[delicate](https://github.com/BinChengZhao/delicate)
+
+### Message:
+
+##### I recently left my old job and am looking for a new one. If you are interested in my job and need a Rust engineer, please contact me `binchengZhao@outlook.com` .

@@ -11,7 +11,7 @@
 </a>
 
 
-1. 项目体积： 5w行代码+文档。
+1. 项目体积: 5w行代码+文档。
 2. 主要语言是Rust + js。
 3. 迁移涉及到45个文件的修改和4000行代码的修改（增加了2500行，删除了1579行）。
 
@@ -34,7 +34,7 @@
 
 * 在使用 actix-web时，因为actix-web 4 稳定版，一直没有正式发布，我想使用兼容 `tokio`1.0 的库一直是一个需要迫切解决的问题，当`poem`发布时我知道机会来了。
 
-* 在使用 `poem` 且 透明的依赖tokio时，我感到了前所未有的灵活性。
+* 在使用 `poem` 且透明的依赖tokio时，我感到了前所未有的灵活性。
 直接使用tokio生态的组件，去代替原来 actix-web 的一些组件,并且把大量的依赖进行了升级，
 再也不用自己人工制作补丁，或者使用陈旧的依赖。
 
@@ -54,8 +54,8 @@
 迁移前的基本梳理：
 
 * poem中的`handler`会生成一个`Future`，框架与`tokio`的协作可以让请求在多线程运行时中进行效计算。
+
    而actix-web则不是这样，它是内部由多个单线程的`Runtime`组成。
-   
    由于这种微妙的差别，以前用于actix-web的`handler`不能直接用于`poem`，
    因为需要确保每一个`handler`的输入状态，并且保证跨越.await的值需要都Send。
 
@@ -91,7 +91,7 @@
 
 
 #### Endpoint
-`Endpoint` 使用抽象HTTP请求的Trait。
+`Endpoint` 抽象HTTP请求的Trait。
 
 你可以实现`Endpoint`来创建你自己的`Endpoint`处理器。
 
@@ -113,7 +113,7 @@
 使用`poem`制作中间件非常的轻松，如下是一个给请求增加 logger-id 的middlware的示例
 ![poem-middleware-logger](./doc/src/_media/migrate_to_poem/poem_middleware_logger.png)
 
-如下是actix-web 实现middlware的模板示例,模板代码确实稍有冗长
+如下是actix-web 实现middlware的模板示例,模板代码确实稍有冗长,且耐人寻味。
 ![actix-middlware](./doc/src/_media/migrate_to_poem/actix_middlware.png)
 
 
@@ -122,7 +122,7 @@
 在迁移过程中，我有一些需求使用`poem` 是无法直接处理
 随后在 `poem` 上打开了几个issues，不到一天内就与作者沟通完成，并在`poem`支持了该功能，太强大了！
 
-我们要感谢整个社区和代码贡献者。特别是`poem`的作者:
+我要感谢整个社区和代码贡献者。特别是`poem`的作者:
 [油条哥](https://github.com/sunli829)
 
 谢谢你
