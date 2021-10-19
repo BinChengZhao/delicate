@@ -56,8 +56,12 @@ fn main() -> AnyResut<()> {
             Route::new()
                 .nest_no_strip("/api/task", actions::task::route_config())
                 .nest_no_strip("/api/user", actions::user::route_config())
+                .nest_no_strip("/api/role", actions::role::route_config())
                 .nest_no_strip("/api/task_log", actions::task_log::route_config())
+                .nest_no_strip("/api/tasks_state", actions::data_reports::route_config())
                 .nest_no_strip("/api/task_instance", actions::task_instance::route_config())
+                .nest_no_strip("/api/binding", actions::components::binding::route_config())
+                .nest_no_strip("/api/operation_log", actions::operation_log::route_config())
                 .nest_no_strip(
                     "/api/executor_group",
                     actions::executor_group::route_config(),
@@ -70,8 +74,6 @@ fn main() -> AnyResut<()> {
                     "/api/executor_processor_bind",
                     actions::executor_processor_bind::route_config(),
                 )
-                .nest_no_strip("/api/tasks_state", actions::data_reports::route_config())
-                .nest_no_strip("/api/binding", actions::components::binding::route_config())
                 .nest_no_strip(
                     "/api/executor",
                     actions::components::executor::route_config(),
@@ -80,12 +82,10 @@ fn main() -> AnyResut<()> {
                     "/api/permission",
                     actions::components::permission::route_config(),
                 )
-                .nest_no_strip("/api/operation_log", actions::operation_log::route_config())
                 .nest_no_strip(
                     "/api/user_login_log",
                     actions::user_login_log::route_config(),
-                )
-                .nest_no_strip("/api/role", actions::role::route_config()),
+                ),
         );
 
         let app = init_scheduler(app, arc_runtime_cloned).await;

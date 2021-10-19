@@ -4,6 +4,7 @@ pub(crate) fn logger_id_middleware() -> LoggerId {
     LoggerId
 }
 
+#[derive(Copy, Clone, Debug)]
 pub struct LoggerId;
 
 impl<E: Endpoint> Middleware<E> for LoggerId {
@@ -14,6 +15,7 @@ impl<E: Endpoint> Middleware<E> for LoggerId {
     }
 }
 
+#[derive(Copy, Clone, Debug)]
 pub struct LoggerIdMiddleware<E> {
     ep: E,
 }
