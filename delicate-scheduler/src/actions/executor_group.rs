@@ -1,8 +1,7 @@
 use super::prelude::*;
 
 pub(crate) fn route_config() -> Route {
-    let route: Route = Route::new();
-    route
+    Route::new()
         .at("/api/executor_group/list", post(show_executor_groups))
         .at(
             "/api/executor_group/detail",

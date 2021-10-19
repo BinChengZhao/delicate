@@ -1,8 +1,7 @@
 use super::prelude::*;
 
 pub(crate) fn route_config() -> Route {
-    let route: Route = Route::new();
-    route.at("/api/tasks_state/one_day", get(show_one_day_tasks_state))
+    Route::new().at("/api/tasks_state/one_day", get(show_one_day_tasks_state))
 }
 
 #[handler]

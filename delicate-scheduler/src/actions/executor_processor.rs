@@ -2,8 +2,7 @@ use super::prelude::*;
 use db::schema::executor_processor;
 
 pub(crate) fn route_config() -> Route {
-    let route: Route = Route::new();
-    route
+    Route::new()
         .at(
             "/api/executor_processor/list",
             post(show_executor_processors),

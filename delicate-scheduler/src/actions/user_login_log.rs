@@ -1,8 +1,7 @@
 use super::prelude::*;
 
 pub(crate) fn route_config() -> Route {
-    let route: Route = Route::new();
-    route.at("/api/user_login_log/list", post(show_user_login_log))
+    Route::new().at("/api/user_login_log/list", post(show_user_login_log))
 }
 
 #[handler]
