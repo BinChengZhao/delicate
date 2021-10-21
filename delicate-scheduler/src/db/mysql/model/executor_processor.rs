@@ -129,12 +129,12 @@ impl QueryParamsExecutorProcessor {
 pub(crate) async fn get_executor_token_by_id(id: i64, conn: db::PoolConnection) -> Option<String> {
     use db::schema::executor_processor;
 
-    web::block(move || {
+    spawn_blocking::<_,_>(move || {
         executor_processor::table
             .find(id)
             .select(executor_processor::token)
-            .first::<String>(&conn)
+            .first::<String>(&conn).ok()
     })
-    .await
-    .ok()
+    .await.ok().flatten()
+    
 }

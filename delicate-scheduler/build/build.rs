@@ -24,5 +24,13 @@ fn main() {
         })
         .ok();
 
+    // Detects if it is `APP_DEBUG_MODE`.
+    env::var("APP_DEBUG")
+        .map(|a| match a.as_str() {
+            "true" | "True" | "TRUE" => emit("APP_DEBUG_MODE"),
+            _ => (),
+        })
+        .ok();
+
     autocfg::rerun_path("build.rs");
 }

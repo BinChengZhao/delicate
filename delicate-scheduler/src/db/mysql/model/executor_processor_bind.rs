@@ -18,10 +18,10 @@ pub struct ExecutorProcessorBind {
 
 pub struct UpdateExecutorProcessorBind {
     pub(crate) id: i64,
-    name: String,
-    group_id: i64,
-    executor_id: i64,
-    weight: i16,
+    pub(crate) name: String,
+    pub(crate) group_id: i64,
+    pub(crate) executor_id: i64,
+    pub(crate) weight: i16,
 }
 
 #[derive(Queryable, AsChangeset, Identifiable, Debug, Clone, Serialize, Deserialize)]

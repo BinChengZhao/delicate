@@ -13,8 +13,8 @@ class loginLogs extends PureComponent {
     const condition = { page: 1, per_page: 10 }
     const payload = { ...condition, ...extra }
     dispatch({ type: `${NAMESPACE}/getLoginLogs`, payload }).then((ret) => {
-      const { dataSource, pagination } = ret.data
-      this.setState({ dataSource, pagination })
+      const { dataSource, pagination, stateDesc } = ret.data
+      this.setState({ dataSource, pagination, stateDesc })
     })
   }
 
@@ -48,11 +48,11 @@ class loginLogs extends PureComponent {
       },
       {
         title: t`Login Type`,
-        dataIndex: 'login_type'
+        dataIndex: 'login_type_desc'
       },
       {
         title: t`Login Status`,
-        dataIndex: 'command'
+        dataIndex: 'command_desc'
       },
       {
         title: t`Last Ip`,
@@ -61,6 +61,10 @@ class loginLogs extends PureComponent {
       {
         title: t`Username`,
         dataIndex: 'user_name'
+      },
+      {
+        title: t`CreateTime`,
+        dataIndex: 'created_time'
       }
     ]
   }

@@ -1,107 +1,128 @@
 use super::prelude::*;
 
-pub(crate) fn config(cfg: &mut web::ServiceConfig) {
-    cfg.service(show_executor_groups)
-        .service(show_executor_group_detail)
-        .service(create_executor_group)
-        .service(update_executor_group)
-        .service(delete_executor_group);
+pub(crate) fn route_config() -> Route {
+    Route::new()
+        .at("/api/executor_group/list", post(show_executor_groups))
+        .at(
+            "/api/executor_group/detail",
+            post(show_executor_group_detail),
+        )
+        .at("/api/executor_group/create", post(create_executor_group))
+        .at("/api/executor_group/update", post(update_executor_group))
+        .at("/api/executor_group/delete", post(delete_executor_group))
 }
 
-#[post("/api/executor_group/create")]
+#[handler]
 async fn create_executor_group(
-    req: HttpRequest,
-    web::Json(executor_group): web::Json<model::NewExecutorGroup>,
-    pool: ShareData<db::ConnectionPool>,
-) -> HttpResponse {
+    req: &Request,
+    Json(executor_group): Json<model::NewExecutorGroup>,
+    pool: Data<&Arc<db::ConnectionPool>>,
+) -> impl IntoResponse {
     use db::schema::executor_group;
 
     let operation_log_pair_option =
-        generate_operation_executor_group_addtion_log(&req.get_session(), &executor_group).ok();
+        generate_operation_executor_group_addtion_log(req.get_session(), &executor_group).ok();
     send_option_operation_log_pair(operation_log_pair_option).await;
 
     if let Ok(conn) = pool.get() {
-        return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<u64>>::into(
-            web::block(move || {
-                diesel::insert_into(executor_group::table)
-                    .values(&executor_group)
-                    .execute(&conn)?;
+        let f_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
+            diesel::insert_into(executor_group::table)
+                .values(&executor_group)
+                .execute(&conn)?;
 
-                diesel::select(db::last_insert_id).get_result::<u64>(&conn)
-            })
-            .await,
-        ));
+            diesel::select(db::last_insert_id).get_result::<u64>(&conn)
+        })
+        .await;
+
+        let id = f_result
+            .map(Into::<UnifiedResponseMessages<u64>>::into)
+            .unwrap_or_else(|e| {
+                UnifiedResponseMessages::<u64>::error().customized_error_msg(e.to_string())
+            });
+
+        return Json(id);
     }
 
-    HttpResponse::Ok().json(UnifiedResponseMessages::<()>::error())
+    Json(UnifiedResponseMessages::<u64>::error())
 }
 
-#[post("/api/executor_group/list")]
+#[handler]
 async fn show_executor_groups(
-    web::Json(query_params): web::Json<model::QueryParamsExecutorGroup>,
-    pool: ShareData<db::ConnectionPool>,
-) -> HttpResponse {
+    Json(query_params): Json<model::QueryParamsExecutorGroup>,
+    pool: Data<&Arc<db::ConnectionPool>>,
+) -> impl IntoResponse {
     if let Ok(conn) = pool.get() {
-        return HttpResponse::Ok().json(Into::<
-            UnifiedResponseMessages<PaginateData<model::ExecutorGroup>>,
-        >::into(
-            web::block::<_, _, diesel::result::Error>(move || {
-                let query_builder = model::ExecutorGroupQueryBuilder::query_all_columns();
+        let f_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
+            let query_builder = model::ExecutorGroupQueryBuilder::query_all_columns();
 
-                let executor_groups = query_params
-                    .clone()
-                    .query_filter(query_builder)
-                    .paginate(query_params.page)
-                    .set_per_page(query_params.per_page)
-                    .load::<model::ExecutorGroup>(&conn)?;
+            let executor_groups = query_params
+                .clone()
+                .query_filter(query_builder)
+                .paginate(query_params.page)
+                .set_per_page(query_params.per_page)
+                .load::<model::ExecutorGroup>(&conn)?;
 
-                let per_page = query_params.per_page;
-                let count_builder = model::ExecutorGroupQueryBuilder::query_count();
-                let count = query_params
-                    .query_filter(count_builder)
-                    .get_result::<i64>(&conn)?;
+            let per_page = query_params.per_page;
+            let count_builder = model::ExecutorGroupQueryBuilder::query_count();
+            let count = query_params
+                .query_filter(count_builder)
+                .get_result::<i64>(&conn)?;
 
-                Ok(PaginateData::<model::ExecutorGroup>::default()
-                    .set_data_source(executor_groups)
-                    .set_page_size(per_page)
-                    .set_total(count))
+            Ok(PaginateData::<model::ExecutorGroup>::default()
+                .set_data_source(executor_groups)
+                .set_page_size(per_page)
+                .set_total(count))
+        })
+        .await;
+
+        let page = f_result
+            .map(|page_result| {
+                Into::<UnifiedResponseMessages<PaginateData<model::ExecutorGroup>>>::into(
+                    page_result,
+                )
             })
-            .await,
-        ));
+            .unwrap_or_else(|e| {
+                UnifiedResponseMessages::<PaginateData<model::ExecutorGroup>>::error()
+                    .customized_error_msg(e.to_string())
+            });
+        return Json(page);
     }
 
-    HttpResponse::Ok().json(UnifiedResponseMessages::<PaginateData<model::ExecutorGroup>>::error())
+    Json(UnifiedResponseMessages::<PaginateData<model::ExecutorGroup>>::error())
 }
 
-#[post("/api/executor_group/detail")]
+#[handler]
 async fn show_executor_group_detail(
-    web::Json(model::ExecutorGroupId { executor_group_id }): web::Json<model::ExecutorGroupId>,
-    pool: ShareData<db::ConnectionPool>,
-) -> HttpResponse {
+    Json(model::ExecutorGroupId { executor_group_id }): Json<model::ExecutorGroupId>,
+    pool: Data<&Arc<db::ConnectionPool>>,
+) -> impl IntoResponse {
     let executor_group_detail_result =
         pre_show_executor_group_detail(executor_group_id, pool).await;
     if let Ok(executor_group_detail) = executor_group_detail_result {
-        return HttpResponse::Ok().json(
+        return Json(
             UnifiedResponseMessages::<model::ExecutorGroupDetail>::success_with_data(
                 executor_group_detail,
             ),
-        );
+        )
+        .into_response();
     };
-    HttpResponse::Ok().json(
+
+    Json(
         UnifiedResponseMessages::<()>::error()
             .customized_error_msg(executor_group_detail_result.expect_err("").to_string()),
     )
+    .into_response()
 }
 
 async fn pre_show_executor_group_detail(
     executor_group_id: i64,
-    pool: ShareData<db::ConnectionPool>,
+    pool: Data<&Arc<db::ConnectionPool>>,
 ) -> Result<model::ExecutorGroupDetail, CommonError> {
     use db::schema::{executor_group, executor_processor, executor_processor_bind};
 
     let conn = pool.get()?;
     let executor_group_detail: model::ExecutorGroupDetail =
-        web::block::<_, _, diesel::result::Error>(move || {
+        spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
             let executor_group_detail_inner = executor_group::table
                 .select(executor_group::all_columns)
                 .find(executor_group_id)
@@ -126,58 +147,70 @@ async fn pre_show_executor_group_detail(
                 bindings,
             })
         })
-        .await?;
+        .await??;
 
     Ok(executor_group_detail)
 }
 
-#[post("/api/executor_group/update")]
+#[handler]
 async fn update_executor_group(
-    req: HttpRequest,
-    web::Json(executor_group): web::Json<model::UpdateExecutorGroup>,
-    pool: ShareData<db::ConnectionPool>,
-) -> HttpResponse {
+    req: &Request,
+    Json(executor_group): Json<model::UpdateExecutorGroup>,
+    pool: Data<&Arc<db::ConnectionPool>>,
+) -> impl IntoResponse {
     let operation_log_pair_option =
-        generate_operation_executor_group_modify_log(&req.get_session(), &executor_group).ok();
+        generate_operation_executor_group_modify_log(req.get_session(), &executor_group).ok();
     send_option_operation_log_pair(operation_log_pair_option).await;
 
     if let Ok(conn) = pool.get() {
-        return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
-            web::block(move || {
-                diesel::update(&executor_group)
-                    .set(&executor_group)
-                    .execute(&conn)
-            })
-            .await,
-        ));
+        let f_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
+            diesel::update(&executor_group)
+                .set(&executor_group)
+                .execute(&conn)
+        })
+        .await;
+
+        let count = f_result
+            .map(Into::<UnifiedResponseMessages<usize>>::into)
+            .unwrap_or_else(|e| {
+                UnifiedResponseMessages::<usize>::error().customized_error_msg(e.to_string())
+            });
+
+        return Json(count);
     }
 
-    HttpResponse::Ok().json(UnifiedResponseMessages::<usize>::error())
+    Json(UnifiedResponseMessages::<usize>::error())
 }
-#[post("/api/executor_group/delete")]
+
+#[handler]
 async fn delete_executor_group(
-    req: HttpRequest,
-    web::Json(model::ExecutorGroupId { executor_group_id }): web::Json<model::ExecutorGroupId>,
-    pool: ShareData<db::ConnectionPool>,
-) -> HttpResponse {
+    req: &Request,
+    Json(model::ExecutorGroupId { executor_group_id }): Json<model::ExecutorGroupId>,
+    pool: Data<&Arc<db::ConnectionPool>>,
+) -> impl IntoResponse {
     use db::schema::executor_group::dsl::*;
 
     let operation_log_pair_option = generate_operation_executor_group_delete_log(
-        &req.get_session(),
+        req.get_session(),
         &CommonTableRecord::default().set_id(executor_group_id),
     )
     .ok();
     send_option_operation_log_pair(operation_log_pair_option).await;
 
     if let Ok(conn) = pool.get() {
-        return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
-            web::block(move || {
-                // Cannot link to delete internal bindings, otherwise it will cause data misalignment.
-                diesel::delete(executor_group.find(executor_group_id)).execute(&conn)
-            })
-            .await,
-        ));
+        let f_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
+            // Cannot link to delete internal bindings, otherwise it will cause data misalignment.
+            diesel::delete(executor_group.find(executor_group_id)).execute(&conn)
+        })
+        .await;
+
+        let count = f_result
+            .map(Into::<UnifiedResponseMessages<usize>>::into)
+            .unwrap_or_else(|e| {
+                UnifiedResponseMessages::<usize>::error().customized_error_msg(e.to_string())
+            });
+        return Json(count);
     }
 
-    HttpResponse::Ok().json(UnifiedResponseMessages::<usize>::error())
+    Json(UnifiedResponseMessages::<usize>::error())
 }

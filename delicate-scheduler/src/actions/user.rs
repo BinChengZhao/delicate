@@ -1,215 +1,260 @@
 use super::prelude::*;
 use model::schema::{user, user_auth, user_login_log};
-use model::user::get_encrypted_certificate_by_raw_certificate;
+use model::user::{
+    get_encrypted_certificate_by_raw_certificate, UserAndPermissions, UserAndRoles, UserName,
+};
+use model::user_login_log::NewUserLoginLog;
 
-pub(crate) fn config(cfg: &mut web::ServiceConfig) {
-    cfg.service(create_user)
-        .service(show_users)
-        .service(update_user)
-        .service(delete_user)
-        .service(login_user)
-        .service(logout_user)
-        .service(check_user)
-        .service(change_password);
+pub(crate) fn route_config() -> Route {
+    Route::new()
+        .at("/api/user/create", post(create_user))
+        .at("/api/user/list", post(show_users))
+        .at("/api/user/update", post(update_user))
+        .at("/api/user/delete", post(delete_user))
+        .at("/api/user/login", post(login_user))
+        .at("/api/user/logout", post(logout_user))
+        .at("/api/user/check", post(check_user))
+        .at("/api/user/change_password", post(change_password))
+        .at("/api/user/roles", post(roles))
+        .at("/api/user/permissions", post(permissions))
+        .at("/api/user/append_permission", post(append_permission))
+        .at("/api/user/delete_permission", post(delete_permission))
+        .at("/api/user/append_role", post(append_role))
+        .at("/api/user/delete_role", post(delete_role))
 }
 
-#[post("/api/user/create")]
+#[handler]
+
 async fn create_user(
-    req: HttpRequest,
-    web::Json(user): web::Json<model::QueryNewUser>,
-    pool: ShareData<db::ConnectionPool>,
-) -> HttpResponse {
+    req: &Request,
+    Json(user): Json<model::QueryNewUser>,
+    pool: Data<&Arc<db::ConnectionPool>>,
+) -> impl IntoResponse {
     let validate_result: Result<(), ValidationErrors> = user.validate();
     if validate_result.is_err() {
-        return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<()>>::into(validate_result));
+        return Json(Into::<UnifiedResponseMessages<()>>::into(validate_result));
     }
 
     let new_user = Into::<model::NewUser>::into(&user);
 
     let operation_log_pair_option =
-        generate_operation_user_addtion_log(&req.get_session(), &new_user).ok();
+        generate_operation_user_addtion_log(req.get_session(), &new_user).ok();
     send_option_operation_log_pair(operation_log_pair_option).await;
 
     if let Ok(conn) = pool.get() {
-        return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<()>>::into(
-            web::block::<_, _, diesel::result::Error>(move || {
-                conn.transaction(|| {
-                    diesel::insert_into(user::table)
-                        .values(&new_user)
-                        .execute(&conn)?;
+        let f_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
+            conn.transaction(|| {
+                diesel::insert_into(user::table)
+                    .values(&new_user)
+                    .execute(&conn)?;
 
-                    let last_id = diesel::select(db::last_insert_id).get_result::<u64>(&conn)?;
+                let last_id = diesel::select(db::last_insert_id).get_result::<u64>(&conn)?;
 
-                    let user_auths: model::NewUserAuths =
-                        From::<(model::QueryNewUser, u64)>::from((user, last_id));
+                let user_auths: model::NewUserAuths =
+                    From::<(model::QueryNewUser, u64)>::from((user, last_id));
 
-                    diesel::insert_into(user_auth::table)
-                        .values(&user_auths.0[..])
-                        .execute(&conn)?;
+                diesel::insert_into(user_auth::table)
+                    .values(&user_auths.0[..])
+                    .execute(&conn)?;
 
-                    Ok(())
-                })
+                Ok(())
             })
-            .await,
-        ));
+        })
+        .await;
+
+        let resp = f_result
+            .map(Into::<UnifiedResponseMessages<()>>::into)
+            .unwrap_or_else(|e| {
+                UnifiedResponseMessages::<()>::error().customized_error_msg(e.to_string())
+            });
+        return Json(resp);
     }
 
-    HttpResponse::Ok().json(UnifiedResponseMessages::<()>::error())
+    Json(UnifiedResponseMessages::<()>::error())
 }
 
-#[post("/api/user/list")]
+#[handler]
+
 async fn show_users(
-    web::Json(query_params): web::Json<model::QueryParamsUser>,
-    pool: ShareData<db::ConnectionPool>,
-) -> HttpResponse {
+    Json(query_params): Json<model::QueryParamsUser>,
+    pool: Data<&Arc<db::ConnectionPool>>,
+) -> impl IntoResponse {
     if let Ok(conn) = pool.get() {
-        return HttpResponse::Ok().json(
-            Into::<UnifiedResponseMessages<PaginateData<model::User>>>::into(
-                web::block::<_, _, diesel::result::Error>(move || {
-                    let query_builder = model::UserQueryBuilder::query_all_columns();
+        let f_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
+            let query_builder = model::UserQueryBuilder::query_all_columns();
 
-                    let users = query_params
-                        .clone()
-                        .query_filter(query_builder)
-                        .paginate(query_params.page)
-                        .set_per_page(query_params.per_page)
-                        .load::<model::User>(&conn)?;
+            let users = query_params
+                .clone()
+                .query_filter(query_builder)
+                .paginate(query_params.page)
+                .set_per_page(query_params.per_page)
+                .load::<model::User>(&conn)?;
 
-                    let per_page = query_params.per_page;
-                    let count_builder = model::UserQueryBuilder::query_count();
-                    let count = query_params
-                        .query_filter(count_builder)
-                        .get_result::<i64>(&conn)?;
+            let per_page = query_params.per_page;
+            let count_builder = model::UserQueryBuilder::query_count();
+            let count = query_params
+                .query_filter(count_builder)
+                .get_result::<i64>(&conn)?;
 
-                    Ok(PaginateData::<model::User>::default()
-                        .set_data_source(users)
-                        .set_page_size(per_page)
-                        .set_total(count))
-                })
-                .await,
-            ),
-        );
+            Ok(PaginateData::<model::User>::default()
+                .set_data_source(users)
+                .set_page_size(per_page)
+                .set_total(count))
+        })
+        .await;
+
+        let page = f_result
+            .map(|page_result| {
+                Into::<UnifiedResponseMessages<PaginateData<model::User>>>::into(page_result)
+            })
+            .unwrap_or_else(|e| {
+                UnifiedResponseMessages::<PaginateData<model::User>>::error()
+                    .customized_error_msg(e.to_string())
+            });
+        return Json(page);
     }
 
-    HttpResponse::Ok().json(UnifiedResponseMessages::<PaginateData<model::User>>::error())
+    Json(UnifiedResponseMessages::<PaginateData<model::User>>::error())
 }
 
-#[post("/api/user/update")]
+#[handler]
+
 async fn update_user(
-    req: HttpRequest,
-    web::Json(user_value): web::Json<model::UpdateUser>,
-    pool: ShareData<db::ConnectionPool>,
-) -> HttpResponse {
+    req: &Request,
+    Json(user_value): Json<model::UpdateUser>,
+    pool: Data<&Arc<db::ConnectionPool>>,
+) -> impl IntoResponse {
     let operation_log_pair_option =
-        generate_operation_user_modify_log(&req.get_session(), &user_value).ok();
+        generate_operation_user_modify_log(req.get_session(), &user_value).ok();
     send_option_operation_log_pair(operation_log_pair_option).await;
 
     if let Ok(conn) = pool.get() {
-        return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
-            web::block(move || diesel::update(&user_value).set(&user_value).execute(&conn)).await,
-        ));
+        let f_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
+            diesel::update(&user_value).set(&user_value).execute(&conn)
+        })
+        .await;
+
+        let count = f_result
+            .map(Into::<UnifiedResponseMessages<usize>>::into)
+            .unwrap_or_else(|e| {
+                UnifiedResponseMessages::<usize>::error().customized_error_msg(e.to_string())
+            });
+        return Json(count);
     }
 
-    HttpResponse::Ok().json(UnifiedResponseMessages::<usize>::error())
+    Json(UnifiedResponseMessages::<usize>::error())
 }
 
-#[post("/api/user/change_password")]
+#[handler]
+
 async fn change_password(
-    req: HttpRequest,
-    web::Json(user_value): web::Json<model::UserChangePassword>,
-    pool: ShareData<db::ConnectionPool>,
-) -> HttpResponse {
+    req: &Request,
+    Json(user_value): Json<model::UserChangePassword>,
+    pool: Data<&Arc<db::ConnectionPool>>,
+) -> impl IntoResponse {
     let session = req.get_session();
-    let user_id = session
-        .get::<u64>("user_id")
-        .unwrap_or_default()
-        .unwrap_or_default();
+    let user_id = session.get::<u64>("user_id");
+
+    if user_id.is_none() {
+        return Json(UnifiedResponseMessages::<usize>::error());
+    }
 
     if let Ok(conn) = pool.get() {
-        return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
-            web::block::<_, _, diesel::result::Error>(move || {
-                let user_auth_id = user_auth::table
+        let f_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
+            let user_auth_id =
+                user_auth::table
                     .select(user_auth::id)
-                    .filter(user_auth::user_id.eq(&user_id))
+                    .filter(user_auth::user_id.eq(&user_id.expect("")))
                     .filter(user_auth::identity_type.eq(user_value.identity_type))
                     .filter(user_auth::certificate.eq(
                         get_encrypted_certificate_by_raw_certificate(&user_value.current_password),
                     ))
                     .first::<i64>(&conn)?;
 
-                diesel::update(user_auth::table.find(user_auth_id))
-                    .set(
-                        user_auth::certificate.eq(get_encrypted_certificate_by_raw_certificate(
-                            &user_value.modified_password,
-                        )),
-                    )
-                    .execute(&conn)
-            })
-            .await,
-        ));
+            diesel::update(user_auth::table.find(user_auth_id))
+                .set(
+                    user_auth::certificate.eq(get_encrypted_certificate_by_raw_certificate(
+                        &user_value.modified_password,
+                    )),
+                )
+                .execute(&conn)
+        })
+        .await;
+
+        let count = f_result
+            .map(Into::<UnifiedResponseMessages<usize>>::into)
+            .unwrap_or_else(|e| {
+                UnifiedResponseMessages::<usize>::error().customized_error_msg(e.to_string())
+            });
+
+        return Json(count);
     }
 
-    HttpResponse::Ok().json(UnifiedResponseMessages::<usize>::error())
+    Json(UnifiedResponseMessages::<usize>::error())
 }
+#[handler]
 
-#[post("/api/user/delete")]
 async fn delete_user(
-    req: HttpRequest,
-    web::Json(model::UserId { user_id }): web::Json<model::UserId>,
-    pool: ShareData<db::ConnectionPool>,
-) -> HttpResponse {
+    req: &Request,
+    Json(model::UserId { user_id }): Json<model::UserId>,
+    pool: Data<&Arc<db::ConnectionPool>>,
+) -> impl IntoResponse {
     let operation_log_pair_option = generate_operation_user_delete_log(
-        &req.get_session(),
+        req.get_session(),
         &CommonTableRecord::default().set_id(user_id as i64),
     )
     .ok();
     send_option_operation_log_pair(operation_log_pair_option).await;
 
     if let Ok(conn) = pool.get() {
-        return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<()>>::into(
-            web::block::<_, _, diesel::result::Error>(move || {
-                conn.transaction(|| {
-                    diesel::delete(user::table.filter(user::id.eq(user_id))).execute(&conn)?;
-                    diesel::delete(user_auth::table.filter(user_auth::user_id.eq(user_id)))
-                        .execute(&conn)?;
+        let f_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
+            conn.transaction(|| {
+                diesel::delete(user::table.filter(user::id.eq(user_id))).execute(&conn)?;
+                diesel::delete(user_auth::table.filter(user_auth::user_id.eq(user_id)))
+                    .execute(&conn)?;
 
-                    Ok(())
-                })
+                Ok(())
             })
-            .await,
-        ));
+        })
+        .await;
+
+        let resp = f_result
+            .map(Into::<UnifiedResponseMessages<()>>::into)
+            .unwrap_or_else(|e| {
+                UnifiedResponseMessages::<()>::error().customized_error_msg(e.to_string())
+            });
+        return Json(resp);
     }
 
-    HttpResponse::Ok().json(UnifiedResponseMessages::<()>::error())
+    Json(UnifiedResponseMessages::<()>::error())
 }
 
-#[post("/api/user/login")]
-async fn login_user(
-    req: HttpRequest,
-    web::Json(user_login): web::Json<model::UserAuthLogin>,
-    session: Session,
-    pool: ShareData<db::ConnectionPool>,
-) -> HttpResponse {
-    let login_result: UnifiedResponseMessages<()> =
-        pre_login_user(req, user_login, session, pool).await.into();
+#[handler]
 
-    HttpResponse::Ok().json(login_result)
+async fn login_user(
+    req: &Request,
+    Json(user_login): Json<model::UserAuthLogin>,
+    pool: Data<&Arc<db::ConnectionPool>>,
+) -> impl IntoResponse {
+    let login_result: UnifiedResponseMessages<()> =
+        pre_login_user(req, user_login, pool).await.into();
+
+    Json(login_result)
 }
 
 async fn pre_login_user(
-    req: HttpRequest,
+    req: &Request,
     model::UserAuthLogin {
         login_type,
         account,
         password,
     }: model::UserAuthLogin,
-    session: Session,
-    pool: ShareData<db::ConnectionPool>,
+    pool: Data<&Arc<db::ConnectionPool>>,
 ) -> Result<(), CommonError> {
-    use model::user_login_log::NewUserLoginLog;
-
-    let connection = req.connection_info();
-    let client_ip = connection.realip_remote_addr();
+    let client_ip = req
+        .remote_addr()
+        .as_socket_addr()
+        .map(|sock| sock.ip().to_string());
     let mut new_user_login_log = NewUserLoginLog::default();
     new_user_login_log
         .set_lastip(client_ip)
@@ -217,7 +262,7 @@ async fn pre_login_user(
 
     let conn = pool.get()?;
     let user_package: (model::UserAuth, model::User) =
-        web::block::<_, _, diesel::result::Error>(move || {
+        spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
             let login_result = user_auth::table
                 .inner_join(user::table)
                 .select((user_auth::all_columns, user::all_columns))
@@ -251,46 +296,53 @@ async fn pre_login_user(
 
             login_result
         })
-        .await?;
-    save_session(session, user_package)
+        .await??;
+    save_session(req, user_package)
 }
 
 fn save_session(
-    session: Session,
+    req: &Request,
     (_, user): (model::UserAuth, model::User),
 ) -> Result<(), CommonError> {
-    session.set("login_time", get_timestamp())?;
-    session.set("user_id", user.id)?;
-    session.set("user_name", user.user_name)?;
-    session.set("nick_name", user.nick_name)?;
+    let session = req.get_session();
+
+    session.set("login_time", get_timestamp());
+    session.set("user_id", user.id);
+    session.set("user_name", user.user_name);
+    session.set("nick_name", user.nick_name);
+
     Ok(())
 }
 
-#[post("/api/user/check")]
-async fn check_user(session: Session, pool: ShareData<db::ConnectionPool>) -> HttpResponse {
-    let check_result = pre_check_user(session, pool).await;
+#[handler]
+
+async fn check_user(req: &Request, pool: Data<&Arc<db::ConnectionPool>>) -> impl IntoResponse {
+    let check_result = pre_check_user(req, pool).await;
     if let Ok(user) = check_result {
-        return HttpResponse::Ok().json(UnifiedResponseMessages::<model::User>::success_with_data(
+        return Json(UnifiedResponseMessages::<model::User>::success_with_data(
             user,
-        ));
+        ))
+        .into_response();
     };
 
-    HttpResponse::Ok().json(
+    Json(
         UnifiedResponseMessages::<()>::error()
             .customized_error_msg(check_result.expect_err("").to_string()),
     )
+    .into_response()
 }
 
 async fn pre_check_user(
-    session: Session,
-    pool: ShareData<db::ConnectionPool>,
+    req: &Request,
+    pool: Data<&Arc<db::ConnectionPool>>,
 ) -> Result<model::User, CommonError> {
+    let session = req.get_session();
     let conn = pool.get()?;
     let user_id = session
-        .get::<u64>("user_id")?
+        .get::<u64>("user_id")
         .ok_or_else(|| CommonError::DisPass("Without set `user_id` .".into()))?;
 
-    let user = web::block::<_, _, diesel::result::Error>(move || {
+    let user = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
         let user = user::table
             .select(user::all_columns)
             .find(user_id)
@@ -298,15 +350,178 @@ async fn pre_check_user(
 
         Ok(user)
     })
-    .await?;
+    .await??;
 
     Ok(user)
 }
 
-#[post("/api/user/logout")]
-async fn logout_user(session: Session) -> HttpResponse {
-    HttpResponse::Ok().json({
-        session.clear();
-        UnifiedResponseMessages::<()>::success()
-    })
+#[handler]
+
+async fn logout_user(req: &Request) -> impl IntoResponse {
+    let session = req.get_session();
+    session.clear();
+    UnifiedResponseMessages::<()>::success()
+}
+
+#[handler]
+
+async fn roles(
+    enforcer: Data<&Arc<RwLock<Enforcer>>>,
+    Json(UserName { user_name }): Json<UserName>,
+) -> impl IntoResponse {
+    let mut enforcer_guard = enforcer.write().await;
+    let mut roles = enforcer_guard.get_roles_for_user(&user_name, None);
+    let implicit_roles = enforcer_guard.get_implicit_roles_for_user(&user_name, None);
+    roles.extend(implicit_roles.into_iter());
+
+    Json(UnifiedResponseMessages::<Vec<String>>::success_with_data(
+        roles,
+    ))
+}
+
+#[handler]
+
+async fn permissions(
+    enforcer: Data<&Arc<RwLock<Enforcer>>>,
+    Json(UserName { user_name }): Json<UserName>,
+) -> impl IntoResponse {
+    let mut enforcer_guard = enforcer.write().await;
+
+    let mut permissions = enforcer_guard.get_permissions_for_user(&user_name, None);
+    let implicit_permissions = enforcer_guard.get_implicit_permissions_for_user(&user_name, None);
+    permissions.extend(implicit_permissions.into_iter());
+
+    Json(UnifiedResponseMessages::<Vec<Vec<String>>>::success_with_data(permissions))
+}
+
+#[handler]
+
+async fn append_role(
+    req: &Request,
+    enforcer: Data<&Arc<RwLock<Enforcer>>>,
+    Json(user_and_roles): Json<UserAndRoles>,
+) -> impl IntoResponse {
+    let operation_log_pair_option =
+        generate_operation_user_role_addtion_log(req.get_session(), &user_and_roles).ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
+
+    let UserAndRoles {
+        user_name,
+        mut operate_roles,
+    } = user_and_roles;
+
+    operate_roles.sort_unstable();
+    operate_roles.dedup();
+    let append_roles: Vec<String> = operate_roles
+        .iter()
+        .filter_map(|role_id| ROLES.get(*role_id).map(|role_name| role_name.to_string()))
+        .collect();
+
+    if append_roles.is_empty() {
+        return Json(UnifiedResponseMessages::<bool>::error());
+    }
+
+    let mut enforcer_guard = enforcer.write().await;
+    let operated_result = enforcer_guard
+        .add_roles_for_user(&user_name, append_roles, None)
+        .await;
+
+    let msg = Into::<UnifiedResponseMessages<bool>>::into(operated_result);
+    Json(msg)
+}
+
+#[handler]
+
+async fn delete_role(
+    req: &Request,
+    enforcer: Data<&Arc<RwLock<Enforcer>>>,
+    Json(user_and_roles): Json<UserAndRoles>,
+) -> impl IntoResponse {
+    let operation_log_pair_option =
+        generate_operation_user_role_delete_log(req.get_session(), &user_and_roles).ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
+
+    let UserAndRoles {
+        user_name,
+        mut operate_roles,
+    } = user_and_roles;
+
+    operate_roles.sort_unstable();
+    operate_roles.dedup();
+
+    let delete_roles: Vec<&str> = operate_roles
+        .iter()
+        .filter_map(|role_id| ROLES.get(*role_id).copied())
+        .collect();
+
+    if delete_roles.is_empty() {
+        return Json(UnifiedResponseMessages::<bool>::error());
+    }
+
+    let mut enforcer_guard = enforcer.write().await;
+
+    for role in delete_roles {
+        enforcer_guard
+            .delete_role_for_user(&user_name, role, None)
+            .await
+            .map_err(|e| error!("role: {}, error: {}", role, e))
+            .unwrap_or_default();
+    }
+
+    Json(UnifiedResponseMessages::<bool>::success())
+}
+
+#[handler]
+
+async fn append_permission(
+    req: &Request,
+    enforcer: Data<&Arc<RwLock<Enforcer>>>,
+    Json(user_and_permissions): Json<UserAndPermissions>,
+) -> impl IntoResponse {
+    let operation_log_pair_option =
+        generate_operation_user_permission_addtion_log(req.get_session(), &user_and_permissions)
+            .ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
+
+    let UserAndPermissions {
+        user_name,
+        operate_permissions,
+    } = user_and_permissions;
+
+    let mut enforcer_guard = enforcer.write().await;
+    let operated_result = enforcer_guard
+        .add_permissions_for_user(&user_name, operate_permissions)
+        .await;
+    let msg = Into::<UnifiedResponseMessages<bool>>::into(operated_result);
+    Json(msg)
+}
+
+#[handler]
+async fn delete_permission(
+    req: &Request,
+    enforcer: Data<&Arc<RwLock<Enforcer>>>,
+    Json(user_and_permissions): Json<UserAndPermissions>,
+) -> impl IntoResponse {
+    let operation_log_pair_option =
+        generate_operation_user_permission_delete_log(req.get_session(), &user_and_permissions)
+            .ok();
+    send_option_operation_log_pair(operation_log_pair_option).await;
+
+    let UserAndPermissions {
+        user_name,
+        operate_permissions,
+    } = user_and_permissions;
+
+    let mut enforcer_guard = enforcer.write().await;
+
+    for operate_permission in operate_permissions {
+        enforcer_guard
+            .delete_permission_for_user(&user_name, operate_permission)
+            .await
+            .map_err(|e| error!("error: {}", e))
+            .unwrap_or_default();
+    }
+
+    let msg = UnifiedResponseMessages::<()>::success();
+    Json(msg)
 }

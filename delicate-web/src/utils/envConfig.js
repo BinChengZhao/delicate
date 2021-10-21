@@ -3,7 +3,7 @@ const env = process.env.NODE_ENV
 const envConfig = {
   development: {
     // Auto set by ci.
-    DELICATE_API: 'http://api.delicate-rs.com:8090',
+    DELICATE_API: 'http://api-local.delicate-rs.com',
     DELICATE_WEB: 'http://localhost:7000'
   },
   test: {
@@ -11,7 +11,7 @@ const envConfig = {
     DELICATE_WEB: 'http://localhost:3001'
   },
   production: {
-    DELICATE_API: 'http://api.delicate-rs.com:8090',
+    DELICATE_API: 'http://api.delicate-rs.com',
     DELICATE_WEB: 'http://localhost:3001'
   }
 }

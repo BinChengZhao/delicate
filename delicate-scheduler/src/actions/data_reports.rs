@@ -1,16 +1,16 @@
 use super::prelude::*;
 
-pub(crate) fn config(cfg: &mut web::ServiceConfig) {
-    cfg.service(show_one_day_tasks_state);
+pub(crate) fn route_config() -> Route {
+    Route::new().at("/api/tasks_state/one_day", get(show_one_day_tasks_state))
 }
 
-#[get("/api/tasks_state/one_day")]
-async fn show_one_day_tasks_state(pool: ShareData<db::ConnectionPool>) -> HttpResponse {
+#[handler]
+async fn show_one_day_tasks_state(pool: Data<&Arc<db::ConnectionPool>>) -> impl IntoResponse {
     use db::schema::task_log;
     use state::task_log::State;
 
     if let Ok(conn) = pool.get() {
-        let daily_state_result = web::block::<_, _, diesel::result::Error>(move || {
+        let daily_state_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
             let datetime: DateTime<Local> = SystemTime::now().into();
             let now = datetime.naive_local();
             let raw_past_day = now - ChronoDuration::days(1);
@@ -74,12 +74,18 @@ async fn show_one_day_tasks_state(pool: ShareData<db::ConnectionPool>) -> HttpRe
             ))
         })
         .await;
-        return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<model::DailyState>>::into(
-            daily_state_result,
-        ));
+        let daily_state = daily_state_result
+            .map(|daily_state_result| {
+                Into::<UnifiedResponseMessages<model::DailyState>>::into(daily_state_result)
+            })
+            .unwrap_or_else(|e| {
+                UnifiedResponseMessages::<model::DailyState>::error()
+                    .customized_error_msg(e.to_string())
+            });
+        return Json(daily_state);
     }
 
-    HttpResponse::Ok().json(UnifiedResponseMessages::<model::DailyState>::error())
+    Json(UnifiedResponseMessages::<model::DailyState>::error())
 }
 
 pub(crate) fn pre_show_one_day_tasks_state(

@@ -38,11 +38,11 @@ export const isEmpty = (val) => {
  * @param range
  * @returns {{start_time: null|number, end_time: null|number}}
  */
-export const getDatePikerRange = (range) => {
+export const getDatePikerRange = (range, fmt = 'YYYY-MM-DD hh:mm:ss') => {
   const timeRange = { start_time: null, end_time: null }
   if (range) {
-    timeRange.start_time = parseInt(moment(range[0]._d).valueOf() / 1000)
-    timeRange.end_time = parseInt(moment(range[1]._d).valueOf() / 1000)
+    timeRange.start_time = moment(range[0]._d).format(fmt)
+    timeRange.end_time = moment(range[1]._d).format(fmt)
   }
   return timeRange
 }

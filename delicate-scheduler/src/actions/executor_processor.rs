@@ -1,161 +1,203 @@
 use super::prelude::*;
 use db::schema::executor_processor;
-pub(crate) fn config(cfg: &mut web::ServiceConfig) {
-    cfg.service(show_executor_processors)
-        .service(create_executor_processor)
-        .service(update_executor_processor)
-        .service(delete_executor_processor)
-        .service(activate_executor_processor);
+
+pub(crate) fn route_config() -> Route {
+    Route::new()
+        .at(
+            "/api/executor_processor/list",
+            post(show_executor_processors),
+        )
+        .at(
+            "/api/executor_processor/create",
+            post(create_executor_processor),
+        )
+        .at(
+            "/api/executor_processor/update",
+            post(update_executor_processor),
+        )
+        .at(
+            "/api/executor_processor/delete",
+            post(delete_executor_processor),
+        )
+        .at(
+            "/api/executor_processor/activate",
+            post(activate_executor_processor),
+        )
 }
 
-#[post("/api/executor_processor/create")]
+#[handler]
 async fn create_executor_processor(
-    req: HttpRequest,
-    web::Json(executor_processor): web::Json<model::NewExecutorProcessor>,
-    pool: ShareData<db::ConnectionPool>,
-) -> HttpResponse {
+    req: &Request,
+    Json(executor_processor): Json<model::NewExecutorProcessor>,
+    pool: Data<&Arc<db::ConnectionPool>>,
+) -> impl IntoResponse {
     let operation_log_pair_option =
-        generate_operation_executor_processor_addtion_log(&req.get_session(), &executor_processor)
+        generate_operation_executor_processor_addtion_log(req.get_session(), &executor_processor)
             .ok();
     send_option_operation_log_pair(operation_log_pair_option).await;
 
     if let Ok(conn) = pool.get() {
-        return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
-            web::block(move || {
-                diesel::insert_into(executor_processor::table)
-                    .values(&executor_processor)
-                    .execute(&conn)
-            })
-            .await,
-        ));
+        let f_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
+            diesel::insert_into(executor_processor::table)
+                .values(&executor_processor)
+                .execute(&conn)
+        })
+        .await;
+
+        let count = f_result
+            .map(Into::<UnifiedResponseMessages<usize>>::into)
+            .unwrap_or_else(|e| {
+                UnifiedResponseMessages::<usize>::error().customized_error_msg(e.to_string())
+            });
+        return Json(count);
     }
 
-    HttpResponse::Ok().json(UnifiedResponseMessages::<()>::error())
+    Json(UnifiedResponseMessages::<usize>::error())
 }
 
-#[post("/api/executor_processor/list")]
+#[handler]
 async fn show_executor_processors(
-    web::Json(query_params): web::Json<model::QueryParamsExecutorProcessor>,
-    pool: ShareData<db::ConnectionPool>,
-) -> HttpResponse {
+    Json(query_params): Json<model::QueryParamsExecutorProcessor>,
+    pool: Data<&Arc<db::ConnectionPool>>,
+) -> impl IntoResponse {
     if let Ok(conn) = pool.get() {
-        return HttpResponse::Ok().json(Into::<
-            UnifiedResponseMessages<PaginateData<model::ExecutorProcessor>>,
-        >::into(
-            web::block::<_, _, diesel::result::Error>(move || {
-                let query_builder = model::ExecutorProcessorQueryBuilder::query_all_columns();
+        let f_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
+            let query_builder = model::ExecutorProcessorQueryBuilder::query_all_columns();
 
-                let executor_processors = query_params
-                    .clone()
-                    .query_filter(query_builder)
-                    .paginate(query_params.page)
-                    .set_per_page(query_params.per_page)
-                    .load::<model::ExecutorProcessor>(&conn)?;
+            let executor_processors = query_params
+                .clone()
+                .query_filter(query_builder)
+                .paginate(query_params.page)
+                .set_per_page(query_params.per_page)
+                .load::<model::ExecutorProcessor>(&conn)?;
 
-                let per_page = query_params.per_page;
-                let count_builder = model::ExecutorProcessorQueryBuilder::query_count();
-                let count = query_params
-                    .query_filter(count_builder)
-                    .get_result::<i64>(&conn)?;
+            let per_page = query_params.per_page;
+            let count_builder = model::ExecutorProcessorQueryBuilder::query_count();
+            let count = query_params
+                .query_filter(count_builder)
+                .get_result::<i64>(&conn)?;
 
-                Ok(PaginateData::<model::ExecutorProcessor>::default()
-                    .set_data_source(executor_processors)
-                    .set_page_size(per_page)
-                    .set_total(count))
+            Ok(PaginateData::<model::ExecutorProcessor>::default()
+                .set_data_source(executor_processors)
+                .set_page_size(per_page)
+                .set_total(count)
+                .set_state_desc::<state::executor_processor::State>())
+        })
+        .await;
+        let processor = f_result
+            .map(|processor_result| {
+                Into::<UnifiedResponseMessages<PaginateData<model::ExecutorProcessor>>>::into(
+                    processor_result,
+                )
             })
-            .await,
-        ));
+            .unwrap_or_else(|e| {
+                UnifiedResponseMessages::<PaginateData<model::ExecutorProcessor>>::error()
+                    .customized_error_msg(e.to_string())
+            });
+        return Json(processor);
     }
 
-    HttpResponse::Ok().json(UnifiedResponseMessages::<
+    Json(UnifiedResponseMessages::<
         PaginateData<model::ExecutorProcessor>,
     >::error())
 }
 
-#[post("/api/executor_processor/update")]
+#[handler]
 async fn update_executor_processor(
-    req: HttpRequest,
-    web::Json(executor_processor): web::Json<model::UpdateExecutorProcessor>,
-    pool: ShareData<db::ConnectionPool>,
-) -> HttpResponse {
+    req: &Request,
+    Json(executor_processor): Json<model::UpdateExecutorProcessor>,
+    pool: Data<&Arc<db::ConnectionPool>>,
+) -> impl IntoResponse {
     let operation_log_pair_option =
-        generate_operation_executor_processor_modify_log(&req.get_session(), &executor_processor)
+        generate_operation_executor_processor_modify_log(req.get_session(), &executor_processor)
             .ok();
     send_option_operation_log_pair(operation_log_pair_option).await;
 
     if let Ok(conn) = pool.get() {
-        return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
-            web::block(move || {
-                diesel::update(&executor_processor)
-                    .set(&executor_processor)
-                    .execute(&conn)
-            })
-            .await,
-        ));
+        let f_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
+            diesel::update(&executor_processor)
+                .set(&executor_processor)
+                .execute(&conn)
+        })
+        .await;
+
+        let count = f_result
+            .map(Into::<UnifiedResponseMessages<usize>>::into)
+            .unwrap_or_else(|e| {
+                UnifiedResponseMessages::<usize>::error().customized_error_msg(e.to_string())
+            });
+        return Json(count);
     }
 
-    HttpResponse::Ok().json(UnifiedResponseMessages::<usize>::error())
+    Json(UnifiedResponseMessages::<usize>::error())
 }
-#[post("/api/executor_processor/delete")]
+
+#[handler]
 async fn delete_executor_processor(
-    req: HttpRequest,
-    web::Json(model::ExecutorProcessorId {
+    req: &Request,
+    Json(model::ExecutorProcessorId {
         executor_processor_id,
-    }): web::Json<model::ExecutorProcessorId>,
-    pool: ShareData<db::ConnectionPool>,
-) -> HttpResponse {
+    }): Json<model::ExecutorProcessorId>,
+    pool: Data<&Arc<db::ConnectionPool>>,
+) -> impl IntoResponse {
     use db::schema::executor_processor::dsl::*;
 
     let operation_log_pair_option = generate_operation_executor_processor_delete_log(
-        &req.get_session(),
+        req.get_session(),
         &CommonTableRecord::default().set_id(executor_processor_id),
     )
     .ok();
     send_option_operation_log_pair(operation_log_pair_option).await;
 
     if let Ok(conn) = pool.get() {
-        return HttpResponse::Ok().json(Into::<UnifiedResponseMessages<usize>>::into(
-            web::block(move || {
-                diesel::delete(executor_processor.find(executor_processor_id)).execute(&conn)
-            })
-            .await,
-        ));
+        let f_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
+            diesel::delete(executor_processor.find(executor_processor_id)).execute(&conn)
+        })
+        .await;
+
+        let count = f_result
+            .map(Into::<UnifiedResponseMessages<usize>>::into)
+            .unwrap_or_else(|e| {
+                UnifiedResponseMessages::<usize>::error().customized_error_msg(e.to_string())
+            });
+        return Json(count);
     }
 
-    HttpResponse::Ok().json(UnifiedResponseMessages::<usize>::error())
+    Json(UnifiedResponseMessages::<usize>::error())
 }
 
-// Update `status` and `token`.
-
-#[post("/api/executor_processor/activate")]
+#[handler]
 async fn activate_executor_processor(
-    web::Json(model::ExecutorProcessorId {
+    req: &Request,
+    Json(model::ExecutorProcessorId {
         executor_processor_id,
-    }): web::Json<model::ExecutorProcessorId>,
-    pool: ShareData<db::ConnectionPool>,
-    scheduler: SharedSchedulerMetaInfo,
-) -> HttpResponse {
+    }): Json<model::ExecutorProcessorId>,
+    pool: Data<&Arc<db::ConnectionPool>>,
+    scheduler: Data<&Arc<SchedulerMetaInfo>>,
+) -> impl IntoResponse {
     let uniform_data: UnifiedResponseMessages<()> =
-        do_activate(pool, executor_processor_id, scheduler)
+        do_activate(req, pool, executor_processor_id, scheduler)
             .await
             .into();
-    HttpResponse::Ok().json(uniform_data)
+    Json(uniform_data)
 }
 async fn do_activate(
-    pool: ShareData<db::ConnectionPool>,
+    req: &Request,
+    pool: Data<&Arc<db::ConnectionPool>>,
     executor_processor_id: i64,
-    scheduler: SharedSchedulerMetaInfo,
+    scheduler: Data<&Arc<SchedulerMetaInfo>>,
 ) -> Result<(), CommonError> {
-    let bind_info = activate_executor(pool.get()?, executor_processor_id, scheduler).await?;
+    let bind_info = activate_executor(req, pool.get()?, executor_processor_id, scheduler).await?;
     activate_executor_row(pool.get()?, executor_processor_id, bind_info).await?;
     Ok(())
 }
 async fn activate_executor(
+    req: &Request,
     conn: db::PoolConnection,
     executor_processor_id: i64,
-    scheduler: SharedSchedulerMetaInfo,
+    scheduler: Data<&Arc<SchedulerMetaInfo>>,
 ) -> Result<service_binding::BindResponse, CommonError> {
-    let query = web::block::<_, model::UpdateExecutorProcessor, diesel::result::Error>(move || {
+    let query = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
         executor_processor::table
             .find(executor_processor_id)
             .select((
@@ -168,7 +210,7 @@ async fn activate_executor(
             ))
             .first(&conn)
     })
-    .await?;
+    .await??;
 
     let model::UpdateExecutorProcessor {
         id,
@@ -178,7 +220,10 @@ async fn activate_executor(
         ..
     }: model::UpdateExecutorProcessor = query;
 
-    let client = RequestClient::default();
+    let request_client = req
+        .extensions()
+        .get::<RequestClient>()
+        .expect("Missing Components `RequestClient`");
     let url = "http://".to_string() + (host.deref()) + "/api/executor/bind";
 
     let private_key = scheduler.get_app_security_key();
@@ -192,9 +237,10 @@ async fn activate_executor(
         .set_time(get_timestamp())
         .sign(private_key)?;
 
-    let response: Result<service_binding::EncryptedBindResponse, CommonError> = client
+    let response: Result<service_binding::EncryptedBindResponse, CommonError> = request_client
         .post(url)
-        .send_json(&signed_scheduler)
+        .json(&signed_scheduler)
+        .send()
         .await?
         .json::<UnifiedResponseMessages<service_binding::EncryptedBindResponse>>()
         .await?
@@ -215,7 +261,7 @@ async fn activate_executor_row(
     // This will avoid querying the database.
     // However, cached record operations cannot be placed in the context of the operation db update token.
 
-    web::block::<_, usize, diesel::result::Error>(move || {
+    spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
         diesel::update(executor_processor.find(executor_processor_id))
             .set((
                 token.eq(&bind_info.token.unwrap_or_default()),
@@ -223,7 +269,7 @@ async fn activate_executor_row(
             ))
             .execute(&conn)
     })
-    .await?;
+    .await??;
 
     Ok(())
 }

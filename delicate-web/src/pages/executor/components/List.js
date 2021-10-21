@@ -1,6 +1,6 @@
 import { t, Trans } from '@lingui/macro'
 import { Dropdown, Menu, Space, Table, Tooltip, Popconfirm, message } from 'antd'
-import { DownOutlined } from '@ant-design/icons'
+import { CheckCircleOutlined, DownOutlined, StopOutlined, WarningOutlined } from '@ant-design/icons'
 import React, { PureComponent } from 'react'
 import styles from '../../taskList/components/List.less'
 import PropTypes from 'prop-types'
@@ -46,7 +46,17 @@ class ExecutorList extends PureComponent {
       {
         title: t`Status`,
         dataIndex: 'status',
-        key: 'status'
+        key: 'status',
+        render: (text) => {
+          switch (text) {
+            case 1:
+              return <StopOutlined style={{ color: 'red', fontSize: '18px' }} />
+            case 2:
+              return <CheckCircleOutlined style={{ color: 'green', fontSize: '18px' }} />
+            case 3:
+              return <WarningOutlined style={{ color: 'orange', fontSize: '18px' }} />
+          }
+        }
       },
       {
         title: t`Host`,
