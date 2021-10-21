@@ -441,8 +441,7 @@ where
         Box::pin(async move {
 
            // do something.
-                return service.call(req).await;
-
+           return service.call(req).await;
         })
     }
 ```
