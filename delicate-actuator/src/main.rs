@@ -1,44 +1,39 @@
 use tonic::{transport::Server, Request, Response, Status};
 
-use hello_world::greeter_server::{Greeter, GreeterServer};
-use hello_world::{HelloReply, HelloRequest};
-
-pub mod hello_world {
-    tonic::include_proto!("helloworld"); // The string specified here must match the proto package name
+use actuator::actuator_server::{Actuator, ActuatorServer};
+use actuator::{Task, UnifiedResponseMessages};
+pub mod actuator {
+    include!("../proto/generated_codes/delicate.actuator.rs");
 }
 
-// proto3: https://developers.google.com/protocol-buffers/docs/proto3#simple
-// rust-Protocol Buffers: https://github.com/tokio-rs/prost
-// grpcurl -plaintext -import-path ./proto -proto helloworld.proto -d '{"name": "Tonic"}' "[::]:30051" helloworld.Greeter/SayHello
-#[derive(Debug, Default)]
-pub struct MyGreeter {}
+#[derive(Debug, Copy, Clone)]
+struct DelicateActuator;
 
 #[tonic::async_trait]
-impl Greeter for MyGreeter {
-    async fn say_hello(
+impl Actuator for DelicateActuator {
+    async fn add_task(
         &self,
-        request: Request<HelloRequest>, // Accept request of type HelloRequest
-    ) -> Result<Response<HelloReply>, Status> { // Return an instance of type HelloReply
-        println!("Got a request: {:?}", request);
-
-        let reply = hello_world::HelloReply {
-            message: format!("Hello {}!", request.into_inner().name), // We must use .into_inner() as the fields of gRPC requests and responses are private
-        };
-
-        Ok(Response::new(reply)) // Send back our formatted greeting
+        _request: Request<Task>,
+    ) -> Result<Response<UnifiedResponseMessages>, Status> {
+        Err(Status::data_loss("sleep."))
     }
 }
 
+// ./grpcurl -plaintext -import-path ./delicate/delicate-actuator/proto -proto actuator.proto -d '{"task_id":1, "task_name": "Tonic", "command": "sleep" }' "[::1]:8899" delicate.actuator.Actuator/AddTask
+
+// TODO:
+// Objectives.
+
+// 2. Implement the actuator, via tonic.
+// 3. Prioritize minimalist implementations, supporting only single machines at first, with subsequent support for slicing or various rules.
+// 4. advertise on `poem` Readme.
+// 5. add/delete/change/check/cancel for standalone tasks Do it first.
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    
-    let addr = "[::1]:30051".parse()?;
-    let greeter = MyGreeter::default();
-
     Server::builder()
-        .add_service(GreeterServer::new(greeter))
-        .serve(addr)
+        .add_service(ActuatorServer::new(DelicateActuator))
+        .serve("[::1]:8899".parse().expect(""))
         .await?;
-
     Ok(())
 }
