@@ -11,7 +11,8 @@ build = "build/build.rs"
 tonic = "0.5"
 prost = "0.8.0"
 prost-types = "0.8.0"
-tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
+delicate-utils = { path = "../delicate-utils" }
+
 
 [build-dependencies]
 tonic-build = "0.5"
