@@ -7,6 +7,9 @@ build = "build/build.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[[bin]]
+name = "client_emulator"
+
 [dependencies]
 tonic = "0.5"
 prost = "0.8.0"
