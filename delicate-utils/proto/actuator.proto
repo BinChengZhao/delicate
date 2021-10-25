@@ -4,8 +4,8 @@ package delicate.actuator;
 import "google/protobuf/any.proto";
 
 message Task{
-    uint64 task_id = 1;
-    string task_name = 2;
+    uint64 id = 1;
+    string name = 2;
     string command = 3;
 }
 
@@ -17,4 +17,6 @@ message UnifiedResponseMessages{
 
 service Actuator {
     rpc AddTask(Task) returns (UnifiedResponseMessages) {}
+    rpc KeepRunning(Task) returns (stream UnifiedResponseMessages) {}
+
 }

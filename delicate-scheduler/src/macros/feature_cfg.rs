@@ -5,7 +5,6 @@ macro_rules! cfg_mysql_support {
         $(
             // As long as the features contains mysql-support, it will compile.
             #[cfg(DB_MYSQL)]
-            #[allow(dead_code)]
             $item
 
         )*
@@ -17,7 +16,6 @@ macro_rules! cfg_postgres_support {
         $(
             // As long as the features contains postgres-support, it will compile.
             #[cfg(DB_POSTGRES)]
-            #[allow(dead_code)]
             $item
 
         )*

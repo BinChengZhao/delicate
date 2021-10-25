@@ -3,7 +3,6 @@ name = "delicate-actuator"
 version = "0.1.0"
 authors = ["BinChengZhao <binchengZhao@outlook.com>"]
 edition = "2018"
-build = "build/build.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -11,10 +10,12 @@ build = "build/build.rs"
 name = "client_emulator"
 
 [dependencies]
+async-stream = "0.3.2"
 tonic = "0.5"
 prost = "0.8.0"
 prost-types = "0.8.0"
 delicate-utils = { path = "../delicate-utils" }
+tokio-stream = {version = "0.1.7", features = ["time", "sync", "fs", "io-util", "net"]}
 
 
 [build-dependencies]

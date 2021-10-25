@@ -9,37 +9,94 @@ impl Actuator for DelicateActuator {
     async fn add_task(
         &self,
         request: Request<Task>,
-    ) -> Result<Response<UnifiedResponseMessages>, Status> {
+    ) -> Result<Response<UnifiedResponseMessagesForGPRC>, Status> {
         let task_ref = request.get_ref();
-        let task_message = task_ref.encode_to_vec();
 
         info!("{:?}", task_ref);
 
-        let type_url = if task_ref.task_id == 1 {
-            String::from("/delicate.actuator.Task")
-        } else {
-            // If type_url is set incorrectly, then the data will not be deserialized properly.
-            String::from("/Task")
-        };
-
-        let any = Any {
-            type_url,
-            value: task_message,
-        };
-
-        let mut res = UnifiedResponseMessages {
+        let mut res = UnifiedResponseMessagesForGPRC {
             code: 1,
             msg: String::from("hahahaha"),
             ..Default::default()
         };
-        res.data.push(any);
+
+        {
+            let value = task_ref.encode_to_vec();
+            let type_url = String::from("/delicate.actuator.Task");
+            res.data.push(Any { type_url, value });
+        }
+
+        {
+            let value = String::from("I'm string").into_bytes();
+            let type_url = String::from("/String");
+            res.data.push(Any { type_url, value });
+        }
+
+        {
+            let value = String::from("I'm Fake , have no exist.").into_bytes();
+            let type_url = String::from("/Fake");
+            res.data.push(Any { type_url, value });
+        }
 
         Ok(Response::new(res))
     }
+
+    type KeepRunningStream = Pin<
+        Box<
+            dyn Stream<Item = Result<UnifiedResponseMessagesForGPRC, Status>>
+                + Send
+                + Sync
+                + 'static,
+        >,
+    >;
+    async fn keep_running(
+        &self,
+        request: Request<Task>,
+    ) -> Result<Response<Self::KeepRunningStream>, Status> {
+        let task = request.into_inner();
+        let mut process_linked_list = parse_and_run::<TokioChild, TokioCommand>(&task.command)
+            .await
+            .map_err(|e| Status::failed_precondition(e.to_string()))?;
+
+        let child_guard = process_linked_list
+            .pop_back()
+            .ok_or_else(|| Status::failed_precondition("Have no process executed.".to_string()))?;
+
+        let child = child_guard.take_inner().ok_or_else(|| {
+            Status::failed_precondition(" No valid process execution .".to_string())
+        })?;
+
+        let child_stdout = child
+            .stdout
+            .ok_or_else(|| Status::failed_precondition(" No valid process stdout .".to_string()))?;
+
+        let mut buf_reader_lines =
+            LinesStream::new(BufReader::new(child_stdout).lines()).map(|l| {
+                l.map(|s| {
+                    let type_url = "/String".to_string();
+                    let value = s.encode_to_vec();
+                    let any = Any { type_url, value };
+                    let data = vec![any];
+                    UnifiedResponseMessagesForGPRC {
+                        data,
+                        ..Default::default()
+                    }
+                })
+                .map_err(|e| Status::unknown(e.to_string()))
+            });
+
+        let stream = async_stream::stream! {
+
+            while let Some(resp) = buf_reader_lines.next().await{
+                yield resp;
+            }
+        };
+
+        Ok(Response::new(Box::pin(stream) as Self::KeepRunningStream))
+    }
 }
 
-// ./grpcurl -plaintext -import-path ./delicate/delicate-actuator/proto -proto actuator.proto -d '{"task_id":1, "task_name": "Tonic", "command": "sleep" }' "[::1]:8899" delicate.actuator.Actuator/AddTask
-
+// ./grpcurl -plaintext -import-path ./delicate/delicate-utils/proto -proto actuator.proto -d '{"id":1, "name": "Tonic", "command": "sleep" }' "[::1]:8899" delicate.actuator.Actuator/AddTask
 // TODO:
 // Objectives.
 
@@ -62,6 +119,9 @@ impl Actuator for DelicateActuator {
 // GRPC-stream: (scheduler & actuator)
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Loads environment variables.
+    dotenv().ok();
+
     init_logger();
     Server::builder()
         .add_service(ActuatorServer::new(DelicateActuator))

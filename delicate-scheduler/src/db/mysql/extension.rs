@@ -49,6 +49,7 @@ impl<T> Paginated<T> {
 }
 
 impl<T> Paginated<T> {
+    #[allow(dead_code)]
     fn load_pages<U>(self, conn: &MysqlConnection) -> QueryResult<Vec<U>>
     where
         Self: LoadQuery<MysqlConnection, U>,

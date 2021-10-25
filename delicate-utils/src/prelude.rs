@@ -14,12 +14,13 @@ pub(crate) use async_lock::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 pub use crate::consensus_message::security::{
     self, make_signature, verify_signature_by_raw_data, SecurityLevel,
 };
-pub use crate::consensus_message::service_binding;
+pub use crate::consensus_message::{actuator, service_binding, UnifiedResponseMessagesForGPRC};
 pub use crate::error::*;
 pub use crate::helper_utils::*;
 pub(crate) use delay_timer::prelude::*;
 pub(crate) use delay_timer::utils::status_report::PublicFinishOutput;
 pub(crate) use derive_more::Display;
+pub use dotenv::dotenv;
 
 pub(crate) use log::error;
 pub(crate) use rand::rngs::OsRng;

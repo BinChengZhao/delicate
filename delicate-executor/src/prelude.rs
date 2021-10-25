@@ -2,8 +2,6 @@ pub(crate) use crate::component::SystemMirror;
 
 pub(crate) use async_lock::RwLock;
 
-pub(crate) use dotenv::dotenv;
-
 pub(crate) use delay_timer::prelude::*;
 
 pub(crate) use delicate_utils::consensus_message::security::ExecutorSecurityConf;

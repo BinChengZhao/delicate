@@ -69,7 +69,6 @@ pub(crate) use diesel::query_dsl::RunQueryDsl;
 pub(crate) use diesel::r2d2::CustomizeConnection;
 pub(crate) use diesel::result::Error as DieselError;
 pub(crate) use diesel::sql_types;
-pub(crate) use dotenv::dotenv;
 pub(crate) use flexi_logger::writers::FileLogWriterHandle;
 pub(crate) use flexi_logger::{
     writers::FileLogWriter, Age, Cleanup, Criterion, FileSpec, Naming, WriteMode,

@@ -1,9 +1,9 @@
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Task {
     #[prost(uint64, tag = "1")]
-    pub task_id: u64,
+    pub id: u64,
     #[prost(string, tag = "2")]
-    pub task_name: ::prost::alloc::string::String,
+    pub name: ::prost::alloc::string::String,
     #[prost(string, tag = "3")]
     pub command: ::prost::alloc::string::String,
 }
@@ -90,6 +90,26 @@ pub mod actuator_client {
             let path = http::uri::PathAndQuery::from_static("/delicate.actuator.Actuator/AddTask");
             self.inner.unary(request.into_request(), path, codec).await
         }
+        pub async fn keep_running(
+            &mut self,
+            request: impl tonic::IntoRequest<super::Task>,
+        ) -> Result<
+            tonic::Response<tonic::codec::Streaming<super::UnifiedResponseMessages>>,
+            tonic::Status,
+        > {
+            self.inner.ready().await.map_err(|e| {
+                tonic::Status::new(
+                    tonic::Code::Unknown,
+                    format!("Service was not ready: {}", e.into()),
+                )
+            })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path =
+                http::uri::PathAndQuery::from_static("/delicate.actuator.Actuator/KeepRunning");
+            self.inner
+                .server_streaming(request.into_request(), path, codec)
+                .await
+        }
     }
 }
 #[doc = r" Generated server implementations."]
@@ -103,6 +123,15 @@ pub mod actuator_server {
             &self,
             request: tonic::Request<super::Task>,
         ) -> Result<tonic::Response<super::UnifiedResponseMessages>, tonic::Status>;
+        #[doc = "Server streaming response type for the KeepRunning method."]
+        type KeepRunningStream: futures_core::Stream<Item = Result<super::UnifiedResponseMessages, tonic::Status>>
+            + Send
+            + Sync
+            + 'static;
+        async fn keep_running(
+            &self,
+            request: tonic::Request<super::Task>,
+        ) -> Result<tonic::Response<Self::KeepRunningStream>, tonic::Status>;
     }
     #[derive(Debug)]
     pub struct ActuatorServer<T: Actuator> {
@@ -167,6 +196,36 @@ pub mod actuator_server {
                             send_compression_encodings,
                         );
                         let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/delicate.actuator.Actuator/KeepRunning" => {
+                    #[allow(non_camel_case_types)]
+                    struct KeepRunningSvc<T: Actuator>(pub Arc<T>);
+                    impl<T: Actuator> tonic::server::ServerStreamingService<super::Task> for KeepRunningSvc<T> {
+                        type Response = super::UnifiedResponseMessages;
+                        type ResponseStream = T::KeepRunningStream;
+                        type Future =
+                            BoxFuture<tonic::Response<Self::ResponseStream>, tonic::Status>;
+                        fn call(&mut self, request: tonic::Request<super::Task>) -> Self::Future {
+                            let inner = self.0.clone();
+                            let fut = async move { (*inner).keep_running(request).await };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = KeepRunningSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec).apply_compression_config(
+                            accept_compression_encodings,
+                            send_compression_encodings,
+                        );
+                        let res = grpc.server_streaming(method, req).await;
                         Ok(res)
                     };
                     Box::pin(fut)
