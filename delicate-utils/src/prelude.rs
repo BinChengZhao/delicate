@@ -1,4 +1,5 @@
 pub use casbin;
+pub use dashmap;
 pub use delay_timer;
 pub use flexi_logger;
 pub use hex;

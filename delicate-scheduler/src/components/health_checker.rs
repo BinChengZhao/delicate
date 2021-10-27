@@ -24,6 +24,10 @@ async fn health_check(
     conn: db::PoolConnection,
     request_client: RequestClient,
 ) -> Result<(), CommonError> {
+    // TODO:
+    //     Implement a function to cache a list of machines based on cached.
+    // When executing a task to an actuator, the most resourceful machine is retrieved from it by group id.
+
     let (executor_packages, conn) =
         spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
             let executors = executor_processor::table

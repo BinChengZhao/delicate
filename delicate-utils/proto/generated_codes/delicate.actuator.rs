@@ -8,6 +8,11 @@ pub struct Task {
     pub command: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+pub struct RecordId {
+    #[prost(int64, tag = "1")]
+    pub id: i64,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct UnifiedResponseMessages {
     #[prost(int32, tag = "1")]
     pub code: i32,
@@ -76,7 +81,7 @@ pub mod actuator_client {
             self.inner = self.inner.accept_gzip();
             self
         }
-        pub async fn add_task(
+        pub async fn run_task(
             &mut self,
             request: impl tonic::IntoRequest<super::Task>,
         ) -> Result<tonic::Response<super::UnifiedResponseMessages>, tonic::Status> {
@@ -87,10 +92,25 @@ pub mod actuator_client {
                 )
             })?;
             let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static("/delicate.actuator.Actuator/AddTask");
+            let path = http::uri::PathAndQuery::from_static("/delicate.actuator.Actuator/RunTask");
             self.inner.unary(request.into_request(), path, codec).await
         }
-        pub async fn keep_running(
+        pub async fn cancel_task(
+            &mut self,
+            request: impl tonic::IntoRequest<super::RecordId>,
+        ) -> Result<tonic::Response<super::UnifiedResponseMessages>, tonic::Status> {
+            self.inner.ready().await.map_err(|e| {
+                tonic::Status::new(
+                    tonic::Code::Unknown,
+                    format!("Service was not ready: {}", e.into()),
+                )
+            })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path =
+                http::uri::PathAndQuery::from_static("/delicate.actuator.Actuator/CancelTask");
+            self.inner.unary(request.into_request(), path, codec).await
+        }
+        pub async fn keep_running_task(
             &mut self,
             request: impl tonic::IntoRequest<super::Task>,
         ) -> Result<
@@ -105,7 +125,7 @@ pub mod actuator_client {
             })?;
             let codec = tonic::codec::ProstCodec::default();
             let path =
-                http::uri::PathAndQuery::from_static("/delicate.actuator.Actuator/KeepRunning");
+                http::uri::PathAndQuery::from_static("/delicate.actuator.Actuator/KeepRunningTask");
             self.inner
                 .server_streaming(request.into_request(), path, codec)
                 .await
@@ -119,19 +139,23 @@ pub mod actuator_server {
     #[doc = "Generated trait containing gRPC methods that should be implemented for use with ActuatorServer."]
     #[async_trait]
     pub trait Actuator: Send + Sync + 'static {
-        async fn add_task(
+        async fn run_task(
             &self,
             request: tonic::Request<super::Task>,
         ) -> Result<tonic::Response<super::UnifiedResponseMessages>, tonic::Status>;
-        #[doc = "Server streaming response type for the KeepRunning method."]
-        type KeepRunningStream: futures_core::Stream<Item = Result<super::UnifiedResponseMessages, tonic::Status>>
+        async fn cancel_task(
+            &self,
+            request: tonic::Request<super::RecordId>,
+        ) -> Result<tonic::Response<super::UnifiedResponseMessages>, tonic::Status>;
+        #[doc = "Server streaming response type for the KeepRunningTask method."]
+        type KeepRunningTaskStream: futures_core::Stream<Item = Result<super::UnifiedResponseMessages, tonic::Status>>
             + Send
             + Sync
             + 'static;
-        async fn keep_running(
+        async fn keep_running_task(
             &self,
             request: tonic::Request<super::Task>,
-        ) -> Result<tonic::Response<Self::KeepRunningStream>, tonic::Status>;
+        ) -> Result<tonic::Response<Self::KeepRunningTaskStream>, tonic::Status>;
     }
     #[derive(Debug)]
     pub struct ActuatorServer<T: Actuator> {
@@ -172,15 +196,15 @@ pub mod actuator_server {
         fn call(&mut self, req: http::Request<B>) -> Self::Future {
             let inner = self.inner.clone();
             match req.uri().path() {
-                "/delicate.actuator.Actuator/AddTask" => {
+                "/delicate.actuator.Actuator/RunTask" => {
                     #[allow(non_camel_case_types)]
-                    struct AddTaskSvc<T: Actuator>(pub Arc<T>);
-                    impl<T: Actuator> tonic::server::UnaryService<super::Task> for AddTaskSvc<T> {
+                    struct RunTaskSvc<T: Actuator>(pub Arc<T>);
+                    impl<T: Actuator> tonic::server::UnaryService<super::Task> for RunTaskSvc<T> {
                         type Response = super::UnifiedResponseMessages;
                         type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
                         fn call(&mut self, request: tonic::Request<super::Task>) -> Self::Future {
                             let inner = self.0.clone();
-                            let fut = async move { (*inner).add_task(request).await };
+                            let fut = async move { (*inner).run_task(request).await };
                             Box::pin(fut)
                         }
                     }
@@ -189,7 +213,7 @@ pub mod actuator_server {
                     let inner = self.inner.clone();
                     let fut = async move {
                         let inner = inner.0;
-                        let method = AddTaskSvc(inner);
+                        let method = RunTaskSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec).apply_compression_config(
                             accept_compression_encodings,
@@ -200,17 +224,18 @@ pub mod actuator_server {
                     };
                     Box::pin(fut)
                 }
-                "/delicate.actuator.Actuator/KeepRunning" => {
+                "/delicate.actuator.Actuator/CancelTask" => {
                     #[allow(non_camel_case_types)]
-                    struct KeepRunningSvc<T: Actuator>(pub Arc<T>);
-                    impl<T: Actuator> tonic::server::ServerStreamingService<super::Task> for KeepRunningSvc<T> {
+                    struct CancelTaskSvc<T: Actuator>(pub Arc<T>);
+                    impl<T: Actuator> tonic::server::UnaryService<super::RecordId> for CancelTaskSvc<T> {
                         type Response = super::UnifiedResponseMessages;
-                        type ResponseStream = T::KeepRunningStream;
-                        type Future =
-                            BoxFuture<tonic::Response<Self::ResponseStream>, tonic::Status>;
-                        fn call(&mut self, request: tonic::Request<super::Task>) -> Self::Future {
+                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::RecordId>,
+                        ) -> Self::Future {
                             let inner = self.0.clone();
-                            let fut = async move { (*inner).keep_running(request).await };
+                            let fut = async move { (*inner).cancel_task(request).await };
                             Box::pin(fut)
                         }
                     }
@@ -219,7 +244,37 @@ pub mod actuator_server {
                     let inner = self.inner.clone();
                     let fut = async move {
                         let inner = inner.0;
-                        let method = KeepRunningSvc(inner);
+                        let method = CancelTaskSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec).apply_compression_config(
+                            accept_compression_encodings,
+                            send_compression_encodings,
+                        );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/delicate.actuator.Actuator/KeepRunningTask" => {
+                    #[allow(non_camel_case_types)]
+                    struct KeepRunningTaskSvc<T: Actuator>(pub Arc<T>);
+                    impl<T: Actuator> tonic::server::ServerStreamingService<super::Task> for KeepRunningTaskSvc<T> {
+                        type Response = super::UnifiedResponseMessages;
+                        type ResponseStream = T::KeepRunningTaskStream;
+                        type Future =
+                            BoxFuture<tonic::Response<Self::ResponseStream>, tonic::Status>;
+                        fn call(&mut self, request: tonic::Request<super::Task>) -> Self::Future {
+                            let inner = self.0.clone();
+                            let fut = async move { (*inner).keep_running_task(request).await };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = KeepRunningTaskSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec).apply_compression_config(
                             accept_compression_encodings,

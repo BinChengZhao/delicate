@@ -1,15 +1,82 @@
 mod prelude;
 use prelude::*;
 
-#[derive(Debug, Copy, Clone)]
-struct DelicateActuator;
+// TODO: Add conf struct.
+// #[derive(Debug)]
+// pub struct ActuatorSecurityConf {
+//     pub security_level: SecurityLevel,
+//     pub rsa_public_key: Option<SecurityeKey<RSAPublicKey>>,
+//     pub bind_scheduler: BindScheduler,
+// }
+
+// On async fn health_check(
+
+// TODO:
+//     Implement a function to cache a list of machines based on cached.
+// When executing a task to an actuator, the most resourceful machine is retrieved from it by group id.
+
+#[derive(Debug, Clone)]
+pub struct ActuatorState {
+    handlers_map: Arc<DashMap<i64, TaskHandlers>>,
+}
+
+#[derive(Debug)]
+pub struct TaskHandlers {
+    running_handler: JoinHandle<()>,
+    timeout_handler: JoinHandle<()>,
+}
+
+impl TaskHandlers {
+    pub fn cancel_running(&self) {
+        self.running_handler.abort();
+    }
+
+    pub fn cancel_timeout(&self) {
+        self.timeout_handler.abort();
+    }
+}
+
+impl Default for ActuatorState {
+    fn default() -> Self {
+        let handlers_map = Arc::new(DashMap::new());
+
+        Self { handlers_map }
+    }
+}
+
+#[derive(Debug, Default, Clone)]
+struct DelicateActuator {
+    state: ActuatorState,
+}
 
 #[tonic::async_trait]
 impl Actuator for DelicateActuator {
-    async fn add_task(
+    async fn run_task(
         &self,
         request: Request<Task>,
     ) -> Result<Response<UnifiedResponseMessagesForGPRC>, Status> {
+        let task = request.get_ref();
+
+        // tokio_spawn(async {
+        //     let mut process_linked_list = parse_and_run::<TokioChild, TokioCommand>(&task.command)
+        //         .await
+        //         .map_err(|e| Status::failed_precondition(e.to_string()))?;
+
+        //     let child_guard = process_linked_list.pop_back().ok_or_else(|| {
+        //         Status::failed_precondition("Have no process executed.".to_string())
+        //     })?;
+
+        //     let child = child_guard.take_inner().ok_or_else(|| {
+        //         Status::failed_precondition(" No valid process execution .".to_string())
+        //     })?;
+
+        //     let child_stdout = child.stdout.ok_or_else(|| {
+        //         Status::failed_precondition(" No valid process stdout .".to_string())
+        //     })?;
+
+        //     let mut output = String::new();
+        //     child_stdout.read_to_string(&mut output).await;
+        // });
         let task_ref = request.get_ref();
 
         info!("{:?}", task_ref);
@@ -41,7 +108,14 @@ impl Actuator for DelicateActuator {
         Ok(Response::new(res))
     }
 
-    type KeepRunningStream = Pin<
+    async fn cancel_task(
+        &self,
+        reqeust: Request<RecordId>,
+    ) -> Result<Response<UnifiedResponseMessagesForGPRC>, Status> {
+        todo!();
+    }
+
+    type KeepRunningTaskStream = Pin<
         Box<
             dyn Stream<Item = Result<UnifiedResponseMessagesForGPRC, Status>>
                 + Send
@@ -49,10 +123,10 @@ impl Actuator for DelicateActuator {
                 + 'static,
         >,
     >;
-    async fn keep_running(
+    async fn keep_running_task(
         &self,
         request: Request<Task>,
-    ) -> Result<Response<Self::KeepRunningStream>, Status> {
+    ) -> Result<Response<Self::KeepRunningTaskStream>, Status> {
         let task = request.into_inner();
         let mut process_linked_list = parse_and_run::<TokioChild, TokioCommand>(&task.command)
             .await
@@ -92,7 +166,9 @@ impl Actuator for DelicateActuator {
             }
         };
 
-        Ok(Response::new(Box::pin(stream) as Self::KeepRunningStream))
+        Ok(Response::new(
+            Box::pin(stream) as Self::KeepRunningTaskStream
+        ))
     }
 }
 
@@ -123,8 +199,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv().ok();
 
     init_logger();
+
+    let state = ActuatorState::default();
     Server::builder()
-        .add_service(ActuatorServer::new(DelicateActuator))
+        .add_service(ActuatorServer::new(DelicateActuator { state }))
         .serve("[::1]:8899".parse().expect(""))
         .await?;
     Ok(())

@@ -13,6 +13,7 @@ name = "delicate_utils"
 [dependencies]
 async-lock = "^2.3.0"
 casbin = {version = '2.0.9', default-features = false, features = ["incremental", "logging", "tokio", "runtime-tokio", "watcher"]}
+dashmap = "4.0.2"
 derive_more = "^0.99.14"
 delay_timer = {version = "^0.9.2", features = ["full"]}
 dotenv = "^0.15.0"

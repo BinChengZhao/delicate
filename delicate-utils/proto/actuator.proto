@@ -9,6 +9,10 @@ message Task{
     string command = 3;
 }
 
+message RecordId{
+    int64 id = 1;
+}
+
 message UnifiedResponseMessages{
     int32 code = 1;
     string msg = 2;
@@ -16,7 +20,8 @@ message UnifiedResponseMessages{
 }
 
 service Actuator {
-    rpc AddTask(Task) returns (UnifiedResponseMessages) {}
-    rpc KeepRunning(Task) returns (stream UnifiedResponseMessages) {}
+    rpc RunTask(Task) returns (UnifiedResponseMessages) {}
+    rpc CancelTask(RecordId) returns (UnifiedResponseMessages) {}
+    rpc KeepRunningTask(Task) returns (stream UnifiedResponseMessages) {}
 
 }

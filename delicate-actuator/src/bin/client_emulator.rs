@@ -48,7 +48,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             "create" => {
                 let task = Task { id, name, command };
 
-                let response = client.add_task(Request::new(task)).await?;
+                let response = client.run_task(Request::new(task)).await?;
 
                 debug!("{:?}", response.get_ref());
             }
@@ -58,7 +58,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             "keep_running" => {
                 let task = Task { id, name, command };
 
-                let response = client.keep_running(Request::new(task)).await?;
+                let response = client.keep_running_task(Request::new(task)).await?;
 
                 let mut stream = response.into_inner();
                 while let Some(u) = stream.next().await {
