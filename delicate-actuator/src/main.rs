@@ -1,13 +1,15 @@
 mod prelude;
 use prelude::*;
 
-// TODO: Add conf struct.
-// #[derive(Debug)]
-// pub struct ActuatorSecurityConf {
-//     pub security_level: SecurityLevel,
-//     pub rsa_public_key: Option<SecurityeKey<RSAPublicKey>>,
-//     pub bind_scheduler: BindScheduler,
-// }
+// auth example: /Users/bincheng_paopao/project/repo/rust/others/libs/tonic/examples/src/authentication/server.rs
+// zip example: .send_gzip().accept_gzip()
+#[derive(Debug)]
+pub struct ActuatorSecurityConf {
+    pub security_level: SecurityLevel,
+    pub rsa_public_key: Option<SecurityeKey<RSAPublicKey>>,
+    pub bind_scheduler: BindScheduler,
+    pub id_generator: Option<AsyncMutex<SnowflakeIdGenerator>>,
+}
 
 // On async fn health_check(
 
@@ -18,12 +20,25 @@ use prelude::*;
 #[derive(Debug, Clone)]
 pub struct ActuatorState {
     handlers_map: Arc<DashMap<i64, TaskHandlers>>,
+    security_conf: Arc<ActuatorSecurityConf>,
 }
 
 #[derive(Debug)]
 pub struct TaskHandlers {
-    running_handler: JoinHandle<()>,
+    running_handler: JoinHandle<Result<String, std::io::Error>>,
     timeout_handler: JoinHandle<()>,
+}
+
+impl TaskHandlers {
+    pub fn new(
+        running_handler: JoinHandle<Result<String, std::io::Error>>,
+        timeout_handler: JoinHandle<()>,
+    ) -> Self {
+        Self {
+            running_handler,
+            timeout_handler,
+        }
+    }
 }
 
 impl TaskHandlers {
@@ -40,7 +55,11 @@ impl Default for ActuatorState {
     fn default() -> Self {
         let handlers_map = Arc::new(DashMap::new());
 
-        Self { handlers_map }
+        let security_conf = Arc::new(ActuatorSecurityConf::default());
+        Self {
+            handlers_map,
+            security_conf,
+        }
     }
 }
 
@@ -57,26 +76,36 @@ impl Actuator for DelicateActuator {
     ) -> Result<Response<UnifiedResponseMessagesForGPRC>, Status> {
         let task = request.get_ref();
 
-        // tokio_spawn(async {
-        //     let mut process_linked_list = parse_and_run::<TokioChild, TokioCommand>(&task.command)
-        //         .await
-        //         .map_err(|e| Status::failed_precondition(e.to_string()))?;
+        let mut process_linked_list = parse_and_run::<TokioChild, TokioCommand>(&task.command)
+            .await
+            .map_err(|e| Status::failed_precondition(e.to_string()))?;
 
-        //     let child_guard = process_linked_list.pop_back().ok_or_else(|| {
-        //         Status::failed_precondition("Have no process executed.".to_string())
-        //     })?;
+        let child_guard = process_linked_list
+            .pop_back()
+            .ok_or_else(|| Status::failed_precondition("Have no process executed.".to_string()))?;
 
-        //     let child = child_guard.take_inner().ok_or_else(|| {
-        //         Status::failed_precondition(" No valid process execution .".to_string())
-        //     })?;
+        let child = child_guard.take_inner().ok_or_else(|| {
+            Status::failed_precondition(" No valid process execution .".to_string())
+        })?;
 
-        //     let child_stdout = child.stdout.ok_or_else(|| {
-        //         Status::failed_precondition(" No valid process stdout .".to_string())
-        //     })?;
+        let mut child_stdout = child
+            .stdout
+            .ok_or_else(|| Status::failed_precondition(" No valid process stdout .".to_string()))?;
 
-        //     let mut output = String::new();
-        //     child_stdout.read_to_string(&mut output).await;
-        // });
+        let running_handler = tokio_spawn(async move {
+            let mut output = String::new();
+            child_stdout
+                .read_to_string(&mut output)
+                .await
+                .map(|_| output)
+        });
+
+        let timeout_handler = tokio_spawn(async {
+            todo!();
+        });
+
+        let task_handlers = TaskHandlers::new(running_handler, timeout_handler);
+
         let task_ref = request.get_ref();
 
         info!("{:?}", task_ref);
@@ -219,4 +248,29 @@ fn init_logger() {
         .with_thread_names(true)
         // completes the builder.
         .init();
+}
+
+impl Default for ActuatorSecurityConf {
+    fn default() -> Self {
+        let security_level = SecurityLevel::get_app_security_level();
+        let rsa_public_key =
+            SecurityeKey::<RSAPublicKey>::get_app_rsa_key("DELICATE_SECURITY_PUBLIC_KEY");
+
+        if matches!(security_level, SecurityLevel::Normal if rsa_public_key.is_err()) {
+            error!(
+                "{}",
+                rsa_public_key.as_ref()
+                    .err()
+                    .map(|e| "Initialization failed because: ".to_owned() + (e.to_string().as_ref()))
+                    .unwrap_or_default()
+            );
+            unreachable!("When the security level is Normal, the initialization `delicate-executor` must contain the secret key (DELICATE_SECURITY_PUBLIC_KEY)");
+        }
+
+        Self {
+            security_level: SecurityLevel::get_app_security_level(),
+            rsa_public_key: rsa_public_key.map(SecurityeKey).ok(),
+            ..Default::default()
+        }
+    }
 }

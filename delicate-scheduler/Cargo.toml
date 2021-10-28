@@ -15,7 +15,6 @@ documentation = ""
 
 [dependencies]
 async-channel = "1.6.1"
-async-lock = "^2.4.0"
 async-trait = "0.1.51"
 anyhow = "^1.0.38"
 concat-idents = "1.1.3"

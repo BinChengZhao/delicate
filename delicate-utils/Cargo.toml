@@ -21,7 +21,6 @@ fastrand = "^1.4.1"
 flexi_logger = {version = "0.19", features = ["trc"]}
 reqwest = { version = "0.11", features = ["json"] }
 hex = {version = "^0.4", features = ["serde"]}
-log = "^0.4"
 poem = { version = "1.0.5", features = ["session", "tower-compat"]}
 prost = "0.8.0"
 prost-types = "0.8.0"
@@ -32,10 +31,11 @@ redis = { version = "0.21.2", features = ["connection-manager", "tokio-comp"] }
 serde = { version = "^1.0", features = ["derive"] }
 serde_json = "^1.0.62"
 sysinfo = "^0.16.5"
+rs-snowflake = "0.5.0"
 diesel = { version = "^1.4.6", features = ["postgres", "mysql", "extras", "r2d2", "chrono"] }
 thiserror = "1.0.25"
 tokio ={version = "1.12.0", features = ["full"] }
-tonic = "0.5"
+tonic = {version = "0.5", features = ["tls", "compression"]}
 tracing = "0.1.26"
 tracing-subscriber = "0.2.19"
 uuid = {version = "^0.8.2", features = ["v4"]}
@@ -44,4 +44,4 @@ uuid = {version = "^0.8.2", features = ["v4"]}
 
 
 [build-dependencies]
-tonic-build = "0.5"
+tonic-build = {version = "0.5", features = ["compression"]}

@@ -63,7 +63,7 @@ impl Default for SchedulerSecurityConf {
         if matches!(security_level, SecurityLevel::Normal if rsa_private_key.is_err()) {
             error!(
                 "{}",
-                rsa_private_key
+                rsa_private_key.as_ref()
                     .err()
                     .map(|e| "Initialization failed because: ".to_owned() + (e.to_string().as_ref()))
                     .unwrap_or_default()
@@ -135,7 +135,7 @@ impl Default for ExecutorSecurityConf {
         if matches!(security_level, SecurityLevel::Normal if rsa_public_key.is_err()) {
             error!(
                 "{}",
-                rsa_public_key
+                rsa_public_key.as_ref()
                     .err()
                     .map(|e| "Initialization failed because: ".to_owned() + (e.to_string().as_ref()))
                     .unwrap_or_default()
