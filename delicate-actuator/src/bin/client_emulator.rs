@@ -55,7 +55,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             "cancel" => {}
 
-            "keep_running" => {
+            "keep" => {
                 let task = Task { id, name, command };
 
                 let response = client.keep_running_task(Request::new(task)).await?;
@@ -66,7 +66,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
             }
 
-            _ => {}
+            _ => {
+                return Ok(());
+            }
         }
     }
     Ok(())

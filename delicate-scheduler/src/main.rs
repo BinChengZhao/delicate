@@ -158,7 +158,7 @@ async fn init_scheduler(app: Route, arc_runtime_cloned: Arc<Runtime>) -> impl En
     #[cfg(AUTH_CASBIN)]
     let enforcer = get_casbin_enforcer(arc_connection_pool.clone()).await;
     #[cfg(AUTH_CASBIN)]
-    let shared_enforcer = Arc::new(RwLock::new(enforcer));
+    let shared_enforcer = Arc::new(AsyncRwLock::new(enforcer));
 
     #[cfg(AUTH_CASBIN)]
     let app = app
@@ -189,7 +189,7 @@ async fn init_scheduler(app: Route, arc_runtime_cloned: Arc<Runtime>) -> impl En
 async fn launch_ready_operation(
     pool: Arc<db::ConnectionPool>,
     request_client: RequestClient,
-    #[cfg(AUTH_CASBIN)] enforcer: Arc<RwLock<Enforcer>>,
+    #[cfg(AUTH_CASBIN)] enforcer: Arc<AsyncRwLock<Enforcer>>,
 ) {
     launch_health_check(pool.clone(), request_client);
     launch_operation_log_consumer(pool);

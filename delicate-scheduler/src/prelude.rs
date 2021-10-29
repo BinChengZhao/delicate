@@ -50,7 +50,7 @@ pub(crate) use std::time::SystemTime;
 
 pub(crate) use anyhow::Result as AnyResut;
 pub(crate) use async_channel::{Receiver as AsyncReceiver, Sender as AsyncSender};
-pub(crate) use async_lock::RwLock;
+pub(crate) use async_lock::RwLock as AsyncRwLock;
 pub(crate) use cached::proc_macro::cached;
 pub(crate) use cached::TimedSizedCache;
 pub(crate) use casbin::{

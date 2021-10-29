@@ -1,4 +1,15 @@
 use crate::prelude::*;
+pub(crate) use actuator::BindRequest;
+
+mod proto_health {
+    include!("../../proto/generated_codes/delicate.actuator.health.rs");
+}
+/// This is a mirror of the system that can reflect the current state of the system.
+#[derive(Debug)]
+pub struct SystemMirror {
+    inner_system: AsyncRwLock<System>,
+    inner_snapshot: AsyncRwLock<SystemSnapshot>,
+}
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct HealthCheckPackage {
@@ -21,7 +32,18 @@ pub struct SystemSnapshot {
 pub struct Processes {
     inner: HashMap<SysPid, Process>,
 }
-use std::iter::Iterator;
+
+/// An enumeration of values representing gRPC service health.
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum ServingStatus {
+    /// Unknown status
+    Unknown,
+    /// The service is currently up and serving requests.
+    Serving,
+    /// The service is currently down and not serving requests.
+    NotServing,
+}
+
 impl From<&HashMap<SysPid, SysProcess>> for Processes {
     fn from(value: &HashMap<SysPid, SysProcess>) -> Processes {
         let inner: HashMap<SysPid, Process> = value
@@ -92,11 +114,80 @@ impl From<&SysProcess> for Process {
     }
 }
 
+impl fmt::Display for ServingStatus {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ServingStatus::Unknown => f.write_str("Unknown"),
+            ServingStatus::Serving => f.write_str("Serving"),
+            ServingStatus::NotServing => f.write_str("NotServing"),
+        }
+    }
+}
+
+impl From<ServingStatus> for proto_health::health_check_response::ServingStatus {
+    fn from(s: ServingStatus) -> Self {
+        match s {
+            ServingStatus::Unknown => proto_health::health_check_response::ServingStatus::Unknown,
+            ServingStatus::Serving => proto_health::health_check_response::ServingStatus::Serving,
+            ServingStatus::NotServing => {
+                proto_health::health_check_response::ServingStatus::NotServing
+            }
+        }
+    }
+}
+
 impl From<&SysProcessor> for Processor {
     fn from(sys_processor: &SysProcessor) -> Self {
         Processor {
             cpu_usage: sys_processor.get_cpu_usage(),
             frequency: sys_processor.get_frequency(),
+        }
+    }
+}
+
+impl SystemMirror {
+    pub async fn refresh_all(&self) -> SystemSnapshot {
+        let mut system = self.inner_system.write().await;
+        system.refresh_cpu();
+        system.refresh_memory();
+
+        // TODO: The heartbeat check is concerned with system metrics
+        // And does not require a detailed list of processes.
+        // system.refresh_processes();
+        // let processes: Processes = system.get_processes().into();
+
+        let processor: Processor = system.get_global_processor_info().into();
+
+        let memory: Memory = Memory {
+            total_memory: system.get_total_memory(),
+            free_memory: system.get_available_memory(),
+            used_memory: system.get_used_memory(),
+        };
+
+        let mut inner_snapshot = self.inner_snapshot.write().await;
+        // inner_snapshot.processes = processes;
+        inner_snapshot.processor = processor;
+        inner_snapshot.memory = memory;
+
+        inner_snapshot.clone()
+    }
+}
+
+impl Default for SystemMirror {
+    fn default() -> SystemMirror {
+        let inner_system = AsyncRwLock::new(System::new_with_specifics(
+            RefreshKind::new()
+                .without_users_list()
+                .without_components()
+                .with_components_list()
+                .without_networks()
+                .without_networks_list(),
+        ));
+        let inner_snapshot = AsyncRwLock::new(SystemSnapshot::default());
+
+        SystemMirror {
+            inner_system,
+            inner_snapshot,
         }
     }
 }

@@ -16,7 +16,7 @@ pub use tracing::{debug, error, info, Level};
 pub use tracing_subscriber::FmtSubscriber;
 
 pub use actuator::actuator_server::{Actuator, ActuatorServer};
-pub use actuator::{RecordId, Task};
+pub use actuator::{BindRequest, RecordId, Task, UnifiedResponseMessagesForGrpc};
 
 pub use security::BindScheduler;
 pub use service_binding::{SecurityRsaKey, SecurityeKey};

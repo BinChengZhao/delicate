@@ -13,15 +13,25 @@ message RecordId{
     int64 id = 1;
 }
 
-message UnifiedResponseMessages{
+message BindRequest {
+    int64 executor_processor_id = 1;
+    string scheduler_host = 2;
+    string executor_processor_host = 3;
+    string executor_processor_name=4;
+    int32 executor_machine_id = 5;
+    uint64 time = 6;
+}
+
+message UnifiedResponseMessagesForGrpc{
     int32 code = 1;
     string msg = 2;
     repeated google.protobuf.Any data = 3;  
 }
 
 service Actuator {
-    rpc RunTask(Task) returns (UnifiedResponseMessages) {}
-    rpc CancelTask(RecordId) returns (UnifiedResponseMessages) {}
-    rpc KeepRunningTask(Task) returns (stream UnifiedResponseMessages) {}
+    rpc RunTask(Task) returns (UnifiedResponseMessagesForGrpc) {}
+    rpc CancelTask(RecordId) returns (UnifiedResponseMessagesForGrpc) {}
+    rpc KeepRunningTask(Task) returns (stream UnifiedResponseMessagesForGrpc) {}
+    rpc BindActuator(BindRequest) returns (UnifiedResponseMessagesForGrpc) {}
 
 }

@@ -73,7 +73,7 @@ impl Actuator for DelicateActuator {
     async fn run_task(
         &self,
         request: Request<Task>,
-    ) -> Result<Response<UnifiedResponseMessagesForGPRC>, Status> {
+    ) -> Result<Response<UnifiedResponseMessagesForGrpc>, Status> {
         let task = request.get_ref();
 
         let mut process_linked_list = parse_and_run::<TokioChild, TokioCommand>(&task.command)
@@ -110,7 +110,7 @@ impl Actuator for DelicateActuator {
 
         info!("{:?}", task_ref);
 
-        let mut res = UnifiedResponseMessagesForGPRC {
+        let mut res = UnifiedResponseMessagesForGrpc {
             code: 1,
             msg: String::from("hahahaha"),
             ..Default::default()
@@ -140,13 +140,13 @@ impl Actuator for DelicateActuator {
     async fn cancel_task(
         &self,
         reqeust: Request<RecordId>,
-    ) -> Result<Response<UnifiedResponseMessagesForGPRC>, Status> {
+    ) -> Result<Response<UnifiedResponseMessagesForGrpc>, Status> {
         todo!();
     }
 
     type KeepRunningTaskStream = Pin<
         Box<
-            dyn Stream<Item = Result<UnifiedResponseMessagesForGPRC, Status>>
+            dyn Stream<Item = Result<UnifiedResponseMessagesForGrpc, Status>>
                 + Send
                 + Sync
                 + 'static,
@@ -180,7 +180,7 @@ impl Actuator for DelicateActuator {
                     let value = s.encode_to_vec();
                     let any = Any { type_url, value };
                     let data = vec![any];
-                    UnifiedResponseMessagesForGPRC {
+                    UnifiedResponseMessagesForGrpc {
                         data,
                         ..Default::default()
                     }
@@ -198,6 +198,13 @@ impl Actuator for DelicateActuator {
         Ok(Response::new(
             Box::pin(stream) as Self::KeepRunningTaskStream
         ))
+    }
+
+    async fn bind_actuator(
+        &self,
+        request: Request<BindRequest>,
+    ) -> Result<Response<UnifiedResponseMessagesForGrpc>, Status> {
+        todo!();
     }
 }
 

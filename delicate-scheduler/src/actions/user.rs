@@ -366,7 +366,7 @@ async fn logout_user(req: &Request) -> impl IntoResponse {
 #[handler]
 
 async fn roles(
-    enforcer: Data<&Arc<RwLock<Enforcer>>>,
+    enforcer: Data<&Arc<AsyncRwLock<Enforcer>>>,
     Json(UserName { user_name }): Json<UserName>,
 ) -> impl IntoResponse {
     let mut enforcer_guard = enforcer.write().await;
@@ -382,7 +382,7 @@ async fn roles(
 #[handler]
 
 async fn permissions(
-    enforcer: Data<&Arc<RwLock<Enforcer>>>,
+    enforcer: Data<&Arc<AsyncRwLock<Enforcer>>>,
     Json(UserName { user_name }): Json<UserName>,
 ) -> impl IntoResponse {
     let mut enforcer_guard = enforcer.write().await;
@@ -398,7 +398,7 @@ async fn permissions(
 
 async fn append_role(
     req: &Request,
-    enforcer: Data<&Arc<RwLock<Enforcer>>>,
+    enforcer: Data<&Arc<AsyncRwLock<Enforcer>>>,
     Json(user_and_roles): Json<UserAndRoles>,
 ) -> impl IntoResponse {
     let operation_log_pair_option =
@@ -434,7 +434,7 @@ async fn append_role(
 
 async fn delete_role(
     req: &Request,
-    enforcer: Data<&Arc<RwLock<Enforcer>>>,
+    enforcer: Data<&Arc<AsyncRwLock<Enforcer>>>,
     Json(user_and_roles): Json<UserAndRoles>,
 ) -> impl IntoResponse {
     let operation_log_pair_option =
@@ -475,7 +475,7 @@ async fn delete_role(
 
 async fn append_permission(
     req: &Request,
-    enforcer: Data<&Arc<RwLock<Enforcer>>>,
+    enforcer: Data<&Arc<AsyncRwLock<Enforcer>>>,
     Json(user_and_permissions): Json<UserAndPermissions>,
 ) -> impl IntoResponse {
     let operation_log_pair_option =
@@ -499,7 +499,7 @@ async fn append_permission(
 #[handler]
 async fn delete_permission(
     req: &Request,
-    enforcer: Data<&Arc<RwLock<Enforcer>>>,
+    enforcer: Data<&Arc<AsyncRwLock<Enforcer>>>,
     Json(user_and_permissions): Json<UserAndPermissions>,
 ) -> impl IntoResponse {
     let operation_log_pair_option =

@@ -88,8 +88,8 @@ pub struct ExecutorSecurityConf {
 
 #[derive(Debug)]
 pub struct BindScheduler {
-    pub inner: RwLock<Option<BindRequest>>,
-    pub token: RwLock<Option<String>>,
+    pub inner: AsyncRwLock<Option<BindRequest>>,
+    pub token: AsyncRwLock<Option<String>>,
 }
 
 impl ExecutorSecurityConf {
@@ -119,8 +119,8 @@ impl ExecutorSecurityConf {
 
 impl Default for BindScheduler {
     fn default() -> BindScheduler {
-        let inner = RwLock::new(None);
-        let token = RwLock::new(None);
+        let inner = AsyncRwLock::new(None);
+        let token = AsyncRwLock::new(None);
 
         BindScheduler { inner, token }
     }

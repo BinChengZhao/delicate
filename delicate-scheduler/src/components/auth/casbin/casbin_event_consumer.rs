@@ -185,7 +185,7 @@ pub(crate) fn handle_event_for_watcher(event: CasbinEventData) {
 #[allow(dead_code)]
 pub(crate) fn launch_casbin_rule_events_consumer(
     redis_client: redis::Client,
-    enforcer: Arc<RwLock<Enforcer>>,
+    enforcer: Arc<AsyncRwLock<Enforcer>>,
 ) {
     tokio_spawn(loop_publish_casbin_rule_events(redis_client.clone()));
     tokio_spawn(loop_subscribe_casbin_rule_events(redis_client, enforcer));
@@ -220,7 +220,7 @@ pub(crate) async fn publish_casbin_rule_events(mut publish_conn: Connection) -> 
 
 pub(crate) async fn loop_subscribe_casbin_rule_events(
     redis_client: redis::Client,
-    enforcer: Arc<RwLock<Enforcer>>,
+    enforcer: Arc<AsyncRwLock<Enforcer>>,
 ) {
     loop {
         let pubsub_conn_result = redis_client.get_async_connection().await;
@@ -239,7 +239,7 @@ pub(crate) async fn loop_subscribe_casbin_rule_events(
 
 pub(crate) async fn subscribe_casbin_rule_events(
     conn: Connection,
-    enforcer: Arc<RwLock<Enforcer>>,
+    enforcer: Arc<AsyncRwLock<Enforcer>>,
 ) -> Result<(), CommonError> {
     let mut pubsub_conn = conn.into_pubsub();
 

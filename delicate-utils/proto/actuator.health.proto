@@ -1,0 +1,63 @@
+syntax = "proto3";
+
+import "actuator.proto";
+package delicate.actuator.health;
+
+message HealthCheckRequest {
+    reserved 1 to 5;
+    int64 time = 6;
+}
+
+message HealthCheckResponse {
+
+    message SystemSnapshot {
+        Processor processor = 1;
+        Memory memory = 2;
+    }
+
+  message Processor {
+    float cpu_usage = 1 ;
+    uint64 frequency = 2 ;
+  }
+
+  message Memory {
+      uint64 total_memory = 1;
+      uint64 used_memory = 2;
+      uint64 free_memory = 3;
+  }
+  
+  enum ServingStatus {
+    UNKNOWN = 0;
+    SERVING = 1;
+    NOT_SERVING = 2;
+    // `SERVICE_UNKNOWN` Used only by the Watch method.
+    SERVICE_UNKNOWN = 3;  
+  }
+  
+  ServingStatus status = 1;
+  SystemSnapshot system_snapshot = 2;
+  delicate.actuator.BindRequest bind_request = 3;
+}
+
+service Health {
+  // If the requested service is unknown, the call will fail with status
+  // NOT_FOUND.
+  rpc Check(HealthCheckRequest) returns (delicate.actuator.UnifiedResponseMessagesForGrpc);
+
+  // Performs a watch for the serving status of the requested service.
+  // The server will immediately send back a message indicating the current
+  // serving status.  It will then subsequently send a new message whenever
+  // the service's serving status changes.
+  //
+  // If the requested service is unknown when the call is received, the
+  // server will send a message setting the serving status to
+  // SERVICE_UNKNOWN but will *not* terminate the call.  If at some
+  // future point, the serving status of the service becomes known, the
+  // server will send a new message with the service's serving status.
+  //
+  // If the call terminates with status UNIMPLEMENTED, then clients
+  // should assume this method is not supported and should not retry the
+  // call.  If the call terminates with any other status (including OK),
+  // clients should retry the call with appropriate exponential backoff.
+  rpc Watch(HealthCheckRequest) returns (stream delicate.actuator.UnifiedResponseMessagesForGrpc);
+}
