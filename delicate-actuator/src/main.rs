@@ -8,7 +8,21 @@ pub struct ActuatorSecurityConf {
     pub security_level: SecurityLevel,
     pub rsa_public_key: Option<SecurityeKey<RSAPublicKey>>,
     pub bind_scheduler: BindScheduler,
-    pub id_generator: Option<AsyncMutex<SnowflakeIdGenerator>>,
+    pub id_generator: AsyncMutex<SnowflakeIdGenerator>,
+}
+
+impl ActuatorSecurityConf {
+    pub fn generate_token(&self) -> Option<String> {
+        self.security_level.generate_token()
+    }
+
+    pub fn get_bind_scheduler(&self) -> &BindScheduler {
+        &self.bind_scheduler
+    }
+
+    pub fn get_id_generator(&self) -> &AsyncMutex<SnowflakeIdGenerator> {
+        &self.id_generator
+    }
 }
 
 // On async fn health_check(
@@ -19,8 +33,14 @@ pub struct ActuatorSecurityConf {
 
 #[derive(Debug, Clone)]
 pub struct ActuatorState {
-    handlers_map: Arc<DashMap<i64, TaskHandlers>>,
-    security_conf: Arc<ActuatorSecurityConf>,
+    pub handlers_map: Arc<DashMap<i64, TaskHandlers>>,
+    pub security_conf: Arc<ActuatorSecurityConf>,
+}
+
+impl ActuatorState {
+    pub fn get_security_conf(&self) -> &ActuatorSecurityConf {
+        &self.security_conf
+    }
 }
 
 #[derive(Debug)]
@@ -66,6 +86,12 @@ impl Default for ActuatorState {
 #[derive(Debug, Default, Clone)]
 struct DelicateActuator {
     state: ActuatorState,
+}
+
+impl DelicateActuator {
+    pub fn get_state(&self) -> &ActuatorState {
+        &self.state
+    }
 }
 
 #[tonic::async_trait]
@@ -204,6 +230,24 @@ impl Actuator for DelicateActuator {
         &self,
         request: Request<BindRequest>,
     ) -> Result<Response<UnifiedResponseMessagesForGrpc>, Status> {
+        let bind_request = request.into_inner();
+        let mut id_generator_guard = self
+            .get_state()
+            .get_security_conf()
+            .get_id_generator()
+            .lock()
+            .await;
+
+        let executor_machine_id = bind_request.executor_machine_id as i16;
+        let extractor: i16 = 0b00_0001_1111;
+        let node_id = executor_machine_id & extractor;
+        let machine_id = (executor_machine_id >> 5) & extractor;
+        *id_generator_guard = SnowflakeIdGenerator::new(node_id as i32, machine_id as i32);
+
+        let token = self.get_state().get_security_conf().generate_token();
+        let bind_scheduler = self.get_state().get_security_conf().get_bind_scheduler();
+        bind_scheduler.set_bind(bind_request.into()).await;
+        bind_scheduler.set_token(token).await;
         todo!();
     }
 }
@@ -274,9 +318,11 @@ impl Default for ActuatorSecurityConf {
             unreachable!("When the security level is Normal, the initialization `delicate-executor` must contain the secret key (DELICATE_SECURITY_PUBLIC_KEY)");
         }
 
+        let id_generator = AsyncMutex::new(SnowflakeIdGenerator::new(0, 0));
         Self {
             security_level: SecurityLevel::get_app_security_level(),
             rsa_public_key: rsa_public_key.map(SecurityeKey).ok(),
+            id_generator,
             ..Default::default()
         }
     }

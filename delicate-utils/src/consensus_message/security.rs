@@ -92,12 +92,23 @@ pub struct BindScheduler {
     pub token: AsyncRwLock<Option<String>>,
 }
 
+impl BindScheduler {
+    pub async fn has_bind(&self) -> bool {
+        self.inner.read().await.is_some()
+    }
+
+    pub async fn set_bind(&self, bind: BindRequest) {
+        *self.inner.write().await = Some(bind);
+    }
+
+    pub async fn set_token(&self, token: Option<String>) {
+        *self.token.write().await = token;
+    }
+}
+
 impl ExecutorSecurityConf {
     pub fn generate_token(&self) -> Option<String> {
-        match self.security_level {
-            SecurityLevel::Normal => Some(repeat_with(fastrand::alphanumeric).take(32).collect()),
-            SecurityLevel::ZeroRestriction => None,
-        }
+        self.security_level.generate_token()
     }
 
     pub async fn get_bind_scheduler_inner_ref(&self) -> RwLockReadGuard<'_, Option<BindRequest>> {
@@ -180,6 +191,13 @@ impl SecurityLevel {
                 .flatten()
                 .expect("Environment Variables `DELICATE_SECURITY_LEVEL` missed.")
         })
+    }
+
+    pub fn generate_token(&self) -> Option<String> {
+        match self {
+            SecurityLevel::Normal => Some(repeat_with(fastrand::alphanumeric).take(32).collect()),
+            SecurityLevel::ZeroRestriction => None,
+        }
     }
 }
 

@@ -67,7 +67,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
 
             _ => {
-                return Ok(());
+                break;
             }
         }
     }
