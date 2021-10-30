@@ -28,10 +28,22 @@ message UnifiedResponseMessagesForGrpc{
     repeated google.protobuf.Any data = 3;  
 }
 
+message HealthCheckUnit{
+
+}
+
+message HealthWatchUnit{
+    
+}
+
 service Actuator {
     rpc RunTask(Task) returns (UnifiedResponseMessagesForGrpc) {}
     rpc CancelTask(RecordId) returns (UnifiedResponseMessagesForGrpc) {}
     rpc KeepRunningTask(Task) returns (stream UnifiedResponseMessagesForGrpc) {}
     rpc BindActuator(BindRequest) returns (UnifiedResponseMessagesForGrpc) {}
+    rpc HealthCheck(HealthCheckUnit) returns (UnifiedResponseMessagesForGrpc) {}
+    rpc HealthWatch(HealthWatchUnit) returns (stream UnifiedResponseMessagesForGrpc) {}
+
+
 
 }

@@ -36,6 +36,10 @@ pub struct UnifiedResponseMessagesForGrpc {
     #[prost(message, repeated, tag = "3")]
     pub data: ::prost::alloc::vec::Vec<::prost_types::Any>,
 }
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct HealthCheckUnit {}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct HealthWatchUnit {}
 #[doc = r" Generated client implementations."]
 pub mod actuator_client {
     #![allow(unused_variables, dead_code, missing_docs, clippy::let_unit_value)]
@@ -160,6 +164,41 @@ pub mod actuator_client {
                 http::uri::PathAndQuery::from_static("/delicate.actuator.Actuator/BindActuator");
             self.inner.unary(request.into_request(), path, codec).await
         }
+        pub async fn health_check(
+            &mut self,
+            request: impl tonic::IntoRequest<super::HealthCheckUnit>,
+        ) -> Result<tonic::Response<super::UnifiedResponseMessagesForGrpc>, tonic::Status> {
+            self.inner.ready().await.map_err(|e| {
+                tonic::Status::new(
+                    tonic::Code::Unknown,
+                    format!("Service was not ready: {}", e.into()),
+                )
+            })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path =
+                http::uri::PathAndQuery::from_static("/delicate.actuator.Actuator/HealthCheck");
+            self.inner.unary(request.into_request(), path, codec).await
+        }
+        pub async fn health_watch(
+            &mut self,
+            request: impl tonic::IntoRequest<super::HealthWatchUnit>,
+        ) -> Result<
+            tonic::Response<tonic::codec::Streaming<super::UnifiedResponseMessagesForGrpc>>,
+            tonic::Status,
+        > {
+            self.inner.ready().await.map_err(|e| {
+                tonic::Status::new(
+                    tonic::Code::Unknown,
+                    format!("Service was not ready: {}", e.into()),
+                )
+            })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path =
+                http::uri::PathAndQuery::from_static("/delicate.actuator.Actuator/HealthWatch");
+            self.inner
+                .server_streaming(request.into_request(), path, codec)
+                .await
+        }
     }
 }
 #[doc = r" Generated server implementations."]
@@ -191,6 +230,20 @@ pub mod actuator_server {
             &self,
             request: tonic::Request<super::BindRequest>,
         ) -> Result<tonic::Response<super::UnifiedResponseMessagesForGrpc>, tonic::Status>;
+        async fn health_check(
+            &self,
+            request: tonic::Request<super::HealthCheckUnit>,
+        ) -> Result<tonic::Response<super::UnifiedResponseMessagesForGrpc>, tonic::Status>;
+        #[doc = "Server streaming response type for the HealthWatch method."]
+        type HealthWatchStream: futures_core::Stream<
+                Item = Result<super::UnifiedResponseMessagesForGrpc, tonic::Status>,
+            > + Send
+            + Sync
+            + 'static;
+        async fn health_watch(
+            &self,
+            request: tonic::Request<super::HealthWatchUnit>,
+        ) -> Result<tonic::Response<Self::HealthWatchStream>, tonic::Status>;
     }
     #[derive(Debug)]
     pub struct ActuatorServer<T: Actuator> {
@@ -357,6 +410,72 @@ pub mod actuator_server {
                             send_compression_encodings,
                         );
                         let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/delicate.actuator.Actuator/HealthCheck" => {
+                    #[allow(non_camel_case_types)]
+                    struct HealthCheckSvc<T: Actuator>(pub Arc<T>);
+                    impl<T: Actuator> tonic::server::UnaryService<super::HealthCheckUnit> for HealthCheckSvc<T> {
+                        type Response = super::UnifiedResponseMessagesForGrpc;
+                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::HealthCheckUnit>,
+                        ) -> Self::Future {
+                            let inner = self.0.clone();
+                            let fut = async move { (*inner).health_check(request).await };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = HealthCheckSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec).apply_compression_config(
+                            accept_compression_encodings,
+                            send_compression_encodings,
+                        );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/delicate.actuator.Actuator/HealthWatch" => {
+                    #[allow(non_camel_case_types)]
+                    struct HealthWatchSvc<T: Actuator>(pub Arc<T>);
+                    impl<T: Actuator> tonic::server::ServerStreamingService<super::HealthWatchUnit>
+                        for HealthWatchSvc<T>
+                    {
+                        type Response = super::UnifiedResponseMessagesForGrpc;
+                        type ResponseStream = T::HealthWatchStream;
+                        type Future =
+                            BoxFuture<tonic::Response<Self::ResponseStream>, tonic::Status>;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::HealthWatchUnit>,
+                        ) -> Self::Future {
+                            let inner = self.0.clone();
+                            let fut = async move { (*inner).health_watch(request).await };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = HealthWatchSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec).apply_compression_config(
+                            accept_compression_encodings,
+                            send_compression_encodings,
+                        );
+                        let res = grpc.server_streaming(method, req).await;
                         Ok(res)
                     };
                     Box::pin(fut)

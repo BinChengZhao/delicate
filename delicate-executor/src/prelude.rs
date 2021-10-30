@@ -1,5 +1,3 @@
-pub(crate) use async_lock::RwLock as AsyncRwLock;
-
 pub(crate) use delay_timer::prelude::*;
 
 pub(crate) use delicate_utils::consensus_message::security::ExecutorSecurityConf;
@@ -26,14 +24,11 @@ pub(crate) use tracing_subscriber::FmtSubscriber;
 
 pub(crate) use std::convert::{Into, TryInto};
 pub(crate) use std::env;
-pub(crate) use std::fmt::Debug;
 pub(crate) use std::ops::Deref;
 pub(crate) use std::str::FromStr;
 pub(crate) use std::sync::atomic::{AtomicUsize, Ordering};
 pub(crate) use std::sync::Arc;
 pub(crate) use std::time::Duration;
-
-pub(crate) use sysinfo::{RefreshKind, System, SystemExt};
 
 pub(crate) use poem::middleware::AddData;
 pub(crate) use poem::web::{Data, Json};

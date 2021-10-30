@@ -1,6 +1,7 @@
 mod prelude;
 use prelude::*;
 
+// TODO:
 // auth example: /Users/bincheng_paopao/project/repo/rust/others/libs/tonic/examples/src/authentication/server.rs
 // zip example: .send_gzip().accept_gzip()
 #[derive(Debug)]
@@ -114,6 +115,11 @@ impl TaskHandlers {
             self.running_handler.abort();
         }
     }
+
+    pub fn cancel(self) {
+        self.timeout_handler.abort();
+        self.running_handler.abort();
+    }
 }
 
 impl Default for ActuatorState {
@@ -200,27 +206,27 @@ impl Actuator for DelicateActuator {
         request: Request<Task>,
     ) -> Result<Response<UnifiedResponseMessagesForGrpc>, Status> {
         let task = request.get_ref();
+        debug!("task: {:?}", task);
 
         self.handler_task(&task.command).await?;
 
-        let task_ref = request.get_ref();
-
-        info!("{:?}", task_ref);
-
-        let mut res = UnifiedResponseMessagesForGrpc {
-            code: 1,
-            msg: String::from("hahahaha"),
-            ..Default::default()
-        };
-
-        Ok(Response::new(res))
+        Ok(Response::new(UnifiedResponseMessagesForGrpc::success()))
     }
 
     async fn cancel_task(
         &self,
         reqeust: Request<RecordId>,
     ) -> Result<Response<UnifiedResponseMessagesForGrpc>, Status> {
-        todo!();
+        let (_, task_handlers) = self
+            .get_state()
+            .get_handlers_map()
+            .remove(&reqeust.into_inner().id)
+            .ok_or(Status::unavailable(
+                "There have no running task instance to cancel.",
+            ))?;
+        task_handlers.cancel();
+
+        Ok(Response::new(UnifiedResponseMessagesForGrpc::success()))
     }
 
     type KeepRunningTaskStream = Pin<
@@ -252,30 +258,22 @@ impl Actuator for DelicateActuator {
             .stdout
             .ok_or_else(|| Status::failed_precondition(" No valid process stdout .".to_string()))?;
 
-        let mut buf_reader_lines =
-            LinesStream::new(BufReader::new(child_stdout).lines()).map(|l| {
-                l.map(|s| {
-                    let type_url = "/String".to_string();
-                    let value = s.encode_to_vec();
-                    let any = Any { type_url, value };
-                    let data = vec![any];
-                    UnifiedResponseMessagesForGrpc {
-                        data,
-                        ..Default::default()
-                    }
-                })
-                .map_err(|e| Status::unknown(e.to_string()))
-            });
-
-        let stream = async_stream::stream! {
-
-            while let Some(resp) = buf_reader_lines.next().await{
-                yield resp;
-            }
-        };
+        let buf_reader_lines = LinesStream::new(BufReader::new(child_stdout).lines()).map(|l| {
+            l.map(|s| {
+                let type_url = "/String".to_string();
+                let value = s.encode_to_vec();
+                let any = Any { type_url, value };
+                let data = vec![any];
+                UnifiedResponseMessagesForGrpc {
+                    data,
+                    ..Default::default()
+                }
+            })
+            .map_err(|e| Status::unknown(e.to_string()))
+        });
 
         Ok(Response::new(
-            Box::pin(stream) as Self::KeepRunningTaskStream
+            Box::pin(buf_reader_lines) as Self::KeepRunningTaskStream
         ))
     }
 
@@ -297,6 +295,28 @@ impl Actuator for DelicateActuator {
         let bind_scheduler = self.get_state().get_security_conf().get_bind_scheduler();
         bind_scheduler.set_bind(bind_request.into()).await;
         bind_scheduler.set_token(token).await;
+        Ok(Response::new(UnifiedResponseMessagesForGrpc::success()))
+    }
+
+    async fn health_check(
+        &self,
+        request: Request<HealthCheckUnit>,
+    ) -> Result<Response<UnifiedResponseMessagesForGrpc>, Status> {
+        todo!();
+    }
+
+    type HealthWatchStream = Pin<
+        Box<
+            dyn Stream<Item = Result<UnifiedResponseMessagesForGrpc, Status>>
+                + Send
+                + Sync
+                + 'static,
+        >,
+    >;
+    async fn health_watch(
+        &self,
+        request: Request<HealthWatchUnit>,
+    ) -> Result<Response<Self::HealthWatchStream>, Status> {
         todo!();
     }
 }
@@ -329,6 +349,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     init_logger();
 
+    // TODO:
+    // auth example: /Users/bincheng_paopao/project/repo/rust/others/libs/tonic/examples/src/authentication/server.rs
+    // zip example: .send_gzip().accept_gzip()
     let state = ActuatorState::default();
     Server::builder()
         .add_service(ActuatorServer::new(DelicateActuator { state }))
