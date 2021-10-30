@@ -5,10 +5,9 @@ use prelude::*;
 // zip example: .send_gzip().accept_gzip()
 #[derive(Debug)]
 pub struct ActuatorSecurityConf {
-    pub security_level: SecurityLevel,
-    pub rsa_public_key: Option<SecurityeKey<RSAPublicKey>>,
-    pub bind_scheduler: BindScheduler,
-    pub id_generator: AsyncMutex<SnowflakeIdGenerator>,
+    security_level: SecurityLevel,
+    rsa_public_key: Option<SecurityeKey<RSAPublicKey>>,
+    bind_scheduler: BindScheduler,
 }
 
 impl ActuatorSecurityConf {
@@ -19,10 +18,6 @@ impl ActuatorSecurityConf {
     pub fn get_bind_scheduler(&self) -> &BindScheduler {
         &self.bind_scheduler
     }
-
-    pub fn get_id_generator(&self) -> &AsyncMutex<SnowflakeIdGenerator> {
-        &self.id_generator
-    }
 }
 
 // On async fn health_check(
@@ -31,43 +26,93 @@ impl ActuatorSecurityConf {
 //     Implement a function to cache a list of machines based on cached.
 // When executing a task to an actuator, the most resourceful machine is retrieved from it by group id.
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct ActuatorState {
-    pub handlers_map: Arc<DashMap<i64, TaskHandlers>>,
-    pub security_conf: Arc<ActuatorSecurityConf>,
+    id_generator: AsyncMutex<SnowflakeIdGenerator>,
+    handlers_map: Arc<DashMap<i64, TaskHandlers>>,
+    security_conf: Arc<ActuatorSecurityConf>,
 }
 
 impl ActuatorState {
+    pub fn handlers_map_cloned(&self) -> Arc<DashMap<i64, TaskHandlers>> {
+        self.handlers_map.clone()
+    }
+
+    pub fn get_handlers_map(&self) -> &DashMap<i64, TaskHandlers> {
+        &self.handlers_map
+    }
     pub fn get_security_conf(&self) -> &ActuatorSecurityConf {
         &self.security_conf
+    }
+
+    pub async fn generate_id(&self) -> i64 {
+        self.id_generator.lock().await.real_time_generate()
+    }
+
+    pub async fn set_id_generator(&self, id_generator: SnowflakeIdGenerator) {
+        let mut id_generator_guard = self.id_generator.lock().await;
+
+        *id_generator_guard = id_generator;
     }
 }
 
 #[derive(Debug)]
 pub struct TaskHandlers {
+    id: i64,
+    status: AtomicUsize,
     running_handler: JoinHandle<Result<String, std::io::Error>>,
     timeout_handler: JoinHandle<()>,
 }
 
 impl TaskHandlers {
+    pub const INIT: usize = 1;
+    pub const COMPLETE: usize = 1;
+    pub const TIMEOUT: usize = 1 << 1;
+
     pub fn new(
+        id: i64,
         running_handler: JoinHandle<Result<String, std::io::Error>>,
         timeout_handler: JoinHandle<()>,
     ) -> Self {
+        let status = AtomicUsize::new(0);
         Self {
+            id,
+            status,
             running_handler,
             timeout_handler,
         }
     }
-}
 
-impl TaskHandlers {
-    pub fn cancel_running(&self) {
-        self.running_handler.abort();
+    pub fn complete(self) {
+        if self
+            .status
+            .compare_exchange(
+                Self::INIT,
+                Self::COMPLETE,
+                Ordering::AcqRel,
+                Ordering::Acquire,
+            )
+            .is_ok()
+        {
+            debug!("cancel running task: {}", self.id);
+            self.timeout_handler.abort();
+        }
     }
 
-    pub fn cancel_timeout(&self) {
-        self.timeout_handler.abort();
+    pub fn timeout(self) {
+        if self
+            .status
+            .compare_exchange(
+                Self::INIT,
+                Self::TIMEOUT,
+                Ordering::AcqRel,
+                Ordering::Acquire,
+            )
+            .is_ok()
+        {
+            debug!("cancel timeout task: {}", self.id);
+            self.running_handler.abort();
+        }
     }
 }
 
@@ -76,14 +121,17 @@ impl Default for ActuatorState {
         let handlers_map = Arc::new(DashMap::new());
 
         let security_conf = Arc::new(ActuatorSecurityConf::default());
+        let id_generator = AsyncMutex::new(SnowflakeIdGenerator::new(0, 0));
+
         Self {
             handlers_map,
             security_conf,
+            id_generator,
         }
     }
 }
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default)]
 struct DelicateActuator {
     state: ActuatorState,
 }
@@ -92,17 +140,9 @@ impl DelicateActuator {
     pub fn get_state(&self) -> &ActuatorState {
         &self.state
     }
-}
 
-#[tonic::async_trait]
-impl Actuator for DelicateActuator {
-    async fn run_task(
-        &self,
-        request: Request<Task>,
-    ) -> Result<Response<UnifiedResponseMessagesForGrpc>, Status> {
-        let task = request.get_ref();
-
-        let mut process_linked_list = parse_and_run::<TokioChild, TokioCommand>(&task.command)
+    pub async fn handler_task(&self, command: &str) -> Result<(), Status> {
+        let mut process_linked_list = parse_and_run::<TokioChild, TokioCommand>(command)
             .await
             .map_err(|e| Status::failed_precondition(e.to_string()))?;
 
@@ -118,19 +158,50 @@ impl Actuator for DelicateActuator {
             .stdout
             .ok_or_else(|| Status::failed_precondition(" No valid process stdout .".to_string()))?;
 
-        let running_handler = tokio_spawn(async move {
-            let mut output = String::new();
-            child_stdout
-                .read_to_string(&mut output)
-                .await
-                .map(|_| output)
+        let id = self.get_state().generate_id().await;
+        let handlers_map_cloned = self.get_state().handlers_map_cloned();
+
+        let running_handler = tokio_spawn({
+            let handlers_map_cloned = handlers_map_cloned.clone();
+            async move {
+                let mut output = String::new();
+                let result_output = child_stdout
+                    .read_to_string(&mut output)
+                    .await
+                    .map(|_| output);
+
+                handlers_map_cloned.remove(&id).map(|(_, h)| {
+                    h.complete();
+                });
+
+                result_output
+            }
         });
 
-        let timeout_handler = tokio_spawn(async {
-            todo!();
+        let timeout_handler = tokio_spawn(async move {
+            handlers_map_cloned.remove(&id).map(|(_, h)| {
+                h.timeout();
+            });
         });
 
-        let task_handlers = TaskHandlers::new(running_handler, timeout_handler);
+        let task_handlers = TaskHandlers::new(id, running_handler, timeout_handler);
+
+        self.get_state()
+            .get_handlers_map()
+            .insert(id, task_handlers);
+        Ok(())
+    }
+}
+
+#[tonic::async_trait]
+impl Actuator for DelicateActuator {
+    async fn run_task(
+        &self,
+        request: Request<Task>,
+    ) -> Result<Response<UnifiedResponseMessagesForGrpc>, Status> {
+        let task = request.get_ref();
+
+        self.handler_task(&task.command).await?;
 
         let task_ref = request.get_ref();
 
@@ -141,24 +212,6 @@ impl Actuator for DelicateActuator {
             msg: String::from("hahahaha"),
             ..Default::default()
         };
-
-        {
-            let value = task_ref.encode_to_vec();
-            let type_url = String::from("/delicate.actuator.Task");
-            res.data.push(Any { type_url, value });
-        }
-
-        {
-            let value = String::from("I'm string").into_bytes();
-            let type_url = String::from("/String");
-            res.data.push(Any { type_url, value });
-        }
-
-        {
-            let value = String::from("I'm Fake , have no exist.").into_bytes();
-            let type_url = String::from("/Fake");
-            res.data.push(Any { type_url, value });
-        }
 
         Ok(Response::new(res))
     }
@@ -231,18 +284,14 @@ impl Actuator for DelicateActuator {
         request: Request<BindRequest>,
     ) -> Result<Response<UnifiedResponseMessagesForGrpc>, Status> {
         let bind_request = request.into_inner();
-        let mut id_generator_guard = self
-            .get_state()
-            .get_security_conf()
-            .get_id_generator()
-            .lock()
-            .await;
 
         let executor_machine_id = bind_request.executor_machine_id as i16;
         let extractor: i16 = 0b00_0001_1111;
         let node_id = executor_machine_id & extractor;
         let machine_id = (executor_machine_id >> 5) & extractor;
-        *id_generator_guard = SnowflakeIdGenerator::new(node_id as i32, machine_id as i32);
+        self.get_state()
+            .set_id_generator(SnowflakeIdGenerator::new(node_id as i32, machine_id as i32))
+            .await;
 
         let token = self.get_state().get_security_conf().generate_token();
         let bind_scheduler = self.get_state().get_security_conf().get_bind_scheduler();
@@ -318,11 +367,9 @@ impl Default for ActuatorSecurityConf {
             unreachable!("When the security level is Normal, the initialization `delicate-executor` must contain the secret key (DELICATE_SECURITY_PUBLIC_KEY)");
         }
 
-        let id_generator = AsyncMutex::new(SnowflakeIdGenerator::new(0, 0));
         Self {
             security_level: SecurityLevel::get_app_security_level(),
             rsa_public_key: rsa_public_key.map(SecurityeKey).ok(),
-            id_generator,
             ..Default::default()
         }
     }

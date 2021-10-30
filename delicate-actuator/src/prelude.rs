@@ -27,4 +27,5 @@ pub use rsa::RSAPublicKey;
 pub use std::env;
 pub use std::pin::Pin;
 pub use std::str::FromStr;
+pub use std::sync::atomic::{AtomicUsize, Ordering};
 pub use std::sync::Arc;
