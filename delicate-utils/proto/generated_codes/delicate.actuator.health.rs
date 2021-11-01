@@ -40,8 +40,8 @@ pub mod health_check_response {
     #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
     #[repr(i32)]
     pub enum ServingStatus {
-        Unknown = 0,
-        Serving = 1,
+        Unknown    = 0,
+        Serving    = 1,
         NotServing = 2,
         /// `SERVICE_UNKNOWN` Used only by the Watch method.
         ServiceUnknown = 3,
@@ -58,40 +58,23 @@ pub mod health_client {
     impl HealthClient<tonic::transport::Channel> {
         #[doc = r" Attempt to create a new client by connecting to a given endpoint."]
         pub async fn connect<D>(dst: D) -> Result<Self, tonic::transport::Error>
-        where
-            D: std::convert::TryInto<tonic::transport::Endpoint>,
-            D::Error: Into<StdError>,
+            where D: std::convert::TryInto<tonic::transport::Endpoint>,
+                  D::Error: Into<StdError>
         {
             let conn = tonic::transport::Endpoint::new(dst)?.connect().await?;
             Ok(Self::new(conn))
         }
     }
     impl<T> HealthClient<T>
-    where
-        T: tonic::client::GrpcService<tonic::body::BoxBody>,
-        T::ResponseBody: Body + Send + Sync + 'static,
-        T::Error: Into<StdError>,
-        <T::ResponseBody as Body>::Error: Into<StdError> + Send,
+        where T: tonic::client::GrpcService<tonic::body::BoxBody>,
+              T::ResponseBody: Body + Send + Sync + 'static,
+              T::Error: Into<StdError>,
+              <T::ResponseBody as Body>::Error: Into<StdError> + Send
     {
         pub fn new(inner: T) -> Self {
             let inner = tonic::client::Grpc::new(inner);
             Self { inner }
-        }
-        pub fn with_interceptor<F>(
-            inner: T,
-            interceptor: F,
-        ) -> HealthClient<InterceptedService<T, F>>
-        where
-            F: tonic::service::Interceptor,
-            T: tonic::codegen::Service<
-                http::Request<tonic::body::BoxBody>,
-                Response = http::Response<
-                    <T as tonic::client::GrpcService<tonic::body::BoxBody>>::ResponseBody,
-                >,
-            >,
-            <T as tonic::codegen::Service<http::Request<tonic::body::BoxBody>>>::Error:
-                Into<StdError> + Send + Sync,
-        {
+        }        pub fn with_interceptor < F > (inner : T , interceptor : F) -> HealthClient < InterceptedService < T , F >> where F : tonic :: service :: Interceptor , T : tonic :: codegen :: Service < http :: Request < tonic :: body :: BoxBody > , Response = http :: Response << T as tonic :: client :: GrpcService < tonic :: body :: BoxBody >> :: ResponseBody > > , < T as tonic :: codegen :: Service < http :: Request < tonic :: body :: BoxBody >> > :: Error : Into < StdError > + Send + Sync ,{
             HealthClient::new(InterceptedService::new(inner, interceptor))
         }
         #[doc = r" Compress requests with `gzip`."]
@@ -111,15 +94,14 @@ pub mod health_client {
         #[doc = " NOT_FOUND."]
         pub async fn check(
             &mut self,
-            request: impl tonic::IntoRequest<super::HealthCheckRequest>,
-        ) -> Result<tonic::Response<super::super::UnifiedResponseMessagesForGrpc>, tonic::Status>
+            request: impl tonic::IntoRequest<super::HealthCheckRequest>)
+            -> Result<tonic::Response<super::super::UnifiedResponseMessagesForGrpc>, tonic::Status>
         {
             self.inner.ready().await.map_err(|e| {
-                tonic::Status::new(
-                    tonic::Code::Unknown,
-                    format!("Service was not ready: {}", e.into()),
-                )
-            })?;
+                                         tonic::Status::new(tonic::Code::Unknown,
+                                                            format!("Service was not ready: {}",
+                                                                    e.into()))
+                                     })?;
             let codec = tonic::codec::ProstCodec::default();
             let path =
                 http::uri::PathAndQuery::from_static("/delicate.actuator.health.Health/Check");
@@ -139,26 +121,16 @@ pub mod health_client {
         #[doc = " If the call terminates with status UNIMPLEMENTED, then clients"]
         #[doc = " should assume this method is not supported and should not retry the"]
         #[doc = " call.  If the call terminates with any other status (including OK),"]
-        #[doc = " clients should retry the call with appropriate exponential backoff."]
-        pub async fn watch(
-            &mut self,
-            request: impl tonic::IntoRequest<super::HealthCheckRequest>,
-        ) -> Result<
-            tonic::Response<tonic::codec::Streaming<super::super::UnifiedResponseMessagesForGrpc>>,
-            tonic::Status,
-        > {
+        #[doc = " clients should retry the call with appropriate exponential backoff."]        pub async fn watch (& mut self , request : impl tonic :: IntoRequest < super :: HealthCheckRequest > ,) -> Result < tonic :: Response < tonic :: codec :: Streaming < super :: super :: UnifiedResponseMessagesForGrpc >> , tonic :: Status >{
             self.inner.ready().await.map_err(|e| {
-                tonic::Status::new(
-                    tonic::Code::Unknown,
-                    format!("Service was not ready: {}", e.into()),
-                )
-            })?;
+                                         tonic::Status::new(tonic::Code::Unknown,
+                                                            format!("Service was not ready: {}",
+                                                                    e.into()))
+                                     })?;
             let codec = tonic::codec::ProstCodec::default();
             let path =
                 http::uri::PathAndQuery::from_static("/delicate.actuator.health.Health/Watch");
-            self.inner
-                .server_streaming(request.into_request(), path, codec)
-                .await
+            self.inner.server_streaming(request.into_request(), path, codec).await
         }
     }
 }
@@ -173,14 +145,10 @@ pub mod health_server {
         #[doc = " NOT_FOUND."]
         async fn check(
             &self,
-            request: tonic::Request<super::HealthCheckRequest>,
-        ) -> Result<tonic::Response<super::super::UnifiedResponseMessagesForGrpc>, tonic::Status>;
+            request: tonic::Request<super::HealthCheckRequest>)
+            -> Result<tonic::Response<super::super::UnifiedResponseMessagesForGrpc>, tonic::Status>;
         #[doc = "Server streaming response type for the Watch method."]
-        type WatchStream: futures_core::Stream<
-                Item = Result<super::super::UnifiedResponseMessagesForGrpc, tonic::Status>,
-            > + Send
-            + Sync
-            + 'static;
+        type WatchStream : futures_core :: Stream < Item = Result < super :: super :: UnifiedResponseMessagesForGrpc , tonic :: Status >> + Send + Sync + 'static ;
         #[doc = " Performs a watch for the serving status of the requested service."]
         #[doc = " The server will immediately send back a message indicating the current"]
         #[doc = " serving status.  It will then subsequently send a new message whenever"]
@@ -196,10 +164,9 @@ pub mod health_server {
         #[doc = " should assume this method is not supported and should not retry the"]
         #[doc = " call.  If the call terminates with any other status (including OK),"]
         #[doc = " clients should retry the call with appropriate exponential backoff."]
-        async fn watch(
-            &self,
-            request: tonic::Request<super::HealthCheckRequest>,
-        ) -> Result<tonic::Response<Self::WatchStream>, tonic::Status>;
+        async fn watch(&self,
+                       request: tonic::Request<super::HealthCheckRequest>)
+                       -> Result<tonic::Response<Self::WatchStream>, tonic::Status>;
     }
     #[derive(Debug)]
     pub struct HealthServer<T: Health> {
@@ -212,15 +179,12 @@ pub mod health_server {
         pub fn new(inner: T) -> Self {
             let inner = Arc::new(inner);
             let inner = _Inner(inner);
-            Self {
-                inner,
-                accept_compression_encodings: Default::default(),
-                send_compression_encodings: Default::default(),
-            }
+            Self { inner,
+                   accept_compression_encodings: Default::default(),
+                   send_compression_encodings: Default::default() }
         }
         pub fn with_interceptor<F>(inner: T, interceptor: F) -> InterceptedService<Self, F>
-        where
-            F: tonic::service::Interceptor,
+            where F: tonic::service::Interceptor
         {
             InterceptedService::new(Self::new(inner), interceptor)
         }
@@ -236,10 +200,9 @@ pub mod health_server {
         }
     }
     impl<T, B> tonic::codegen::Service<http::Request<B>> for HealthServer<T>
-    where
-        T: Health,
-        B: Body + Send + Sync + 'static,
-        B::Error: Into<StdError> + Send + 'static,
+        where T: Health,
+              B: Body + Send + Sync + 'static,
+              B::Error: Into<StdError> + Send + 'static
     {
         type Response = http::Response<tonic::body::BoxBody>;
         type Error = Never;
@@ -256,10 +219,9 @@ pub mod health_server {
                     impl<T: Health> tonic::server::UnaryService<super::HealthCheckRequest> for CheckSvc<T> {
                         type Response = super::super::UnifiedResponseMessagesForGrpc;
                         type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
-                        fn call(
-                            &mut self,
-                            request: tonic::Request<super::HealthCheckRequest>,
-                        ) -> Self::Future {
+                        fn call(&mut self,
+                                request: tonic::Request<super::HealthCheckRequest>)
+                                -> Self::Future {
                             let inner = self.0.clone();
                             let fut = async move { (*inner).check(request).await };
                             Box::pin(fut)
@@ -272,15 +234,12 @@ pub mod health_server {
                         let inner = inner.0;
                         let method = CheckSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic::server::Grpc::new(codec).apply_compression_config(
-                            accept_compression_encodings,
-                            send_compression_encodings,
-                        );
+                        let mut grpc = tonic :: server :: Grpc :: new (codec) . apply_compression_config (accept_compression_encodings , send_compression_encodings) ;
                         let res = grpc.unary(method, req).await;
                         Ok(res)
                     };
                     Box::pin(fut)
-                }
+                },
                 "/delicate.actuator.health.Health/Watch" => {
                     #[allow(non_camel_case_types)]
                     struct WatchSvc<T: Health>(pub Arc<T>);
@@ -289,10 +248,9 @@ pub mod health_server {
                         type ResponseStream = T::WatchStream;
                         type Future =
                             BoxFuture<tonic::Response<Self::ResponseStream>, tonic::Status>;
-                        fn call(
-                            &mut self,
-                            request: tonic::Request<super::HealthCheckRequest>,
-                        ) -> Self::Future {
+                        fn call(&mut self,
+                                request: tonic::Request<super::HealthCheckRequest>)
+                                -> Self::Future {
                             let inner = self.0.clone();
                             let fut = async move { (*inner).watch(request).await };
                             Box::pin(fut)
@@ -305,22 +263,18 @@ pub mod health_server {
                         let inner = inner.0;
                         let method = WatchSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic::server::Grpc::new(codec).apply_compression_config(
-                            accept_compression_encodings,
-                            send_compression_encodings,
-                        );
+                        let mut grpc = tonic :: server :: Grpc :: new (codec) . apply_compression_config (accept_compression_encodings , send_compression_encodings) ;
                         let res = grpc.server_streaming(method, req).await;
                         Ok(res)
                     };
                     Box::pin(fut)
-                }
+                },
                 _ => Box::pin(async move {
-                    Ok(http::Response::builder()
-                        .status(200)
-                        .header("grpc-status", "12")
-                        .header("content-type", "application/grpc")
-                        .body(empty_body())
-                        .unwrap())
+                    Ok(http::Response::builder().status(200)
+                                                .header("grpc-status", "12")
+                                                .header("content-type", "application/grpc")
+                                                .body(empty_body())
+                                                .unwrap())
                 }),
             }
         }
@@ -328,11 +282,9 @@ pub mod health_server {
     impl<T: Health> Clone for HealthServer<T> {
         fn clone(&self) -> Self {
             let inner = self.inner.clone();
-            Self {
-                inner,
-                accept_compression_encodings: self.accept_compression_encodings,
-                send_compression_encodings: self.send_compression_encodings,
-            }
+            Self { inner,
+                   accept_compression_encodings: self.accept_compression_encodings,
+                   send_compression_encodings: self.send_compression_encodings }
         }
     }
     impl<T: Health> Clone for _Inner<T> {

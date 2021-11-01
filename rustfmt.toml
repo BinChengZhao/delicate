@@ -1,0 +1,42 @@
+# rustfmt 2.0
+version = "Two"
+
+# This option can be used to simplify the management and bulk updates of the granular width configuration settings 
+# (fn_call_width, attr_fn_like_width, struct_lit_width, struct_variant_width, array_width, chain_width, single_line_if_else_max_width),
+# that respectively control when formatted constructs are multi-lined/vertical based on width.
+use_small_heuristics="MAX"
+
+# Indent on expressions or items.
+indent_style="Visual" 
+# The maximum length of enum variant having discriminant, that gets vertically aligned with others.
+# Variants without discriminants would be ignored for the purpose of alignment.
+enum_discrim_align_threshold = 10 
+# Put a trailing comma after a block based match arm (non-block arms are not affected)
+match_block_trailing_comma=true
+
+# StdExternalCrate:
+# Discard existing import groups, and create three groups for:
+
+# std, core and alloc,
+# external crates,
+# self, super and crate imports.
+group_imports="StdExternalCrate" 
+# Format the metavariable matching patterns in macros.
+format_macro_matchers=true 
+# Always print the abi for extern items
+force_explicit_abi=false 
+# Maximum length of comments. No effect unlesswrap_comments = true.
+comment_width=80
+# Break comments to fit on the line
+wrap_comments=true
+# Convert /* */ comments to // comments where possible
+normalize_comments=true
+# Report FIXME items in comments.
+report_fixme="Unnumbered"
+# Replace strings of _ wildcards by a single .. in tuple patterns
+condense_wildcard_suffixes=true
+
+# Skip formatting files and directories that match the specified pattern. The pattern format is the same as .gitignore. Be sure to use Unix/forwardslash / style paths. This path style will work on all platforms.
+# Windows style paths with backslashes \ are not supported.
+ignore = [
+]

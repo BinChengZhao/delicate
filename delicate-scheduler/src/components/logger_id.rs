@@ -26,9 +26,6 @@ impl<E: Endpoint> Endpoint for LoggerIdMiddleware<E> {
 
     async fn call(&self, req: Request) -> Self::Output {
         let unique_id = get_unique_id_string();
-        self.ep
-            .call(req)
-            .instrument(info_span!("logger-", id = unique_id.deref()))
-            .await
+        self.ep.call(req).instrument(info_span!("logger-", id = unique_id.deref())).await
     }
 }

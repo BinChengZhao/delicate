@@ -1,5 +1,4 @@
-use crate::prelude::*;
-use crate::security::SchedulerSecurityConf;
+use crate::{prelude::*, security::SchedulerSecurityConf};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub(crate) struct SchedulerMetaInfo {
@@ -37,11 +36,11 @@ impl Default for SchedulerMetaInfo {
             .map(|s| s.to_owned())
             .expect("Environment variable resolution failure.");
 
-        let name = env::var_os("SCHEDULER_NAME")
-            .expect("No environment variable set `SCHEDULER_NAME`.")
-            .to_str()
-            .map(|s| s.to_owned())
-            .expect("Environment variable resolution failure.");
+        let name =
+            env::var_os("SCHEDULER_NAME").expect("No environment variable set `SCHEDULER_NAME`.")
+                                         .to_str()
+                                         .map(|s| s.to_owned())
+                                         .expect("Environment variable resolution failure.");
 
         let listening_address = env::var_os("SCHEDULER_LISTENING_ADDRESS")
             .expect("No environment variable set `SCHEDULER_LISTENING_ADDRESS`.")
@@ -51,11 +50,6 @@ impl Default for SchedulerMetaInfo {
 
         let security_conf = SchedulerSecurityConf::default();
 
-        SchedulerMetaInfo {
-            name,
-            domain,
-            listening_address,
-            security_conf,
-        }
+        SchedulerMetaInfo { name, domain, listening_address, security_conf }
     }
 }

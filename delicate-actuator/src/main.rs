@@ -2,8 +2,9 @@ mod prelude;
 use prelude::*;
 
 // TODO:
-// auth example: /Users/bincheng_paopao/project/repo/rust/others/libs/tonic/examples/src/authentication/server.rs
-// zip example: .send_gzip().accept_gzip()
+// auth example:
+// /Users/bincheng_paopao/project/repo/rust/others/libs/tonic/examples/src/
+// authentication/server.rs zip example: .send_gzip().accept_gzip()
 #[derive(Debug)]
 pub struct ActuatorSecurityConf {
     security_level: SecurityLevel,
@@ -25,7 +26,8 @@ impl ActuatorSecurityConf {
 
 // TODO:
 //     Implement a function to cache a list of machines based on cached.
-// When executing a task to an actuator, the most resourceful machine is retrieved from it by group id.
+// When executing a task to an actuator, the most resourceful machine is
+// retrieved from it by group id.
 
 #[derive(Debug)]
 pub struct ActuatorState {
@@ -70,30 +72,18 @@ impl TaskHandlers {
     pub const COMPLETE: usize = 1;
     pub const TIMEOUT: usize = 1 << 1;
 
-    pub fn new(
-        id: i64,
-        running_handler: JoinHandle<Result<String, std::io::Error>>,
-        timeout_handler: JoinHandle<()>,
-    ) -> Self {
+    pub fn new(id: i64,
+               running_handler: JoinHandle<Result<String, std::io::Error>>,
+               timeout_handler: JoinHandle<()>)
+               -> Self {
         let status = AtomicUsize::new(0);
-        Self {
-            id,
-            status,
-            running_handler,
-            timeout_handler,
-        }
+        Self { id, status, running_handler, timeout_handler }
     }
 
     pub fn complete(self) {
-        if self
-            .status
-            .compare_exchange(
-                Self::INIT,
-                Self::COMPLETE,
-                Ordering::AcqRel,
-                Ordering::Acquire,
-            )
-            .is_ok()
+        if self.status
+               .compare_exchange(Self::INIT, Self::COMPLETE, Ordering::AcqRel, Ordering::Acquire)
+               .is_ok()
         {
             debug!("cancel running task: {}", self.id);
             self.timeout_handler.abort();
@@ -101,15 +91,9 @@ impl TaskHandlers {
     }
 
     pub fn timeout(self) {
-        if self
-            .status
-            .compare_exchange(
-                Self::INIT,
-                Self::TIMEOUT,
-                Ordering::AcqRel,
-                Ordering::Acquire,
-            )
-            .is_ok()
+        if self.status
+               .compare_exchange(Self::INIT, Self::TIMEOUT, Ordering::AcqRel, Ordering::Acquire)
+               .is_ok()
         {
             debug!("cancel timeout task: {}", self.id);
             self.running_handler.abort();
@@ -129,11 +113,7 @@ impl Default for ActuatorState {
         let security_conf = Arc::new(ActuatorSecurityConf::default());
         let id_generator = AsyncMutex::new(SnowflakeIdGenerator::new(0, 0));
 
-        Self {
-            handlers_map,
-            security_conf,
-            id_generator,
-        }
+        Self { handlers_map, security_conf, id_generator }
     }
 }
 
@@ -160,9 +140,10 @@ impl DelicateActuator {
             Status::failed_precondition(" No valid process execution .".to_string())
         })?;
 
-        let mut child_stdout = child
-            .stdout
-            .ok_or_else(|| Status::failed_precondition(" No valid process stdout .".to_string()))?;
+        let mut child_stdout =
+            child.stdout.ok_or_else(|| {
+                             Status::failed_precondition(" No valid process stdout .".to_string())
+                         })?;
 
         let id = self.get_state().generate_id().await;
         let handlers_map_cloned = self.get_state().handlers_map_cloned();
@@ -171,14 +152,11 @@ impl DelicateActuator {
             let handlers_map_cloned = handlers_map_cloned.clone();
             async move {
                 let mut output = String::new();
-                let result_output = child_stdout
-                    .read_to_string(&mut output)
-                    .await
-                    .map(|_| output);
+                let result_output = child_stdout.read_to_string(&mut output).await.map(|_| output);
 
                 handlers_map_cloned.remove(&id).map(|(_, h)| {
-                    h.complete();
-                });
+                                                   h.complete();
+                                               });
 
                 result_output
             }
@@ -186,25 +164,22 @@ impl DelicateActuator {
 
         let timeout_handler = tokio_spawn(async move {
             handlers_map_cloned.remove(&id).map(|(_, h)| {
-                h.timeout();
-            });
+                                               h.timeout();
+                                           });
         });
 
         let task_handlers = TaskHandlers::new(id, running_handler, timeout_handler);
 
-        self.get_state()
-            .get_handlers_map()
-            .insert(id, task_handlers);
+        self.get_state().get_handlers_map().insert(id, task_handlers);
         Ok(())
     }
 }
 
 #[tonic::async_trait]
 impl Actuator for DelicateActuator {
-    async fn run_task(
-        &self,
-        request: Request<Task>,
-    ) -> Result<Response<UnifiedResponseMessagesForGrpc>, Status> {
+    async fn run_task(&self,
+                      request: Request<Task>)
+                      -> Result<Response<UnifiedResponseMessagesForGrpc>, Status> {
         let task = request.get_ref();
         debug!("task: {:?}", task);
 
@@ -213,34 +188,27 @@ impl Actuator for DelicateActuator {
         Ok(Response::new(UnifiedResponseMessagesForGrpc::success()))
     }
 
-    async fn cancel_task(
-        &self,
-        reqeust: Request<RecordId>,
-    ) -> Result<Response<UnifiedResponseMessagesForGrpc>, Status> {
-        let (_, task_handlers) = self
-            .get_state()
-            .get_handlers_map()
-            .remove(&reqeust.into_inner().id)
-            .ok_or(Status::unavailable(
-                "There have no running task instance to cancel.",
-            ))?;
+    async fn cancel_task(&self,
+                         reqeust: Request<RecordId>)
+                         -> Result<Response<UnifiedResponseMessagesForGrpc>, Status> {
+        let (_, task_handlers) =
+            self.get_state()
+                .get_handlers_map()
+                .remove(&reqeust.into_inner().id)
+                .ok_or(Status::unavailable("There have no running task instance to cancel."))?;
         task_handlers.cancel();
 
         Ok(Response::new(UnifiedResponseMessagesForGrpc::success()))
     }
 
-    type KeepRunningTaskStream = Pin<
-        Box<
-            dyn Stream<Item = Result<UnifiedResponseMessagesForGrpc, Status>>
-                + Send
-                + Sync
-                + 'static,
-        >,
-    >;
-    async fn keep_running_task(
-        &self,
-        request: Request<Task>,
-    ) -> Result<Response<Self::KeepRunningTaskStream>, Status> {
+    type KeepRunningTaskStream =
+        Pin<Box<dyn Stream<Item = Result<UnifiedResponseMessagesForGrpc, Status>>
+                    + Send
+                    + Sync
+                    + 'static>>;
+    async fn keep_running_task(&self,
+                               request: Request<Task>)
+                               -> Result<Response<Self::KeepRunningTaskStream>, Status> {
         let task = request.into_inner();
         let mut process_linked_list = parse_and_run::<TokioChild, TokioCommand>(&task.command)
             .await
@@ -254,33 +222,28 @@ impl Actuator for DelicateActuator {
             Status::failed_precondition(" No valid process execution .".to_string())
         })?;
 
-        let child_stdout = child
-            .stdout
-            .ok_or_else(|| Status::failed_precondition(" No valid process stdout .".to_string()))?;
+        let child_stdout =
+            child.stdout.ok_or_else(|| {
+                             Status::failed_precondition(" No valid process stdout .".to_string())
+                         })?;
 
         let buf_reader_lines = LinesStream::new(BufReader::new(child_stdout).lines()).map(|l| {
-            l.map(|s| {
+                                                                                         l.map(|s| {
                 let type_url = "/String".to_string();
                 let value = s.encode_to_vec();
                 let any = Any { type_url, value };
                 let data = vec![any];
-                UnifiedResponseMessagesForGrpc {
-                    data,
-                    ..Default::default()
-                }
+                UnifiedResponseMessagesForGrpc { data, ..Default::default() }
             })
             .map_err(|e| Status::unknown(e.to_string()))
-        });
+                                                                                     });
 
-        Ok(Response::new(
-            Box::pin(buf_reader_lines) as Self::KeepRunningTaskStream
-        ))
+        Ok(Response::new(Box::pin(buf_reader_lines) as Self::KeepRunningTaskStream))
     }
 
-    async fn bind_actuator(
-        &self,
-        request: Request<BindRequest>,
-    ) -> Result<Response<UnifiedResponseMessagesForGrpc>, Status> {
+    async fn bind_actuator(&self,
+                           request: Request<BindRequest>)
+                           -> Result<Response<UnifiedResponseMessagesForGrpc>, Status> {
         let bind_request = request.into_inner();
 
         let executor_machine_id = bind_request.executor_machine_id as i16;
@@ -298,37 +261,34 @@ impl Actuator for DelicateActuator {
         Ok(Response::new(UnifiedResponseMessagesForGrpc::success()))
     }
 
-    async fn health_check(
-        &self,
-        request: Request<HealthCheckUnit>,
-    ) -> Result<Response<UnifiedResponseMessagesForGrpc>, Status> {
+    async fn health_check(&self,
+                          request: Request<HealthCheckUnit>)
+                          -> Result<Response<UnifiedResponseMessagesForGrpc>, Status> {
         todo!();
     }
 
-    type HealthWatchStream = Pin<
-        Box<
-            dyn Stream<Item = Result<UnifiedResponseMessagesForGrpc, Status>>
-                + Send
-                + Sync
-                + 'static,
-        >,
-    >;
-    async fn health_watch(
-        &self,
-        request: Request<HealthWatchUnit>,
-    ) -> Result<Response<Self::HealthWatchStream>, Status> {
+    type HealthWatchStream = Pin<Box<dyn Stream<Item = Result<UnifiedResponseMessagesForGrpc,
+                                                              Status>>
+                                         + Send
+                                         + Sync
+                                         + 'static>>;
+    async fn health_watch(&self,
+                          request: Request<HealthWatchUnit>)
+                          -> Result<Response<Self::HealthWatchStream>, Status> {
         todo!();
     }
 }
 
-// ./grpcurl -plaintext -import-path ./delicate/delicate-utils/proto -proto actuator.proto -d '{"id":1, "name": "Tonic", "command": "sleep" }' "[::1]:8899" delicate.actuator.Actuator/AddTask
-// TODO:
+// ./grpcurl -plaintext -import-path ./delicate/delicate-utils/proto -proto
+// actuator.proto -d '{"id":1, "name": "Tonic", "command": "sleep" }'
+// "[::1]:8899" delicate.actuator.Actuator/AddTask TODO:
 // Objectives.
 
 // 2. Implement the actuator, via tonic.
-// 3. Prioritize minimalist implementations, supporting only single machines at first, with subsequent support for slicing or various rules.
-// 4. advertise on `poem` Readme.
-// 5. add/delete/change/check/cancel for standalone tasks Do it first.
+// 3. Prioritize minimalist implementations, supporting only single machines at
+// first, with subsequent support for slicing or various rules. 4. advertise on
+// `poem` Readme. 5. add/delete/change/check/cancel for standalone tasks Do it
+// first.
 
 // scheduler & actuator interaction, also send/register task,
 // return response carrying record-id,
@@ -339,9 +299,9 @@ impl Actuator for DelicateActuator {
 
 // The actuator supports cancel of tasks, using task.abort();
 
-// Provide a task test execution, direct transfer between frontend & scheduler & actuator, dynamic rendering of pages, no database storage.
-// SSE: (frontend & scheduler)
-// GRPC-stream: (scheduler & actuator)
+// Provide a task test execution, direct transfer between frontend & scheduler &
+// actuator, dynamic rendering of pages, no database storage. SSE: (frontend &
+// scheduler) GRPC-stream: (scheduler & actuator)
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Loads environment variables.
@@ -350,13 +310,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     init_logger();
 
     // TODO:
-    // auth example: /Users/bincheng_paopao/project/repo/rust/others/libs/tonic/examples/src/authentication/server.rs
-    // zip example: .send_gzip().accept_gzip()
+    // auth example:
+    // /Users/bincheng_paopao/project/repo/rust/others/libs/tonic/examples/src/
+    // authentication/ server.rs zip example: .send_gzip().accept_gzip()
     let state = ActuatorState::default();
-    Server::builder()
-        .add_service(ActuatorServer::new(DelicateActuator { state }))
-        .serve("[::1]:8899".parse().expect(""))
-        .await?;
+    Server::builder().add_service(ActuatorServer::new(DelicateActuator { state }))
+                     .serve("[::1]:8899".parse().expect(""))
+                     .await?;
     Ok(())
 }
 
@@ -366,11 +326,11 @@ fn init_logger() {
             .expect("Log level acquired fail.");
 
     FmtSubscriber::builder()
-        // will be written to stdout.
-        .with_max_level(log_level)
-        .with_thread_names(true)
-        // completes the builder.
-        .init();
+                            // will be written to stdout.
+                            .with_max_level(log_level)
+                            .with_thread_names(true)
+                            // completes the builder.
+                            .init();
 }
 
 impl Default for ActuatorSecurityConf {
@@ -380,20 +340,17 @@ impl Default for ActuatorSecurityConf {
             SecurityeKey::<RSAPublicKey>::get_app_rsa_key("DELICATE_SECURITY_PUBLIC_KEY");
 
         if matches!(security_level, SecurityLevel::Normal if rsa_public_key.is_err()) {
-            error!(
-                "{}",
-                rsa_public_key.as_ref()
-                    .err()
-                    .map(|e| "Initialization failed because: ".to_owned() + (e.to_string().as_ref()))
-                    .unwrap_or_default()
-            );
+            error!("{}",
+                   rsa_public_key.as_ref()
+                                 .err()
+                                 .map(|e| "Initialization failed because: ".to_owned()
+                                          + (e.to_string().as_ref()))
+                                 .unwrap_or_default());
             unreachable!("When the security level is Normal, the initialization `delicate-executor` must contain the secret key (DELICATE_SECURITY_PUBLIC_KEY)");
         }
 
-        Self {
-            security_level: SecurityLevel::get_app_security_level(),
-            rsa_public_key: rsa_public_key.map(SecurityeKey).ok(),
-            ..Default::default()
-        }
+        Self { security_level: SecurityLevel::get_app_security_level(),
+               rsa_public_key: rsa_public_key.map(SecurityeKey).ok(),
+               ..Default::default() }
     }
 }

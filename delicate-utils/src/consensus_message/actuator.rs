@@ -1,5 +1,6 @@
-use crate::uniform_data::Trial;
 pub use prost_types::Any;
+
+use crate::uniform_data::Trial;
 
 include!("../../proto/generated_codes/delicate.actuator.rs");
 
@@ -23,10 +24,7 @@ impl Task {
 impl UnifiedResponseMessagesForGrpc {
     #[inline(always)]
     pub fn success_with_data(data: Vec<Any>) -> Self {
-        UnifiedResponseMessagesForGrpc {
-            data,
-            ..Default::default()
-        }
+        UnifiedResponseMessagesForGrpc { data, ..Default::default() }
     }
 
     #[allow(dead_code)]
@@ -73,18 +71,12 @@ impl UnifiedResponseMessagesForGrpc {
 impl UnifiedResponseMessagesForGrpc {
     #[inline(always)]
     pub fn error() -> Self {
-        UnifiedResponseMessagesForGrpc {
-            code: -1,
-            ..Default::default()
-        }
+        UnifiedResponseMessagesForGrpc { code: -1, ..Default::default() }
     }
 
     #[inline(always)]
     pub fn success() -> Self {
-        UnifiedResponseMessagesForGrpc {
-            code: 0,
-            ..Default::default()
-        }
+        UnifiedResponseMessagesForGrpc { code: 0, ..Default::default() }
     }
 }
 

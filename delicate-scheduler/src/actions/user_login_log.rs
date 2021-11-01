@@ -5,41 +5,37 @@ pub(crate) fn route_config() -> Route {
 }
 
 #[handler]
-async fn show_user_login_log(
-    Json(query_params): Json<model::QueryParamsUserLoginLog>,
-    pool: Data<&Arc<db::ConnectionPool>>,
-) -> impl IntoResponse {
+async fn show_user_login_log(Json(query_params): Json<model::QueryParamsUserLoginLog>,
+                             pool: Data<&Arc<db::ConnectionPool>>)
+                             -> impl IntoResponse {
     if let Ok(conn) = pool.get() {
         let f_result = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
-            let query_builder = model::UserLoginLogQueryBuilder::query_all_columns();
+                           let query_builder = model::UserLoginLogQueryBuilder::query_all_columns();
 
-            let user_login_log = query_params
-                .clone()
-                .query_filter(query_builder)
-                .paginate(query_params.page)
-                .set_per_page(query_params.per_page)
-                .load::<model::UserLoginLog>(&conn)?;
+                           let user_login_log = query_params.clone()
+                                                            .query_filter(query_builder)
+                                                            .paginate(query_params.page)
+                                                            .set_per_page(query_params.per_page)
+                                                            .load::<model::UserLoginLog>(&conn)?;
 
-            let per_page = query_params.per_page;
-            let count_builder = model::UserLoginLogQueryBuilder::query_count();
-            let count = query_params
-                .query_filter(count_builder)
-                .get_result::<i64>(&conn)?;
+                           let per_page = query_params.per_page;
+                           let count_builder = model::UserLoginLogQueryBuilder::query_count();
+                           let count =
+                               query_params.query_filter(count_builder).get_result::<i64>(&conn)?;
 
-            let front_end_user_login_log: Vec<model::FrontEndUserLoginLog> =
-                user_login_log.into_iter().map(|log| log.into()).collect();
+                           let front_end_user_login_log: Vec<model::FrontEndUserLoginLog> =
+                               user_login_log.into_iter().map(|log| log.into()).collect();
 
-            Ok(PaginateData::<model::FrontEndUserLoginLog>::default()
+                           Ok(PaginateData::<model::FrontEndUserLoginLog>::default()
                 .set_data_source(front_end_user_login_log)
                 .set_page_size(per_page)
                 .set_total(count)
                 .set_state_desc::<state::user_login_log::LoginCommand>()
                 .set_state_desc::<state::user_login_log::LoginType>())
-        })
-        .await;
+                       }).await;
 
-        let page = f_result
-            .map(|page_result| {
+        let page =
+            f_result.map(|page_result| {
                 Into::<UnifiedResponseMessages<PaginateData<model::FrontEndUserLoginLog>>>::into(
                     page_result,
                 )
@@ -51,7 +47,5 @@ async fn show_user_login_log(
         return Json(page);
     }
 
-    Json(UnifiedResponseMessages::<
-        PaginateData<model::FrontEndUserLoginLog>,
-    >::error())
+    Json(UnifiedResponseMessages::<PaginateData<model::FrontEndUserLoginLog>>::error())
 }

@@ -1,4 +1,5 @@
-//! This macro module provides the declaration macros used for the conditional compilation of lib.
+//! This macro module provides the declaration macros used for the conditional
+//! compilation of lib.
 
 macro_rules! cfg_mysql_support {
     ($($item:item)*) => {

@@ -1,8 +1,8 @@
 use crate::prelude::*;
 
 // In order to be compatible with the front-end components,
-// some of the return values have to be named with small humps when they are returned
-// which is very sad.
+// some of the return values have to be named with small humps when they are
+// returned which is very sad.
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -52,10 +52,6 @@ impl<T> Default for PaginateData<T> {
         let pagination = Pagination::default();
         let state_desc = HashMap::default();
 
-        PaginateData {
-            data_source,
-            state_desc,
-            pagination,
-        }
+        PaginateData { data_source, state_desc, pagination }
     }
 }

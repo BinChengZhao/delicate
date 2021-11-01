@@ -1,10 +1,11 @@
-use super::state::task_log::State;
-use crate::prelude::*;
 use delicate_utils_task_log::EventType;
 
+use super::state::task_log::State;
+use crate::prelude::*;
+
 pub(crate) enum IdentityType {
-    Mobile = 1,
-    Email = 2,
+    Mobile   = 1,
+    Email    = 2,
     Username = 3,
 }
 

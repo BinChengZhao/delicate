@@ -4,8 +4,9 @@ use crate::*;
 // When introducing different mods based on conditional compilation,
 // It affects the formatting of the code within the mod.
 
-// The current interim formatting practice is to remove the conditionally compiled macros (`cfg_mysql_support` or `cfg_postgres_support`),
-// Then keep only one class of mods introduced, and then do `cargo fmt`
+// The current interim formatting practice is to remove the conditionally
+// compiled macros (`cfg_mysql_support` or `cfg_postgres_support`), Then keep
+// only one class of mods introduced, and then do `cargo fmt`
 
 cfg_mysql_support!(
     pub(crate) mod mysql;
@@ -54,26 +55,28 @@ pub(crate) fn init_admin_account() {
     use model::QueryNewUser;
     use schema::{user, user_auth};
 
-    let user_name = env::var("INITIAL_ADMINISTRATOR_USER_NAME").unwrap_or_else(|e| {
-        println!(
-            r"`INITIAL_ADMINISTRATOR_USER_NAME` may not set in the environment variable: {}
+    let user_name =
+        env::var("INITIAL_ADMINISTRATOR_USER_NAME").unwrap_or_else(|e| {
+            println!(
+                     r"`INITIAL_ADMINISTRATOR_USER_NAME` may not set in the environment variable: {}
         The default login user-name will as `admin`  .
         Please ignore this error if you have set or initialized delicate.",
-            e.to_string()
-        );
-        "admin".into()
-    });
+                     e.to_string()
+            );
+            "admin".into()
+        });
 
-    let certificate = env::var("INITIAL_ADMINISTRATOR_PASSWORD").unwrap_or_else(|e| {
-        println!(
-            r"`INITIAL_ADMINISTRATOR_PASSWORD` may not set in the environment variable: {}
+    let certificate =
+        env::var("INITIAL_ADMINISTRATOR_PASSWORD").unwrap_or_else(|e| {
+            println!(
+                     r"`INITIAL_ADMINISTRATOR_PASSWORD` may not set in the environment variable: {}
         The default login user-password will as `admin`  .
         Please ignore this error if you have set or initialized delicate.",
-            e.to_string()
-        );
+                     e.to_string()
+            );
 
-        "admin".into()
-    });
+            "admin".into()
+        });
     let nick_name = env::var("INITIAL_ADMINISTRATOR_NICK_NAME").unwrap_or_else(|_| "admin".into());
     let mobile = env::var("INITIAL_ADMINISTRATOR_MOBILE").unwrap_or_else(|_| "12345054321".into());
     let email =
@@ -81,38 +84,28 @@ pub(crate) fn init_admin_account() {
 
     let conn = establish_connection();
 
-    let admin = QueryNewUser {
-        user_name,
-        nick_name,
-        mobile,
-        email,
-        certificate,
-    };
+    let admin = QueryNewUser { user_name, nick_name, mobile, email, certificate };
 
-    let count: i64 = user::table
-        .filter(user::user_name.eq(&admin.user_name))
-        .count()
-        .get_result(&conn)
-        .expect("Init admin-account fail.");
+    let count: i64 = user::table.filter(user::user_name.eq(&admin.user_name))
+                                .count()
+                                .get_result(&conn)
+                                .expect("Init admin-account fail.");
 
     if count != 0 {
         return;
     }
 
     conn.transaction::<_, diesel::result::Error, _>(|| {
-        diesel::insert_into(user::table)
-            .values(&(Into::<model::NewUser>::into(&admin)))
-            .execute(&conn)?;
+            diesel::insert_into(user::table).values(&(Into::<model::NewUser>::into(&admin)))
+                                            .execute(&conn)?;
 
-        let last_id = diesel::select(db::last_insert_id).get_result::<u64>(&conn)?;
+            let last_id = diesel::select(db::last_insert_id).get_result::<u64>(&conn)?;
 
-        let user_auths: model::NewUserAuths =
-            From::<(model::QueryNewUser, u64)>::from((admin, last_id));
+            let user_auths: model::NewUserAuths =
+                From::<(model::QueryNewUser, u64)>::from((admin, last_id));
 
-        diesel::insert_into(user_auth::table)
-            .values(&user_auths.0[..])
-            .execute(&conn)?;
-        Ok(())
-    })
-    .expect("Init admin-account fail.");
+            diesel::insert_into(user_auth::table).values(&user_auths.0[..]).execute(&conn)?;
+            Ok(())
+        })
+        .expect("Init admin-account fail.");
 }

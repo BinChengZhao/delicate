@@ -33,37 +33,28 @@ impl CancelTaskRecord {
         self.time = time;
         self
     }
-    pub fn sign(
-        self,
-        token: Option<&str>,
-    ) -> Result<SignedCancelTaskRecord, crate::error::CommonError> {
+    pub fn sign(self,
+                token: Option<&str>)
+                -> Result<SignedCancelTaskRecord, crate::error::CommonError> {
         let signature = make_signature(&self, token)?;
 
-        Ok(SignedCancelTaskRecord {
-            cancel_task_record: self,
-            signature,
-        })
+        Ok(SignedCancelTaskRecord { cancel_task_record: self, signature })
     }
 }
 
 impl SignedCancelTaskRecord {
     pub fn verify(&self, token: Option<&str>) -> Result<(), crate::error::CommonError> {
-        let SignedCancelTaskRecord {
-            ref cancel_task_record,
-            ref signature,
-        } = self;
+        let SignedCancelTaskRecord { ref cancel_task_record, ref signature } = self;
 
         verify_signature_by_raw_data(cancel_task_record, token, signature)
     }
 
     pub fn get_cancel_task_record_after_verify(
         self,
-        token: Option<&str>,
-    ) -> Result<CancelTaskRecord, crate::error::CommonError> {
+        token: Option<&str>)
+        -> Result<CancelTaskRecord, crate::error::CommonError> {
         self.verify(token)?;
-        let SignedCancelTaskRecord {
-            cancel_task_record, ..
-        } = self;
+        let SignedCancelTaskRecord { cancel_task_record, .. } = self;
 
         Ok(cancel_task_record)
     }
@@ -90,37 +81,28 @@ pub struct SignedExecutorEventCollection {
 }
 
 impl ExecutorEventCollection {
-    pub fn sign(
-        self,
-        token: Option<&str>,
-    ) -> Result<SignedExecutorEventCollection, crate::error::CommonError> {
+    pub fn sign(self,
+                token: Option<&str>)
+                -> Result<SignedExecutorEventCollection, crate::error::CommonError> {
         let signature = make_signature(&self, token)?;
 
-        Ok(SignedExecutorEventCollection {
-            event_collection: self,
-            signature,
-        })
+        Ok(SignedExecutorEventCollection { event_collection: self, signature })
     }
 }
 
 impl SignedExecutorEventCollection {
     pub fn verify(&self, token: Option<&str>) -> Result<(), crate::error::CommonError> {
-        let SignedExecutorEventCollection {
-            ref event_collection,
-            ref signature,
-        } = self;
+        let SignedExecutorEventCollection { ref event_collection, ref signature } = self;
 
         verify_signature_by_raw_data(event_collection, token, signature)
     }
 
     pub fn get_executor_event_collection_after_verify(
         self,
-        token: Option<&str>,
-    ) -> Result<ExecutorEventCollection, crate::error::CommonError> {
+        token: Option<&str>)
+        -> Result<ExecutorEventCollection, crate::error::CommonError> {
         self.verify(token)?;
-        let SignedExecutorEventCollection {
-            event_collection, ..
-        } = self;
+        let SignedExecutorEventCollection { event_collection, .. } = self;
 
         Ok(event_collection)
     }
@@ -142,7 +124,7 @@ pub enum EventType {
     TaskPerform = 1,
     TaskFinish = 2,
     TaskTimeout = 3,
-    Unknown = 81,
+    Unknown    = 81,
 }
 
 impl From<i16> for EventType {
@@ -162,28 +144,20 @@ impl From<PublicFinishOutput> for FinishOutput {
             PublicFinishOutput::ExceptionOutput(str) => FinishOutput::ExceptionOutput(str),
             PublicFinishOutput::ProcessOutput(child_output) => {
                 FinishOutput::ProcessOutput(child_output.into())
-            }
+            },
         }
     }
 }
 
 impl From<StdOutput> for ChildOutput {
     fn from(value: StdOutput) -> Self {
-        let StdOutput {
-            status,
-            stdout,
-            stderr,
-        } = value;
+        let StdOutput { status, stdout, stderr } = value;
 
         let child_status = status.code().unwrap_or(81);
         let child_stdout = String::from_utf8_lossy(&stdout).into_owned();
         let child_stderr = String::from_utf8_lossy(&stderr).into_owned();
 
-        ChildOutput {
-            child_status,
-            child_stdout,
-            child_stderr,
-        }
+        ChildOutput { child_status, child_stdout, child_stderr }
     }
 }
 

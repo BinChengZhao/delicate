@@ -1,6 +1,7 @@
 #![allow(unused_imports)]
-use crate::prelude::*;
 use adapter::adapter_core::DieselAdapter;
+
+use crate::prelude::*;
 
 lazy_static! {
 
@@ -79,27 +80,24 @@ pub struct CasbinAuthMiddleware<E> {
     ep: E,
 }
 
-const WHITE_LIST: [&str; 9] = [
-    "/api/tasks_state/one_day",
-    "/api/user/login",
-    "/api/user/logout",
-    "/api/binding/list",
-    "/api/user/check",
-    "/api/executor/list",
-    "/api/user/change_password",
-    "/api/task_log/event_trigger",
-    "/api/casbin/test",
-];
+const WHITE_LIST: [&str; 9] = ["/api/tasks_state/one_day",
+                               "/api/user/login",
+                               "/api/user/logout",
+                               "/api/binding/list",
+                               "/api/user/check",
+                               "/api/executor/list",
+                               "/api/user/change_password",
+                               "/api/task_log/event_trigger",
+                               "/api/casbin/test"];
 
 #[poem::async_trait]
 impl<E: Endpoint> Endpoint for CasbinAuthMiddleware<E> {
     type Output = Response;
 
     async fn call(&self, req: Request) -> Self::Output {
-        let enforcer = req
-            .extensions()
-            .get::<Arc<AsyncRwLock<Enforcer>>>()
-            .expect("Casbin's enforcer acquisition failed");
+        let enforcer = req.extensions()
+                          .get::<Arc<AsyncRwLock<Enforcer>>>()
+                          .expect("Casbin's enforcer acquisition failed");
         let session = req.get_session();
         let path = req.uri().path().to_string();
         let auth_part = path.split('/').into_iter().collect::<Vec<&str>>();
@@ -131,20 +129,20 @@ impl<E: Endpoint> Endpoint for CasbinAuthMiddleware<E> {
             Ok(true) => {
                 drop(auther);
                 self.ep.call(req).await.into_response()
-            }
+            },
             Ok(false) => {
                 drop(auther);
                 UnifiedResponseMessages::<()>::error()
                     .customized_error_msg(String::from("Permission check failed."))
                     .into_response()
-            }
+            },
             Err(e) => {
                 drop(auther);
 
                 UnifiedResponseMessages::<()>::error()
                     .customized_error_msg(format!("Permission check failed. ({})", e))
                     .into_response()
-            }
+            },
         }
     }
 }

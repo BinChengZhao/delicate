@@ -13,19 +13,15 @@ async fn permission_list(pool: Data<&Arc<db::ConnectionPool>>) -> impl IntoRespo
     // TODO: Awaiting follow-up adjustment.
     if let Ok(conn) = pool.get() {
         let permissions = spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
-            casbin_rule::table
-                .select((casbin_rule::v1, casbin_rule::v2))
-                .filter(casbin_rule::ptype.eq("p"))
-                .filter(casbin_rule::v0.eq_any(&[
-                    "task_admin",
-                    "processor_admin",
-                    "group_admin",
-                    "user_admin",
-                    "log_admin",
-                ]))
-                .load::<(String, String)>(&conn)
-        })
-        .await;
+                              casbin_rule::table.select((casbin_rule::v1, casbin_rule::v2))
+                                                .filter(casbin_rule::ptype.eq("p"))
+                                                .filter(casbin_rule::v0.eq_any(&["task_admin",
+                                                                                 "processor_admin",
+                                                                                 "group_admin",
+                                                                                 "user_admin",
+                                                                                 "log_admin"]))
+                                                .load::<(String, String)>(&conn)
+                          }).await;
 
         let response_permissions: UnifiedResponseMessages<Vec<(String, String)>> =
             permissions.map(|r| r.into()).unwrap_or_else(|e| {

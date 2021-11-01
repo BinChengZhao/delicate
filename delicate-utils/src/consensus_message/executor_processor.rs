@@ -29,36 +29,27 @@ impl HealthScreenUnit {
         self
     }
 
-    pub fn sign(
-        self,
-        token: Option<&str>,
-    ) -> Result<SignedHealthScreenUnit, crate::error::CommonError> {
+    pub fn sign(self,
+                token: Option<&str>)
+                -> Result<SignedHealthScreenUnit, crate::error::CommonError> {
         let signature = make_signature(&self, token)?;
-        Ok(SignedHealthScreenUnit {
-            health_screen_unit: self,
-            signature,
-        })
+        Ok(SignedHealthScreenUnit { health_screen_unit: self, signature })
     }
 }
 
 impl SignedHealthScreenUnit {
     pub fn verify(&self, token: Option<&str>) -> Result<(), crate::error::CommonError> {
-        let SignedHealthScreenUnit {
-            ref health_screen_unit,
-            ref signature,
-        } = self;
+        let SignedHealthScreenUnit { ref health_screen_unit, ref signature } = self;
 
         verify_signature_by_raw_data(health_screen_unit, token, signature)
     }
 
     pub fn get_health_screen_unit_after_verify(
         self,
-        token: Option<&str>,
-    ) -> Result<HealthScreenUnit, crate::error::CommonError> {
+        token: Option<&str>)
+        -> Result<HealthScreenUnit, crate::error::CommonError> {
         self.verify(token)?;
-        let SignedHealthScreenUnit {
-            health_screen_unit, ..
-        } = self;
+        let SignedHealthScreenUnit { health_screen_unit, .. } = self;
 
         Ok(health_screen_unit)
     }

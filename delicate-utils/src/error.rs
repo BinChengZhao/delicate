@@ -1,5 +1,7 @@
-use crate::prelude::*;
 use diesel::r2d2::PoolError;
+use thiserror::Error as ThisError;
+
+use crate::prelude::*;
 
 #[derive(ThisError, Debug)]
 pub enum CommonError {
@@ -22,7 +24,7 @@ pub enum CommonError {
     #[error("The errors reported by the auth-service cannot be ignored.")]
     DisAuth(#[from] AuthServiceError),
     #[error("Blocking running fail.")]
-    JoinError(#[from] JoinError),
+    JoinError(#[from] tokio::task::JoinError),
     #[error("request fail.")]
     RequestError(#[from] reqwest::Error),
 }

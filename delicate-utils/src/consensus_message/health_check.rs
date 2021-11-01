@@ -1,10 +1,12 @@
-use crate::prelude::*;
 pub(crate) use actuator::BindRequest;
+
+use crate::prelude::*;
 
 mod proto_health {
     include!("../../proto/generated_codes/delicate.actuator.health.rs");
 }
-/// This is a mirror of the system that can reflect the current state of the system.
+/// This is a mirror of the system that can reflect the current state of the
+/// system.
 #[derive(Debug)]
 pub struct SystemMirror {
     inner_system: AsyncRwLock<System>,
@@ -46,10 +48,8 @@ pub enum ServingStatus {
 
 impl From<&HashMap<SysPid, SysProcess>> for Processes {
     fn from(value: &HashMap<SysPid, SysProcess>) -> Processes {
-        let inner: HashMap<SysPid, Process> = value
-            .iter()
-            .map(|(index, process)| (*index, Into::<Process>::into(process)))
-            .collect();
+        let inner: HashMap<SysPid, Process> =
+            value.iter().map(|(index, process)| (*index, Into::<Process>::into(process))).collect();
 
         Processes { inner }
     }
@@ -100,17 +100,15 @@ impl From<&SysProcess> for Process {
             _ => 80,
         };
 
-        Process {
-            name: sys_process.name().to_string(),
-            exe: sys_process.exe().to_path_buf(),
-            pid: sys_process.pid(),
-            memory: sys_process.memory(),
-            virtual_memory: sys_process.virtual_memory(),
-            parent: sys_process.parent(),
-            start_time: sys_process.start_time(),
-            cpu_usage: sys_process.cpu_usage(),
-            status,
-        }
+        Process { name: sys_process.name().to_string(),
+                  exe: sys_process.exe().to_path_buf(),
+                  pid: sys_process.pid(),
+                  memory: sys_process.memory(),
+                  virtual_memory: sys_process.virtual_memory(),
+                  parent: sys_process.parent(),
+                  start_time: sys_process.start_time(),
+                  cpu_usage: sys_process.cpu_usage(),
+                  status }
     }
 }
 
@@ -131,17 +129,15 @@ impl From<ServingStatus> for proto_health::health_check_response::ServingStatus 
             ServingStatus::Serving => proto_health::health_check_response::ServingStatus::Serving,
             ServingStatus::NotServing => {
                 proto_health::health_check_response::ServingStatus::NotServing
-            }
+            },
         }
     }
 }
 
 impl From<&SysProcessor> for Processor {
     fn from(sys_processor: &SysProcessor) -> Self {
-        Processor {
-            cpu_usage: sys_processor.get_cpu_usage(),
-            frequency: sys_processor.get_frequency(),
-        }
+        Processor { cpu_usage: sys_processor.get_cpu_usage(),
+                    frequency: sys_processor.get_frequency() }
     }
 }
 
@@ -158,11 +154,9 @@ impl SystemMirror {
 
         let processor: Processor = system.get_global_processor_info().into();
 
-        let memory: Memory = Memory {
-            total_memory: system.get_total_memory(),
-            free_memory: system.get_available_memory(),
-            used_memory: system.get_used_memory(),
-        };
+        let memory: Memory = Memory { total_memory: system.get_total_memory(),
+                                      free_memory: system.get_available_memory(),
+                                      used_memory: system.get_used_memory() };
 
         let mut inner_snapshot = self.inner_snapshot.write().await;
         // inner_snapshot.processes = processes;
@@ -185,9 +179,6 @@ impl Default for SystemMirror {
         ));
         let inner_snapshot = AsyncRwLock::new(SystemSnapshot::default());
 
-        SystemMirror {
-            inner_system,
-            inner_snapshot,
-        }
+        SystemMirror { inner_system, inner_snapshot }
     }
 }

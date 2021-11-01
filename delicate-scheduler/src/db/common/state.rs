@@ -8,9 +8,9 @@ pub mod task {
     #[derive(Copy, Clone, StrumToString, Debug, EnumIter, AsRefStr, IntoStaticStr)]
     pub enum State {
         NotEnabled = 1,
-        Enabled = 2,
-        Deleted = 3,
-        Unknown = 81,
+        Enabled    = 2,
+        Deleted    = 3,
+        Unknown    = 81,
     }
 
     impl From<i16> for State {
@@ -59,9 +59,9 @@ pub mod user {
     #[allow(dead_code)]
     #[derive(Copy, Clone, StrumToString, Debug, EnumIter, AsRefStr, IntoStaticStr)]
     pub enum State {
-        Health = 1,
+        Health    = 1,
         Forbidden = 2,
-        Unknown = 81,
+        Unknown   = 81,
     }
 
     impl From<i16> for State {
@@ -81,9 +81,9 @@ pub mod user_auth {
     #[allow(dead_code)]
     #[derive(Copy, Clone, StrumToString, Debug, EnumIter, AsRefStr, IntoStaticStr)]
     pub enum State {
-        Health = 1,
+        Health    = 1,
         Forbidden = 2,
-        Unknown = 81,
+        Unknown   = 81,
     }
 
     impl From<i16> for State {
@@ -104,9 +104,9 @@ pub mod executor_processor {
     #[derive(Copy, Clone, StrumToString, Debug, EnumIter, AsRefStr, IntoStaticStr)]
     pub enum State {
         NotEnabled = 1,
-        Enabled = 2,
-        Abnormal = 3,
-        Unknown = 81,
+        Enabled    = 2,
+        Abnormal   = 3,
+        Unknown    = 81,
     }
 
     impl From<i16> for State {
@@ -127,9 +127,9 @@ pub mod executor_group {
     #[allow(dead_code)]
     #[derive(Copy, Clone, StrumToString, Debug, EnumIter, AsRefStr, IntoStaticStr)]
     pub enum State {
-        Health = 1,
+        Health    = 1,
         Forbidden = 2,
-        Unknown = 81,
+        Unknown   = 81,
     }
 
     impl From<i16> for State {
@@ -150,9 +150,9 @@ pub mod operation_log {
 
     pub enum OperationType {
         Addition = 1,
-        Modify = 2,
-        Delete = 3,
-        Unknown = 81,
+        Modify   = 2,
+        Delete   = 3,
+        Unknown  = 81,
     }
 
     impl From<i16> for OperationType {
@@ -173,13 +173,13 @@ pub mod user_login_log {
     #[allow(dead_code)]
     #[derive(Copy, Clone, StrumToString, Debug, EnumIter, AsRefStr, IntoStaticStr)]
     pub enum LoginType {
-        Mobile = 1,
-        Email = 2,
-        UserName = 3,
-        Ldap = 4,
+        Mobile     = 1,
+        Email      = 2,
+        UserName   = 3,
+        Ldap       = 4,
         OtherOAuth = 5,
-        Logout = 81,
-        Unknown = 88,
+        Logout     = 81,
+        Unknown    = 88,
     }
 
     impl From<i16> for LoginType {

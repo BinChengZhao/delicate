@@ -1,14 +1,12 @@
 use crate::prelude::*;
 #[derive(Queryable, Clone, Debug, Default, Serialize, Deserialize, Display)]
-#[display(
-    fmt = "task-id:{} command:{} frequency:{} cron_expression:{} timeout:{} maximum_parallel_runnable_num:{}",
-    id,
-    command,
-    frequency,
-    cron_expression,
-    timeout,
-    maximum_parallel_runnable_num
-)]
+#[display(fmt = "task-id:{} command:{} frequency:{} cron_expression:{} timeout:{} maximum_parallel_runnable_num:{}",
+          id,
+          command,
+          frequency,
+          cron_expression,
+          timeout,
+          maximum_parallel_runnable_num)]
 
 pub struct TaskPackage {
     /// Task_id should unique.
@@ -27,9 +25,9 @@ pub struct TaskPackage {
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize)]
 pub enum FrequencyModelType {
-    Once = 1,
+    Once      = 1,
     CountDown = 2,
-    Repeat = 3,
+    Repeat    = 3,
 }
 
 impl Default for FrequencyModelType {
@@ -67,27 +65,20 @@ impl TaskPackage {
     pub fn sign(self, token: Option<&str>) -> Result<SignedTaskPackage, crate::error::CommonError> {
         let signature = make_signature(&self, token)?;
 
-        Ok(SignedTaskPackage {
-            task_package: self,
-            signature,
-        })
+        Ok(SignedTaskPackage { task_package: self, signature })
     }
 }
 
 impl SignedTaskPackage {
     pub fn verify(&self, token: Option<&str>) -> Result<(), crate::error::CommonError> {
-        let SignedTaskPackage {
-            ref task_package,
-            ref signature,
-        } = self;
+        let SignedTaskPackage { ref task_package, ref signature } = self;
 
         verify_signature_by_raw_data(task_package, token, signature)
     }
 
-    pub fn get_task_package_after_verify(
-        self,
-        token: Option<&str>,
-    ) -> Result<TaskPackage, crate::error::CommonError> {
+    pub fn get_task_package_after_verify(self,
+                                         token: Option<&str>)
+                                         -> Result<TaskPackage, crate::error::CommonError> {
         self.verify(token)?;
         let SignedTaskPackage { task_package, .. } = self;
 
@@ -124,27 +115,20 @@ impl TaskUnit {
     }
     pub fn sign(self, token: Option<&str>) -> Result<SignedTaskUnit, crate::error::CommonError> {
         let signature = make_signature(&self, token)?;
-        Ok(SignedTaskUnit {
-            task_unit: self,
-            signature,
-        })
+        Ok(SignedTaskUnit { task_unit: self, signature })
     }
 }
 
 impl SignedTaskUnit {
     pub fn verify(&self, token: Option<&str>) -> Result<(), crate::error::CommonError> {
-        let SignedTaskUnit {
-            ref task_unit,
-            ref signature,
-        } = self;
+        let SignedTaskUnit { ref task_unit, ref signature } = self;
 
         verify_signature_by_raw_data(task_unit, token, signature)
     }
 
-    pub fn get_task_unit_after_verify(
-        self,
-        token: Option<&str>,
-    ) -> Result<TaskUnit, crate::error::CommonError> {
+    pub fn get_task_unit_after_verify(self,
+                                      token: Option<&str>)
+                                      -> Result<TaskUnit, crate::error::CommonError> {
         self.verify(token)?;
         let SignedTaskUnit { task_unit, .. } = self;
 
@@ -155,15 +139,13 @@ impl SignedTaskUnit {
 impl TryFrom<TaskPackage> for Task {
     type Error = CommonError;
     fn try_from(task_package: TaskPackage) -> Result<Self, Self::Error> {
-        let TaskPackage {
-            id,
-            command,
-            frequency,
-            cron_expression,
-            timeout,
-            maximum_parallel_runnable_num,
-            ..
-        } = task_package;
+        let TaskPackage { id,
+                          command,
+                          frequency,
+                          cron_expression,
+                          timeout,
+                          maximum_parallel_runnable_num,
+                          .. } = task_package;
 
         let metadata: FrequencyObject = json_from_slice(frequency.as_bytes())?;
         let cron_expression = &cron_expression;
@@ -173,11 +155,7 @@ impl TryFrom<TaskPackage> for Task {
 
             2 => ScheduleIteratorTimeZone::Local,
 
-            _ => {
-                return Err(CommonError::DisPass(String::from(
-                    "Ineffective time-zone mode.",
-                )))
-            }
+            _ => return Err(CommonError::DisPass(String::from("Ineffective time-zone mode."))),
         };
 
         let mut task_builder = TaskBuilder::default();
@@ -187,26 +165,24 @@ impl TryFrom<TaskPackage> for Task {
         match metadata.mode {
             1 => {
                 task_builder.set_frequency_once_by_cron_str(cron_expression);
-            }
+            },
             2 => {
-                task_builder
-                    .set_frequency_count_down_by_cron_str(cron_expression, metadata.extend.count);
-            }
+                task_builder.set_frequency_count_down_by_cron_str(cron_expression,
+                                                                  metadata.extend.count);
+            },
             3 => {
                 task_builder.set_frequency_repeated_by_cron_str(cron_expression);
-            }
+            },
             _ => {
-                return Err(CommonError::DisPass(String::from(
-                    "Ineffective frequency mode.",
-                )));
-            }
+                return Err(CommonError::DisPass(String::from("Ineffective frequency mode.")));
+            },
         }
 
-        let task = task_builder
-            .set_schedule_iterator_time_zone(time_zone)
-            .set_maximum_running_time(timeout as u64)
-            .set_maximum_parallel_runnable_num(maximum_parallel_runnable_num as u64)
-            .spawn(unblock_process_task_fn(command))?;
+        let task =
+            task_builder.set_schedule_iterator_time_zone(time_zone)
+                        .set_maximum_running_time(timeout as u64)
+                        .set_maximum_parallel_runnable_num(maximum_parallel_runnable_num as u64)
+                        .spawn(unblock_process_task_fn(command))?;
 
         Ok(task)
     }

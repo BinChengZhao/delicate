@@ -1,3 +1,5 @@
+use tracing::error;
+
 use super::prelude::*;
 
 pub trait UniformData: Debug + Clone + Serialize + Send + Sync {}
@@ -83,11 +85,7 @@ impl<T: UniformData + Default> UnifiedResponseMessages<T> {
     pub fn error() -> Self {
         let msg = String::default();
         let data = T::default();
-        UnifiedResponseMessages {
-            code: -1,
-            msg,
-            data,
-        }
+        UnifiedResponseMessages { code: -1, msg, data }
     }
 
     #[inline(always)]
@@ -123,13 +121,11 @@ impl<T: UniformData + Default, E: std::error::Error> From<Result<T, E>>
         match value {
             Ok(d) => Self::success_with_data(d),
             Err(e) => {
-                let message = format!(
-                    "{} ({})",
-                    e.to_string(),
-                    e.source().map(|s| { s.to_string() }).unwrap_or_default()
-                );
+                let message = format!("{} ({})",
+                                      e.to_string(),
+                                      e.source().map(|s| { s.to_string() }).unwrap_or_default());
                 Self::error().customized_error_msg(message)
-            }
+            },
         }
     }
 }
@@ -140,11 +136,9 @@ impl<T: UniformData + Default, E: std::error::Error> From<Result<Result<T, E>, E
     #[inline(always)]
     fn from(value: Result<Result<T, E>, E>) -> Self {
         let f = |e: E| {
-            let message = format!(
-                "{} ({})",
-                e.to_string(),
-                e.source().map(|s| { s.to_string() }).unwrap_or_default()
-            );
+            let message = format!("{} ({})",
+                                  e.to_string(),
+                                  e.source().map(|s| { s.to_string() }).unwrap_or_default());
             Self::error().customized_error_msg(message)
         };
         match value {
@@ -178,25 +172,23 @@ impl<T: UniformData + Default> From<Option<T>> for UnifiedResponseMessages<T> {
 impl<T: UniformData> IntoResponse for &UnifiedResponseMessages<T> {
     #[inline(always)]
     fn into_response(self) -> Response {
-        Response::builder().content_type("application/json").body(
-            to_json_string(self)
-                .map_err(|e| {
-                    error!("into_response happened error: {}", e);
-                })
-                .unwrap_or_default(),
-        )
+        Response::builder().content_type("application/json")
+                           .body(to_json_string(self).map_err(|e| {
+                                                         error!("into_response happened error: {}",
+                                                                e);
+                                                     })
+                                                     .unwrap_or_default())
     }
 }
 
 impl<T: UniformData> IntoResponse for UnifiedResponseMessages<T> {
     #[inline(always)]
     fn into_response(self) -> Response {
-        Response::builder().content_type("application/json").body(
-            to_json_string(&self)
-                .map_err(|e| {
-                    error!("into_response happened error: {}", e);
-                })
-                .unwrap_or_default(),
-        )
+        Response::builder().content_type("application/json")
+                           .body(to_json_string(&self).map_err(|e| {
+                                                          error!("into_response happened error: {}",
+                                                                 e);
+                                                      })
+                                                      .unwrap_or_default())
     }
 }

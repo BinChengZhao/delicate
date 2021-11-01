@@ -1,18 +1,17 @@
-pub use delicate_utils::prelude::*;
-pub use prost::Message;
-pub use prost_types::Any;
-pub use std::env;
-use std::io::{self, BufRead, BufReader};
-use std::ops::Deref;
-pub use std::str::FromStr;
-pub use tonic::{transport::Server, Request, Response, Status};
-pub use tracing::{debug, info, Level};
-pub use tracing_subscriber::FmtSubscriber;
+pub use std::{env, str::FromStr};
+use std::{
+    io::{self, BufRead, BufReader},
+    ops::Deref,
+};
 
 pub use actuator::{actuator_client::ActuatorClient, Task};
 pub use delicate_utils::prelude::*;
-
+pub use prost::Message;
+pub use prost_types::Any;
 use tokio_stream::StreamExt;
+pub use tonic::{transport::Server, Request, Response, Status};
+pub use tracing::{debug, info, Level};
+pub use tracing_subscriber::FmtSubscriber;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Loads environment variables.
@@ -51,9 +50,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let response = client.run_task(Request::new(task)).await?;
 
                 debug!("{:?}", response.get_ref());
-            }
+            },
 
-            "cancel" => {}
+            "cancel" => {},
 
             "keep" => {
                 let task = Task { id, name, command };
@@ -64,11 +63,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 while let Some(u) = stream.next().await {
                     info!("{:?}", u.as_ref().expect(""));
                 }
-            }
+            },
 
             _ => {
                 break;
-            }
+            },
         }
     }
     Ok(())
@@ -80,8 +79,8 @@ fn init_logger() {
             .expect("Log level acquired fail.");
 
     FmtSubscriber::builder()
-        // will be written to stdout.
-        .with_max_level(log_level)
-        // completes the builder.
-        .init();
+                            // will be written to stdout.
+                            .with_max_level(log_level)
+                            // completes the builder.
+                            .init();
 }
