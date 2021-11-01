@@ -6,11 +6,13 @@ pub use std::sync::Arc;
 
 pub use actuator::actuator_server::{Actuator, ActuatorServer};
 pub use actuator::{
-    BindRequest, HealthCheckUnit, HealthWatchUnit, RecordId, Task, UnifiedResponseMessagesForGrpc,
+    self, BindRequest, HealthCheckUnit, HealthWatchUnit, RecordId, Task,
+    UnifiedResponseMessagesForGrpc,
 };
 pub use async_lock::Mutex as AsyncMutex;
 pub use dashmap::DashMap;
 pub use delay_timer::utils::parse_and_run;
+pub use delicate_utils::consensus_message::health_check::{self, *};
 pub use delicate_utils::prelude::*;
 pub use prost::Message;
 pub use prost_types::Any;

@@ -91,6 +91,10 @@ impl BindScheduler {
         self.inner.read().await.is_some()
     }
 
+    pub async fn get_bind(&self) -> Option<BindRequest> {
+        self.inner.read().await.clone()
+    }
+
     pub async fn set_bind(&self, bind: BindRequest) {
         *self.inner.write().await = Some(bind);
     }

@@ -2,7 +2,7 @@ pub(crate) use actuator::BindRequest;
 
 use crate::prelude::*;
 
-mod proto_health {
+pub mod proto_health {
     include!("../../proto/generated_codes/delicate.actuator.health.rs");
 }
 /// This is a mirror of the system that can reflect the current state of the
@@ -131,6 +131,28 @@ impl From<ServingStatus> for proto_health::health_check_response::ServingStatus 
                 proto_health::health_check_response::ServingStatus::NotServing
             },
         }
+    }
+}
+
+impl From<SystemSnapshot> for proto_health::health_check_response::SystemSnapshot {
+    fn from(SystemSnapshot { processor, memory }: SystemSnapshot)
+            -> proto_health::health_check_response::SystemSnapshot {
+        proto_health::health_check_response::SystemSnapshot { processor: Some(processor.into()),
+                                                              memory: Some(memory.into()) }
+    }
+}
+
+impl From<Processor> for proto_health::health_check_response::Processor {
+    fn from(Processor { cpu_usage, frequency }: Processor)
+            -> proto_health::health_check_response::Processor {
+        proto_health::health_check_response::Processor { cpu_usage, frequency }
+    }
+}
+
+impl From<Memory> for proto_health::health_check_response::Memory {
+    fn from(Memory { total_memory, used_memory, free_memory }: Memory)
+            -> proto_health::health_check_response::Memory {
+        proto_health::health_check_response::Memory { total_memory, used_memory, free_memory }
     }
 }
 

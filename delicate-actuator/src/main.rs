@@ -34,6 +34,7 @@ pub struct ActuatorState {
     id_generator: AsyncMutex<SnowflakeIdGenerator>,
     handlers_map: Arc<DashMap<i64, TaskHandlers>>,
     security_conf: Arc<ActuatorSecurityConf>,
+    system_mirror: Arc<SystemMirror>,
 }
 
 impl ActuatorState {
@@ -46,6 +47,10 @@ impl ActuatorState {
     }
     pub fn get_security_conf(&self) -> &ActuatorSecurityConf {
         &self.security_conf
+    }
+
+    pub fn get_system_mirror(&self) -> &SystemMirror {
+        &self.system_mirror
     }
 
     pub async fn generate_id(&self) -> i64 {
@@ -113,7 +118,8 @@ impl Default for ActuatorState {
         let security_conf = Arc::new(ActuatorSecurityConf::default());
         let id_generator = AsyncMutex::new(SnowflakeIdGenerator::new(0, 0));
 
-        Self { handlers_map, security_conf, id_generator }
+        let system_mirror = Arc::new(SystemMirror::default());
+        Self { handlers_map, security_conf, id_generator, system_mirror }
     }
 }
 
@@ -264,6 +270,22 @@ impl Actuator for DelicateActuator {
     async fn health_check(&self,
                           request: Request<HealthCheckUnit>)
                           -> Result<Response<UnifiedResponseMessagesForGrpc>, Status> {
+        let system_snapshot: health_check::proto_health::health_check_response::SystemSnapshot =
+            self.get_state().get_system_mirror().refresh_all().await.into();
+
+        let bind_request: actuator::BindRequest = self.get_state()
+                                                      .get_security_conf()
+                                                      .get_bind_scheduler()
+                                                      .get_bind()
+                                                      .await
+                                                      .unwrap_or_default()
+                                                      .into();
+
+        let status: health_check::proto_health::health_check_response::ServingStatus =
+            health_check::ServingStatus::Serving.into();
+        // let health_check_package = HealthCheckPackage { system_snapshot, bind_request
+        // };
+
         todo!();
     }
 
