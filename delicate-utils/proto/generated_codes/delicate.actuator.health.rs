@@ -4,23 +4,14 @@ pub struct HealthCheckRequest {
     pub time: i64,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct HealthCheckResponse {
-    #[prost(enumeration = "health_check_response::ServingStatus", tag = "1")]
-    pub status: i32,
+pub struct SystemSnapshot {
+    #[prost(message, optional, tag = "1")]
+    pub processor: ::core::option::Option<system_snapshot::Processor>,
     #[prost(message, optional, tag = "2")]
-    pub system_snapshot: ::core::option::Option<health_check_response::SystemSnapshot>,
-    #[prost(message, optional, tag = "3")]
-    pub bind_request: ::core::option::Option<super::BindRequest>,
+    pub memory: ::core::option::Option<system_snapshot::Memory>,
 }
-/// Nested message and enum types in `HealthCheckResponse`.
-pub mod health_check_response {
-    #[derive(Clone, PartialEq, ::prost::Message)]
-    pub struct SystemSnapshot {
-        #[prost(message, optional, tag = "1")]
-        pub processor: ::core::option::Option<Processor>,
-        #[prost(message, optional, tag = "2")]
-        pub memory: ::core::option::Option<Memory>,
-    }
+/// Nested message and enum types in `SystemSnapshot`.
+pub mod system_snapshot {
     #[derive(Clone, PartialEq, ::prost::Message)]
     pub struct Processor {
         #[prost(float, tag = "1")]
@@ -37,6 +28,18 @@ pub mod health_check_response {
         #[prost(uint64, tag = "3")]
         pub free_memory: u64,
     }
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct HealthCheckResponse {
+    #[prost(enumeration = "health_check_response::ServingStatus", tag = "1")]
+    pub status: i32,
+    #[prost(message, optional, tag = "2")]
+    pub system_snapshot: ::core::option::Option<SystemSnapshot>,
+    #[prost(message, optional, tag = "3")]
+    pub bind_request: ::core::option::Option<super::BindRequest>,
+}
+/// Nested message and enum types in `HealthCheckResponse`.
+pub mod health_check_response {
     #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
     #[repr(i32)]
     pub enum ServingStatus {

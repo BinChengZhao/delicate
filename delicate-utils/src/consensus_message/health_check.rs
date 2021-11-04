@@ -134,25 +134,24 @@ impl From<ServingStatus> for proto_health::health_check_response::ServingStatus 
     }
 }
 
-impl From<SystemSnapshot> for proto_health::health_check_response::SystemSnapshot {
-    fn from(SystemSnapshot { processor, memory }: SystemSnapshot)
-            -> proto_health::health_check_response::SystemSnapshot {
-        proto_health::health_check_response::SystemSnapshot { processor: Some(processor.into()),
-                                                              memory: Some(memory.into()) }
+impl From<SystemSnapshot> for proto_health::SystemSnapshot {
+    fn from(SystemSnapshot { processor, memory }: SystemSnapshot) -> proto_health::SystemSnapshot {
+        proto_health::SystemSnapshot { processor: Some(processor.into()),
+                                       memory: Some(memory.into()) }
     }
 }
 
-impl From<Processor> for proto_health::health_check_response::Processor {
+impl From<Processor> for proto_health::system_snapshot::Processor {
     fn from(Processor { cpu_usage, frequency }: Processor)
-            -> proto_health::health_check_response::Processor {
-        proto_health::health_check_response::Processor { cpu_usage, frequency }
+            -> proto_health::system_snapshot::Processor {
+        proto_health::system_snapshot::Processor { cpu_usage, frequency }
     }
 }
 
-impl From<Memory> for proto_health::health_check_response::Memory {
+impl From<Memory> for proto_health::system_snapshot::Memory {
     fn from(Memory { total_memory, used_memory, free_memory }: Memory)
-            -> proto_health::health_check_response::Memory {
-        proto_health::health_check_response::Memory { total_memory, used_memory, free_memory }
+            -> proto_health::system_snapshot::Memory {
+        proto_health::system_snapshot::Memory { total_memory, used_memory, free_memory }
     }
 }
 

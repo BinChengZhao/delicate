@@ -1,4 +1,5 @@
 pub use std::env;
+pub use std::future::Future;
 pub use std::pin::Pin;
 pub use std::str::FromStr;
 pub use std::sync::atomic::{AtomicUsize, Ordering};
@@ -16,6 +17,7 @@ pub use delicate_utils::consensus_message::health_check::{self, *};
 pub use delicate_utils::prelude::*;
 pub use prost::Message;
 pub use prost_types::Any;
+pub use proto_health::HealthCheckResponse;
 pub use rsa::RSAPublicKey;
 pub use security::BindScheduler;
 pub use service_binding::{SecurityRsaKey, SecurityeKey};

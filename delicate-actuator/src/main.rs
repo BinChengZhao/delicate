@@ -62,6 +62,30 @@ impl ActuatorState {
 
         *id_generator_guard = id_generator;
     }
+
+    pub async fn get_health_response(&self) -> UnifiedResponseMessagesForGrpc {
+        let system_snapshot: Option<health_check::proto_health::SystemSnapshot> =
+            Some(self.get_system_mirror().refresh_all().await.into());
+
+        let bind_request: Option<actuator::BindRequest> = Some(self.get_security_conf()
+                                                                   .get_bind_scheduler()
+                                                                   .get_bind()
+                                                                   .await
+                                                                   .unwrap_or_default()
+                                                                   .into());
+
+        let status_enum: health_check::proto_health::health_check_response::ServingStatus =
+            health_check::ServingStatus::Serving.into();
+        let status = status_enum as i32;
+        let value = HealthCheckResponse { system_snapshot, bind_request, status }.encode_to_vec();
+
+        let type_url = "/delicate.actuator.health.HealthCheckResponse".to_string();
+        let any = Any { type_url, value };
+
+        let mut health_response = UnifiedResponseMessagesForGrpc::success();
+        health_response.data.push(any);
+        health_response
+    }
 }
 
 #[derive(Debug)]
@@ -125,7 +149,7 @@ impl Default for ActuatorState {
 
 #[derive(Debug, Default)]
 struct DelicateActuator {
-    state: ActuatorState,
+    state: Arc<ActuatorState>,
 }
 
 impl DelicateActuator {
@@ -133,7 +157,7 @@ impl DelicateActuator {
         &self.state
     }
 
-    pub async fn handler_task(&self, command: &str) -> Result<(), Status> {
+    pub async fn handle_task(&self, command: &str) -> Result<(), Status> {
         let mut process_linked_list = parse_and_run::<TokioChild, TokioCommand>(command)
             .await
             .map_err(|e| Status::failed_precondition(e.to_string()))?;
@@ -189,7 +213,7 @@ impl Actuator for DelicateActuator {
         let task = request.get_ref();
         debug!("task: {:?}", task);
 
-        self.handler_task(&task.command).await?;
+        self.handle_task(&task.command).await?;
 
         Ok(Response::new(UnifiedResponseMessagesForGrpc::success()))
     }
@@ -270,23 +294,7 @@ impl Actuator for DelicateActuator {
     async fn health_check(&self,
                           request: Request<HealthCheckUnit>)
                           -> Result<Response<UnifiedResponseMessagesForGrpc>, Status> {
-        let system_snapshot: health_check::proto_health::health_check_response::SystemSnapshot =
-            self.get_state().get_system_mirror().refresh_all().await.into();
-
-        let bind_request: actuator::BindRequest = self.get_state()
-                                                      .get_security_conf()
-                                                      .get_bind_scheduler()
-                                                      .get_bind()
-                                                      .await
-                                                      .unwrap_or_default()
-                                                      .into();
-
-        let status: health_check::proto_health::health_check_response::ServingStatus =
-            health_check::ServingStatus::Serving.into();
-        // let health_check_package = HealthCheckPackage { system_snapshot, bind_request
-        // };
-
-        todo!();
+        Ok(Response::new(self.get_state().get_health_response().await))
     }
 
     type HealthWatchStream = Pin<Box<dyn Stream<Item = Result<UnifiedResponseMessagesForGrpc,
@@ -297,7 +305,15 @@ impl Actuator for DelicateActuator {
     async fn health_watch(&self,
                           request: Request<HealthWatchUnit>)
                           -> Result<Response<Self::HealthWatchStream>, Status> {
-        todo!();
+        let state = self.state.clone();
+        let stream = async_stream::stream! {
+
+         loop{
+             yield Ok(state.get_health_response().await);
+         }
+        };
+
+        Ok(Response::new(Box::pin(stream)))
     }
 }
 
@@ -335,8 +351,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // auth example:
     // /Users/bincheng_paopao/project/repo/rust/others/libs/tonic/examples/src/
     // authentication/ server.rs zip example: .send_gzip().accept_gzip()
-    let state = ActuatorState::default();
-    Server::builder().add_service(ActuatorServer::new(DelicateActuator { state }))
+
+    Server::builder().add_service(ActuatorServer::new(DelicateActuator::default()))
                      .serve("[::1]:8899".parse().expect(""))
                      .await?;
     Ok(())
