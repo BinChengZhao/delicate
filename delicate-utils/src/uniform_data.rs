@@ -125,7 +125,7 @@ impl<T: UniformData + Default, E: std::error::Error> From<Result<T, E>>
             Err(e) => {
                 let message = format!(
                     "{} ({})",
-                    e.to_string(),
+                    e,
                     e.source().map(|s| { s.to_string() }).unwrap_or_default()
                 );
                 Self::error().customized_error_msg(message)
@@ -142,7 +142,7 @@ impl<T: UniformData + Default, E: std::error::Error> From<Result<Result<T, E>, E
         let f = |e: E| {
             let message = format!(
                 "{} ({})",
-                e.to_string(),
+                e,
                 e.source().map(|s| { s.to_string() }).unwrap_or_default()
             );
             Self::error().customized_error_msg(message)

@@ -150,9 +150,7 @@ pub(crate) fn save_policy(
     use schema::casbin_rule::dsl::casbin_rule;
 
     Ok(conn.transaction::<_, DieselError, _>(|| {
-        if diesel::delete(casbin_rule).execute(&conn).is_err() {
-            return Err(DieselError::RollbackTransaction);
-        }
+        diesel::delete(casbin_rule).execute(&conn)?;
 
         Ok(diesel::insert_into(casbin_rule)
             .values(&rules)

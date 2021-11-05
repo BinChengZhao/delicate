@@ -25,8 +25,6 @@ pub enum CommonError {
     JoinError(#[from] JoinError),
     #[error("request fail.")]
     RequestError(#[from] reqwest::Error),
-    #[error("Parse Cookie fail.")]
-    ParseCookieError(#[from] poem::error::ParseCookieError),
 }
 
 #[derive(ThisError, Debug)]
