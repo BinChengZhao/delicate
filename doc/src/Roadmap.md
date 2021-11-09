@@ -37,14 +37,15 @@
 * Easy to develop new features with Battery-included Delicate.
 * Easy to operate/easy to install.
 
-## Roadmap 2021
+## Roadmap 2021 -- 2022
 
 | Name                         | Issue                                                | Description                                                                                                                                        |
 | ---------------------------- | ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| I18n                         |                                                      | Internationalization, convenient for users in different countries and regions.                                                                     |
-| Operation Log                         |                                                      | Record the user's operation behavior.                                                                     |
-| Permission Management        |                                                      | Humanized permission management to protect machine task resources and maintain system security.                                                    |
+| I18n   ✅                        |                                                      | Internationalization, convenient for users in different countries and regions.                                                                     |
+| Operation Log ✅                        |                                                      | Record the user's operation behavior.                                                                     |
+| Permission Management ✅       |                                                      | Humanized permission management to protect machine task resources and maintain system security.                                                    |
 | Multiple login protocols     |                                                      | Support multiple login protocols to open up the user system within the enterprise and enhance user experience.                                     |
 | Machine resource panel       |                                                      | Powerful online resource panel with online visualization of machine / task support for multiple user actions.                                      |
 | Failover       |                                                      | Automatically migrate tasks when a node is down.                                      |
-| Upgrade to `poem`       |                                                      | Using `poem` we can do everything , So that `scheduler & executor` communication can using RPC  (`tonic ｜ tarpc`).      |
+| Upgrade to `poem` ✅       |                                                      | Using `poem` we can do everything , So that `scheduler & executor` communication can using RPC  (`tonic ｜ tarpc`).      |
+| Lowering the barriers to use      |                           [28](https://github.com/BinChengZhao/delicate/issues/28)                           | 1. make `docker images`, make `executable binaries`, users don't need to pay attention to code details.  2. dynamic core configuration.     |
