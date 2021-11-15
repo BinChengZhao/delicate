@@ -96,7 +96,7 @@ fn init_logger() -> FileLogWriterHandle {
                 Criterion::Age(Age::Day), //
                 // 
                 // - create a new file every day
-                Naming::Timestamps, //
+                Naming::Timestamps,
                 // 
                 // - let the rotated files have a timestamp in their name
                 Cleanup::KeepLogFiles(15) /* 

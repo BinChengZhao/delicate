@@ -22,6 +22,8 @@ pub struct Task {
     pub(crate) status: i16,
     pub(crate) created_time: NaiveDateTime,
     pub(crate) deleted_time: Option<NaiveDateTime>,
+    pub(crate) schedule_type: i16,
+    pub(crate) execute_mode: i16,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -60,6 +62,8 @@ impl From<Task> for FrontEndTask {
             status,
             created_time,
             deleted_time,
+            schedule_type,
+            execute_mode
         } = task;
 
         let binding_ids: Vec<i64> = Vec::new();
@@ -97,6 +101,8 @@ pub struct NewTask {
     pub(crate) retry_interval: i16,
     pub(crate) maximum_parallel_runnable_num: i16,
     pub(crate) tag: String,
+    pub(crate) schedule_type: i16,
+    pub(crate) execute_mode: i16,
 }
 
 #[derive(
@@ -106,16 +112,18 @@ pub struct NewTask {
 
 pub struct UpdateTask {
     pub(crate) id: i64,
-    name: String,
-    description: String,
-    command: String,
-    frequency: String,
-    cron_expression: String,
-    timeout: i16,
-    retry_times: i16,
-    retry_interval: i16,
-    maximum_parallel_runnable_num: i16,
-    tag: String,
+    pub(crate) name: String,
+    pub(crate) description: String,
+    pub(crate) command: String,
+    pub(crate) frequency: String,
+    pub(crate) cron_expression: String,
+    pub(crate) timeout: i16,
+    pub(crate) retry_times: i16,
+    pub(crate) retry_interval: i16,
+    pub(crate) maximum_parallel_runnable_num: i16,
+    pub(crate) tag: String,
+    pub(crate) schedule_type: i16,
+    pub(crate) execute_mode: i16,
 }
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize)]

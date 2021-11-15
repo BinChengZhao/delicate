@@ -29,27 +29,6 @@ pub enum CommonError {
     RequestError(#[from] reqwest::Error),
 }
 
-#[derive(ThisError, Debug)]
-pub enum NewCommonError {
-    #[error("db connect fail.")]
-    DisConnDb(#[from] PoolError),
-    #[error("redis connect fail.")]
-    DisConnRedis(#[from] redis::RedisError),
-    #[error("data query fail.")]
-    DisQuery(#[from] diesel::result::Error),
-    #[error("data serializing fail.")]
-    DisSer(#[from] serde_json_error::Error),
-    #[error("data sign or decrypt or verify fail.")]
-    DisSign(#[from] ras_error::Error),
-    #[error("Consensus message signature verification failed.")]
-    DisVerify,
-    #[error("DelayTimer's task operation failed.")]
-    DisOpeate(#[from] TaskError),
-    #[error("Invalid operation, or invalid data.(`{0}`)")]
-    DisPass(String),
-    #[error("The errors reported by the auth-service cannot be ignored.")]
-    DisAuth(#[from] AuthServiceError),
-}
 
 #[derive(ThisError, Debug)]
 pub enum AuthServiceError {

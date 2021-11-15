@@ -21,6 +21,11 @@ pub struct TaskPackage {
     pub timeout: i16,
     /// Maximum parallel runnable num (optional).
     pub maximum_parallel_runnable_num: i16,
+    /// task scheduling type (1:Centralized, 2:Weakly centralized)
+    pub schedule_type:i16,
+    /// Execution modes for centralized: (1:broadcast, 2:polling, 3:random)
+    pub execute_mode:i16,
+
 }
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize)]
@@ -136,11 +141,10 @@ impl SignedTaskUnit {
     }
 }
 
-impl TryFrom<TaskPackage> for Task {
+impl<'a> TryFrom<&'a TaskPackage> for TaskBuilder<'a> {
     type Error = CommonError;
-    fn try_from(task_package: TaskPackage) -> Result<Self, Self::Error> {
+    fn try_from(task_package: &'a TaskPackage) -> Result<Self, Self::Error> {
         let TaskPackage { id,
-                          command,
                           frequency,
                           cron_expression,
                           timeout,
@@ -160,7 +164,7 @@ impl TryFrom<TaskPackage> for Task {
 
         let mut task_builder = TaskBuilder::default();
 
-        task_builder.set_task_id(id as u64);
+        task_builder.set_task_id((*id) as u64);
 
         match metadata.mode {
             1 => {
@@ -178,10 +182,24 @@ impl TryFrom<TaskPackage> for Task {
             },
         }
 
-        let task =
+
             task_builder.set_schedule_iterator_time_zone(time_zone)
-                        .set_maximum_running_time(timeout as u64)
-                        .set_maximum_parallel_runnable_num(maximum_parallel_runnable_num as u64)
+                        .set_maximum_running_time((*timeout) as u64)
+                        .set_maximum_parallel_runnable_num((*maximum_parallel_runnable_num) as u64);
+
+        Ok(task_builder)
+    }
+}
+
+
+impl TryFrom<TaskPackage> for Task {
+    type Error = CommonError;
+    fn try_from(task_package: TaskPackage) -> Result<Self, Self::Error> {
+        let task_builder : TaskBuilder = (&task_package).try_into()?;
+        let command = task_package.command.clone();
+        
+        let task =
+            task_builder
                         .spawn(unblock_process_task_fn(command))?;
 
         Ok(task)

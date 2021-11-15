@@ -1,5 +1,5 @@
 pub(crate) use std::collections::{HashMap, HashSet};
-pub(crate) use std::convert::{AsRef, TryFrom};
+pub(crate) use std::convert::{AsRef, TryFrom, TryInto};
 pub(crate) use std::env;
 pub(crate) use std::fmt::Debug;
 pub(crate) use std::future::Future;
@@ -13,6 +13,7 @@ pub(crate) use std::time::Duration;
 pub(crate) use std::time::SystemTime;
 pub(crate) use std::vec::IntoIter;
 
+pub(crate) use actuator::actuator_client;
 pub(crate) use anyhow::Result as AnyResut;
 pub(crate) use async_channel::{Receiver as AsyncReceiver, Sender as AsyncSender};
 pub(crate) use async_lock::RwLock as AsyncRwLock;

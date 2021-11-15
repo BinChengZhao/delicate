@@ -13,13 +13,38 @@ pub mod task {
         Unknown    = 81,
     }
 
-    impl From<i16> for State {
-        fn from(v: i16) -> State {
+    #[derive(Copy, Clone, StrumToString, Debug, EnumIter, AsRefStr, IntoStaticStr)]
+    pub enum ScheduleType {
+        Centralized = 1,
+        WeaklyCentralized = 2,
+        Unknown = 81,
+    }
+
+    impl From<i16> for ScheduleType {
+        fn from(v: i16) -> ScheduleType {
             match v {
-                1 => State::NotEnabled,
-                2 => State::Enabled,
-                3 => State::Deleted,
-                _ => State::Unknown,
+                1 => ScheduleType::Centralized,
+                2 => ScheduleType::WeaklyCentralized,
+                _ => ScheduleType::Unknown,
+            }
+        }
+    }
+
+    #[derive(Copy, Clone, StrumToString, Debug, EnumIter, AsRefStr, IntoStaticStr)]
+    pub enum ExecuteMode {
+        Broadcast = 1,
+        Polling   = 2,
+        Random    = 3,
+        Unknown   = 81,
+    }
+
+    impl From<i16> for ExecuteMode {
+        fn from(v: i16) -> ExecuteMode {
+            match v {
+                1 => ExecuteMode::Broadcast,
+                2 => ExecuteMode::Polling,
+                3 => ExecuteMode::Random,
+                _ => ExecuteMode::Unknown,
             }
         }
     }

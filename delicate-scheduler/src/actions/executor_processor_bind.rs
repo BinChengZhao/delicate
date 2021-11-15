@@ -161,6 +161,8 @@ async fn pre_update_executor_processor_bind(req: &Request,
                         task::cron_expression,
                         task::timeout,
                         task::maximum_parallel_runnable_num,
+                        task::schedule_type,
+                        task::execute_mode
                     ),
                     (executor_processor::host, executor_processor::token),
                 ))

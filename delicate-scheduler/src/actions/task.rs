@@ -260,7 +260,9 @@ pub async fn pre_update_task_sevice(req: &Request,
                                                       task::frequency,
                                                       task::cron_expression,
                                                       task::timeout,
-                                                      task::maximum_parallel_runnable_num),
+                                                      task::maximum_parallel_runnable_num,
+                                                      task::schedule_type,
+                                                      task::execute_mode),
                                                      task::status))
                                             .filter(task::id.eq(task_id))
                                             .first::<(TaskPackage, i16)>(&conn)?;
@@ -429,10 +431,7 @@ async fn pre_run_task(req: &Request,
         task::dsl::*,
         task_bind,
     };
-    use state::task::State;
-
-    let request_client =
-        req.extensions().get::<RequestClient>().expect("Missing Components `RequestClient`");
+    use state::task::{ExecuteMode, ScheduleType, State};
 
     let operation_log_pair_option = generate_operation_task_modify_log(
         req.get_session(),
@@ -445,27 +444,29 @@ async fn pre_run_task(req: &Request,
 
     // Many machine.
     let task_packages: Vec<(delicate_utils_task::TaskPackage, (String, String))> =
-        spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
-            diesel::update(task.find(task_id)).set(task::status.eq(State::Enabled as i16))
-                                              .execute(&conn)?;
+        get_executor_token_by_id(task_id, conn).await?;
 
-            task_bind::table
-                .inner_join(executor_processor_bind::table.inner_join(executor_processor::table))
-                .inner_join(task::table)
-                .select((
-                    (
-                        id,
-                        command,
-                        frequency,
-                        cron_expression,
-                        timeout,
-                        maximum_parallel_runnable_num,
-                    ),
-                    (host, token),
-                ))
-                .filter(task_bind::task_id.eq(task_id))
-                .load::<(delicate_utils_task::TaskPackage, (String, String))>(&conn)
-        }).await??;
+    if let Some((ref task_package, ..)) = task_packages.get(0) {
+        match task_package.schedule_type.into() {
+            ScheduleType::Centralized => {
+                run_centralized_task(req, task_packages).await?;
+            },
+            ScheduleType::WeaklyCentralized => {
+                run_weakly_centralized_task(req, task_packages).await?;
+            },
+            _ => {},
+        }
+    }
+
+    Ok(())
+}
+
+async fn run_weakly_centralized_task(req: &Request,
+                                     task_packages: Vec<(delicate_utils_task::TaskPackage,
+                                          (String, String))>)
+                                     -> Result<(), CommonError> {
+    let request_client =
+        req.extensions().get::<RequestClient>().expect("Missing Components `RequestClient`");
 
     let request_all: JoinAll<_> =
         task_packages.into_iter()
@@ -482,8 +483,48 @@ async fn pre_run_task(req: &Request,
                      .collect::<Vec<_>>()
                      .into_iter()
                      .collect();
-
     handle_response::<_, UnifiedResponseMessages<()>>(request_all).await;
+
+    Ok(())
+}
+
+async fn run_centralized_task(req: &Request,
+                              task_packages: Vec<(delicate_utils_task::TaskPackage,
+                                   (String, String))>)
+                              -> Result<(), CommonError> {
+    use actuator::actuator_client::ActuatorClient;
+    use delay_timer::prelude::TaskBuilder;
+
+    let delay_timer =
+        req.extensions().get::<Arc<DelayTimer>>().expect("Missing Components `DelayTimer`");
+
+    let pool = req.extensions()
+                  .get::<Arc<db::ConnectionPool>>()
+                  .expect("Missing Components `DelayTimer`")
+                  .clone();
+
+    let delicate_task = &task_packages[0].0;
+    let task_id = delicate_task.id;
+    let task_builder: TaskBuilder<'_> = delicate_task.try_into()?;
+
+    let task = task_builder.spawn(move |context| {
+                   if let Ok(conn) = pool.get() {
+                       tokio_spawn(async move {
+                           let task_packages = get_executor_token_by_id(task_id, conn).await?;
+
+                           let rpc_client = ActuatorClient::connect("").await.map_err(|e|{
+                                           CommonError::DisPass(e.to_string())
+                                       })?;
+
+                           Result::<(), CommonError>::Ok(())
+                       });
+                   }
+
+                   context.finishe_task(None);
+                   todo!();
+               })?;
+
+    delay_timer.add_task(task)?;
 
     Ok(())
 }
@@ -550,4 +591,48 @@ async fn pre_operate_task(req: &Request,
 
     handle_response::<_, UnifiedResponseMessages<()>>(request_all).await;
     Ok(())
+}
+
+#[cached(type = "TimedSizedCache<i64, Vec<(delicate_utils_task::TaskPackage, (String, String))>>",
+         create = "{ TimedSizedCache::with_size_and_lifespan(1024, 60) }",
+         convert = r#"{ task_id }"#,
+         result = true)]
+pub(crate) async fn get_executor_token_by_id(
+    task_id: i64,
+    conn: db::PoolConnection)
+    -> Result<Vec<(delicate_utils_task::TaskPackage, (String, String))>, CommonError> {
+    use db::schema::{
+        executor_processor,
+        executor_processor::dsl::{host, token},
+        executor_processor_bind, task,
+        task::dsl::*,
+        task_bind,
+    };
+    use state::task::{ExecuteMode, ScheduleType, State};
+    let task_packages: Vec<(delicate_utils_task::TaskPackage, (String, String))> =
+        spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
+            diesel::update(task.find(task_id)).set(task::status.eq(State::Enabled as i16))
+                                              .execute(&conn)?;
+
+            task_bind::table
+            .inner_join(executor_processor_bind::table.inner_join(executor_processor::table))
+            .inner_join(task::table)
+            .select((
+                (
+                    id,
+                    command,
+                    frequency,
+                    cron_expression,
+                    timeout,
+                    maximum_parallel_runnable_num,
+                    schedule_type,
+                    execute_mode
+                ),
+                (host, token),
+            ))
+            .filter(task_bind::task_id.eq(task_id))
+            .load::<(delicate_utils_task::TaskPackage, (String, String))>(&conn)
+        }).await??;
+
+    Ok(task_packages)
 }

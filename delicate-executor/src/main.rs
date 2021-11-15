@@ -305,7 +305,7 @@ fn launch_status_reporter(delay_timer: &mut DelayTimer,
 
                     Ok(())
                 };
-                let f_result: Result<(), NewCommonError> =
+                let f_result: Result<(), CommonError> =
                     f.instrument(span!(Level::INFO,
                                        "status-reporter",
                                        log_id = get_unique_id_string().deref()))
@@ -349,7 +349,7 @@ async fn fresh_scheduler_conf(shared_security_conf: &ExecutorSecurityConf,
 
 async fn collect_events(status_reporter: &StatusReporter,
                         scheduler: Option<&BindRequest>)
-                        -> Result<Vec<ExecutorEvent>, NewCommonError> {
+                        -> Result<Vec<ExecutorEvent>, CommonError> {
     let mut events: Vec<ExecutorEvent> = Vec::new();
     for _i in 0..10 {
         let event_future: TokioTimeout<_> =
@@ -361,7 +361,7 @@ async fn collect_events(status_reporter: &StatusReporter,
             Err(_) => break,
             // Internal runtime exception.
             Ok(Err(_)) => {
-                return Err(NewCommonError::DisPass("Internal runtime exception".to_string()));
+                return Err(CommonError::DisPass("Internal runtime exception".to_string()));
             },
             Ok(Ok(event)) => {
                 scheduler.map(|conf| convert_event(event, conf).map(|e| events.push(e)));
