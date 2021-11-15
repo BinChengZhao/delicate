@@ -112,17 +112,18 @@ pub(crate) fn save_policy(conn: db::PoolConnection,
     use schema::casbin_rule::dsl::casbin_rule;
 
     Ok(conn.transaction::<_, DieselError, _>(|| {
-               if diesel::delete(casbin_rule).execute(&conn).is_err() {
-                   return Err(DieselError::RollbackTransaction);
-               }
+               diesel::delete(casbin_rule).execute(&conn)?;
 
-               Ok(diesel::insert_into(casbin_rule).values(&rules).execute(&*conn).and_then(|n| {
-            if n == rules.len() {
-                Ok(())
-            } else {
-                Err(DieselError::RollbackTransaction)
-            }
-        }))
+               Ok(diesel::insert_into(casbin_rule)
+            .values(&rules)
+            .execute(&*conn)
+            .and_then(|n| {
+                if n == rules.len() {
+                    Ok(())
+                } else {
+                    Err(DieselError::RollbackTransaction)
+                }
+            }))
            })??)
 }
 
