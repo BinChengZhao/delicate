@@ -25,10 +25,11 @@ pub enum CommonError {
     DisAuth(#[from] AuthServiceError),
     #[error("Blocking running fail.")]
     JoinError(#[from] tokio::task::JoinError),
-    #[error("request fail.")]
+    #[error("Reqwest fail.")]
     RequestError(#[from] reqwest::Error),
+    #[error("Tonic transport fail.")]
+    TransportError(#[from] tonic::transport::Error),
 }
-
 
 #[derive(ThisError, Debug)]
 pub enum AuthServiceError {

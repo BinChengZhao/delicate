@@ -13,7 +13,6 @@ pub(crate) use std::time::Duration;
 pub(crate) use std::time::SystemTime;
 pub(crate) use std::vec::IntoIter;
 
-pub(crate) use actuator::actuator_client;
 pub(crate) use anyhow::Result as AnyResut;
 pub(crate) use async_channel::{Receiver as AsyncReceiver, Sender as AsyncSender};
 pub(crate) use async_lock::RwLock as AsyncRwLock;

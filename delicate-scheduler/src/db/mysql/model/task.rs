@@ -43,6 +43,8 @@ pub struct FrontEndTask {
     pub(crate) created_time: NaiveDateTime,
     pub(crate) deleted_time: Option<NaiveDateTime>,
     pub(crate) binding_ids: Vec<i64>,
+    pub(crate) schedule_type: i16,
+    pub(crate) execute_mode: i16,
 }
 
 impl From<Task> for FrontEndTask {
@@ -84,6 +86,8 @@ impl From<Task> for FrontEndTask {
             created_time,
             deleted_time,
             binding_ids,
+            schedule_type,
+            execute_mode
         }
     }
 }

@@ -424,14 +424,7 @@ async fn pre_run_task(req: &Request,
                       task_id: i64,
                       pool: Data<&Arc<db::ConnectionPool>>)
                       -> Result<(), CommonError> {
-    use db::schema::{
-        executor_processor,
-        executor_processor::dsl::{host, token},
-        executor_processor_bind, task,
-        task::dsl::*,
-        task_bind,
-    };
-    use state::task::{ExecuteMode, ScheduleType, State};
+    use state::task::ScheduleType;
 
     let operation_log_pair_option = generate_operation_task_modify_log(
         req.get_session(),
@@ -493,7 +486,8 @@ async fn run_centralized_task(req: &Request,
                                    (String, String))>)
                               -> Result<(), CommonError> {
     use actuator::actuator_client::ActuatorClient;
-    use delay_timer::prelude::TaskBuilder;
+    use actuator::{Task, UnifiedResponseMessagesForGrpc};
+    use tonic::transport::channel::Endpoint;
 
     let delay_timer =
         req.extensions().get::<Arc<DelayTimer>>().expect("Missing Components `DelayTimer`");
@@ -509,20 +503,42 @@ async fn run_centralized_task(req: &Request,
 
     let task = task_builder.spawn(move |context| {
                    if let Ok(conn) = pool.get() {
-                       tokio_spawn(async move {
-                           let task_packages = get_executor_token_by_id(task_id, conn).await?;
+                       let task_handler = tokio_spawn(async move {
+                           let  tasks : JoinAll<_> = get_executor_token_by_id(task_id, conn).await?.into_iter().map(|(task_package, (host,token))|{
 
-                           let rpc_client = ActuatorClient::connect("").await.map_err(|e|{
-                                           CommonError::DisPass(e.to_string())
-                                       })?;
+                            let delicate_utils_task::TaskPackage{
+                                id, command,timeout, ..
+                            } = task_package;
+                            let task = Task::default().set_task_id(id as u64).set_command(command);
+
+                            async move {
+                                let channel = Endpoint::from_shared(host).map_err(|e|{
+                                    CommonError::DisPass(e.to_string())
+                                })?.timeout(Duration::from_secs(timeout as u64)).connect().await?;
+                                let mut rpc_client = ActuatorClient::new(channel);
+
+                               let resp = rpc_client.run_task(task).await.map_err(|e|{
+                                    CommonError::DisPass(e.to_string())
+                                })?;
+
+                                Result::<UnifiedResponseMessagesForGrpc,CommonError>::Ok(resp.into_inner())
+                            }
+
+                           }).collect();
+
+                           tasks.await;
+
+
+                           context.finishe_task(None).await;
 
                            Result::<(), CommonError>::Ok(())
                        });
+                       return create_delay_task_handler(task_handler);
                    }
 
-                   context.finishe_task(None);
-                   todo!();
-               })?;
+                   error!("Not enough database resources to perform the task: {}", task_id);
+                   create_default_delay_task_handler()
+                })?;
 
     delay_timer.add_task(task)?;
 
@@ -608,7 +624,7 @@ pub(crate) async fn get_executor_token_by_id(
         task::dsl::*,
         task_bind,
     };
-    use state::task::{ExecuteMode, ScheduleType, State};
+    use state::task::State;
     let task_packages: Vec<(delicate_utils_task::TaskPackage, (String, String))> =
         spawn_blocking::<_, Result<_, diesel::result::Error>>(move || {
             diesel::update(task.find(task_id)).set(task::status.eq(State::Enabled as i16))

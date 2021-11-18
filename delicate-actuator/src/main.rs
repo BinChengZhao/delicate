@@ -8,6 +8,7 @@ use prelude::*;
 #[derive(Debug)]
 pub struct ActuatorSecurityConf {
     security_level: SecurityLevel,
+    #[allow(dead_code)]
     rsa_public_key: Option<SecurityeKey<RSAPublicKey>>,
     bind_scheduler: BindScheduler,
 }
@@ -294,6 +295,9 @@ impl Actuator for DelicateActuator {
     async fn health_check(&self,
                           request: Request<HealthCheckUnit>)
                           -> Result<Response<UnifiedResponseMessagesForGrpc>, Status> {
+        let addr = request.remote_addr();
+        let check_unit = request.into_inner();
+        info!("Health-check From: {:?}, unit: {:?}", addr, check_unit);
         Ok(Response::new(self.get_state().get_health_response().await))
     }
 
@@ -305,6 +309,9 @@ impl Actuator for DelicateActuator {
     async fn health_watch(&self,
                           request: Request<HealthWatchUnit>)
                           -> Result<Response<Self::HealthWatchStream>, Status> {
+        let addr = request.remote_addr();
+        let check_unit = request.into_inner();
+        info!("Health-check From: {:?}, unit: {:?}", addr, check_unit);
         let state = self.state.clone();
         let stream = async_stream::stream! {
 

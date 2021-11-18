@@ -12,6 +12,7 @@ pub use rsa;
 pub use snowflake;
 pub use sysinfo;
 pub use tokio;
+pub use tonic;
 pub use tracing;
 pub use tracing_subscriber;
 
