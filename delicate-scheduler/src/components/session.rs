@@ -65,7 +65,7 @@ impl<E: Endpoint> Endpoint for SessionAuthMiddleware<E> {
             return self.ep.call(req).await.into_response();
         }
 
-        let session = req.get_session();
+        let session = req.session();
         let uri = req.uri();
         let path = uri.path();
 

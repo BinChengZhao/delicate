@@ -18,7 +18,7 @@ impl ActuatorSecurityConf {
         self.security_level.generate_token()
     }
 
-    pub fn get_bind_scheduler(&self) -> &BindScheduler {
+    pub fn bind_scheduler(&self) -> &BindScheduler {
         &self.bind_scheduler
     }
 }
@@ -26,7 +26,7 @@ impl ActuatorSecurityConf {
 // On async fn health_check(
 
 // TODO:
-//     Implement a function to cache a list of machines based on cached.
+// Implement a function to cache a list of machines based on cached.
 // When executing a task to an actuator, the most resourceful machine is
 // retrieved from it by group id.
 
@@ -43,14 +43,14 @@ impl ActuatorState {
         self.handlers_map.clone()
     }
 
-    pub fn get_handlers_map(&self) -> &DashMap<i64, TaskHandlers> {
+    pub fn handlers_map(&self) -> &DashMap<i64, TaskHandlers> {
         &self.handlers_map
     }
-    pub fn get_security_conf(&self) -> &ActuatorSecurityConf {
+    pub fn security_conf(&self) -> &ActuatorSecurityConf {
         &self.security_conf
     }
 
-    pub fn get_system_mirror(&self) -> &SystemMirror {
+    pub fn system_mirror(&self) -> &SystemMirror {
         &self.system_mirror
     }
 
@@ -64,16 +64,12 @@ impl ActuatorState {
         *id_generator_guard = id_generator;
     }
 
-    pub async fn get_health_response(&self) -> UnifiedResponseMessagesForGrpc {
+    pub async fn health_response(&self) -> UnifiedResponseMessagesForGrpc {
         let system_snapshot: Option<health_check::proto_health::SystemSnapshot> =
-            Some(self.get_system_mirror().refresh_all().await.into());
+            Some(self.system_mirror().refresh_all().await.into());
 
-        let bind_request: Option<actuator::BindRequest> = Some(self.get_security_conf()
-                                                                   .get_bind_scheduler()
-                                                                   .get_bind()
-                                                                   .await
-                                                                   .unwrap_or_default()
-                                                                   .into());
+        let bind_request: Option<actuator::BindRequest> =
+            Some(self.security_conf().bind_scheduler().get_bind().await.unwrap_or_default().into());
 
         let status_enum: health_check::proto_health::health_check_response::ServingStatus =
             health_check::ServingStatus::Serving.into();
@@ -93,7 +89,7 @@ impl ActuatorState {
 pub struct TaskHandlers {
     id: i64,
     status: AtomicUsize,
-    running_handler: JoinHandle<Result<String, std::io::Error>>,
+    running_handler: JoinHandle<String>,
     timeout_handler: JoinHandle<()>,
 }
 
@@ -103,7 +99,7 @@ impl TaskHandlers {
     pub const TIMEOUT: usize = 1 << 1;
 
     pub fn new(id: i64,
-               running_handler: JoinHandle<Result<String, std::io::Error>>,
+               running_handler: JoinHandle<String>,
                timeout_handler: JoinHandle<()>)
                -> Self {
         let status = AtomicUsize::new(0);
@@ -154,15 +150,20 @@ struct DelicateActuator {
 }
 
 impl DelicateActuator {
-    pub fn get_state(&self) -> &ActuatorState {
+    pub fn state(&self) -> &ActuatorState {
         &self.state
     }
 
-    pub async fn handle_task(&self, command: &str) -> Result<(), Status> {
+    pub async fn handle_task(&self, task: Task) -> Result<RecordId, Status> {
+        let command = &task.command;
+        let timeout = task.timeout;
+
+        // Parse the command line and generate a process linked-list.
         let mut process_linked_list = parse_and_run::<TokioChild, TokioCommand>(command)
             .await
             .map_err(|e| Status::failed_precondition(e.to_string()))?;
 
+        // Take the last process that needs to wait for output and get the output.
         let child_guard = process_linked_list
             .pop_back()
             .ok_or_else(|| Status::failed_precondition("Have no process executed.".to_string()))?;
@@ -176,8 +177,8 @@ impl DelicateActuator {
                              Status::failed_precondition(" No valid process stdout .".to_string())
                          })?;
 
-        let id = self.get_state().generate_id().await;
-        let handlers_map_cloned = self.get_state().handlers_map_cloned();
+        let id = self.state().generate_id().await;
+        let handlers_map_cloned = self.state().handlers_map_cloned();
 
         let running_handler = tokio_spawn({
             let handlers_map_cloned = handlers_map_cloned.clone();
@@ -185,48 +186,52 @@ impl DelicateActuator {
                 let mut output = String::new();
                 let result_output = child_stdout.read_to_string(&mut output).await.map(|_| output);
 
-                handlers_map_cloned.remove(&id).map(|(_, h)| {
-                                                   h.complete();
-                                               });
+                if let Some((_, h)) = handlers_map_cloned.remove(&id) {
+                    debug!("Task: {}, completed", id);
+                    h.complete();
+                }
 
-                result_output
+                let output = result_output.unwrap_or_else(|e| e.to_string());
+                // TODO: There should be callback to scheduler (/api/task_log/event_trigger).
+                debug!("Task: {}, Output: {}", id, &output);
+                output
             }
         });
 
         let timeout_handler = tokio_spawn(async move {
-            handlers_map_cloned.remove(&id).map(|(_, h)| {
-                                               h.timeout();
-                                           });
+            async_sleep(Duration::from_secs(timeout)).await;
+            if let Some((_, h)) = handlers_map_cloned.remove(&id) {
+                debug!("Task: {}, Timeout", id);
+                h.timeout();
+            }
         });
 
         let task_handlers = TaskHandlers::new(id, running_handler, timeout_handler);
 
-        self.get_state().get_handlers_map().insert(id, task_handlers);
-        Ok(())
+        self.state().handlers_map().insert(id, task_handlers);
+        Ok(RecordId { id })
     }
 }
 
 #[tonic::async_trait]
 impl Actuator for DelicateActuator {
-    async fn run_task(&self,
-                      request: Request<Task>)
-                      -> Result<Response<UnifiedResponseMessagesForGrpc>, Status> {
-        let task = request.get_ref();
-        debug!("task: {:?}", task);
+    async fn run_task(&self, request: Request<Task>) -> Result<Response<RecordId>, Status> {
+        let task = request.into_inner();
+        debug!("task: {:?}", &task);
 
-        self.handle_task(&task.command).await?;
-
-        Ok(Response::new(UnifiedResponseMessagesForGrpc::success()))
+        let record_id = self.handle_task(task).await?;
+        Ok(Response::new(record_id))
     }
 
     async fn cancel_task(&self,
                          reqeust: Request<RecordId>)
                          -> Result<Response<UnifiedResponseMessagesForGrpc>, Status> {
+        let record_id = reqeust.into_inner();
         let (_, task_handlers) =
-            self.get_state()
-                .get_handlers_map()
-                .remove(&reqeust.into_inner().id)
-                .ok_or(Status::unavailable("There have no running task instance to cancel."))?;
+            self.state()
+                .handlers_map()
+                .remove(&record_id.id)
+                .ok_or_else(||Status::unavailable(format!("There have no running task-record: {} instance to cancel.", record_id.id)))?;
         task_handlers.cancel();
 
         Ok(Response::new(UnifiedResponseMessagesForGrpc::success()))
@@ -281,12 +286,12 @@ impl Actuator for DelicateActuator {
         let extractor: i16 = 0b00_0001_1111;
         let node_id = executor_machine_id & extractor;
         let machine_id = (executor_machine_id >> 5) & extractor;
-        self.get_state()
+        self.state()
             .set_id_generator(SnowflakeIdGenerator::new(node_id as i32, machine_id as i32))
             .await;
 
-        let token = self.get_state().get_security_conf().generate_token();
-        let bind_scheduler = self.get_state().get_security_conf().get_bind_scheduler();
+        let token = self.state().security_conf().generate_token();
+        let bind_scheduler = self.state().security_conf().bind_scheduler();
         bind_scheduler.set_bind(bind_request.into()).await;
         bind_scheduler.set_token(token).await;
         Ok(Response::new(UnifiedResponseMessagesForGrpc::success()))
@@ -298,7 +303,7 @@ impl Actuator for DelicateActuator {
         let addr = request.remote_addr();
         let check_unit = request.into_inner();
         info!("Health-check From: {:?}, unit: {:?}", addr, check_unit);
-        Ok(Response::new(self.get_state().get_health_response().await))
+        Ok(Response::new(self.state().health_response().await))
     }
 
     type HealthWatchStream = Pin<Box<dyn Stream<Item = Result<UnifiedResponseMessagesForGrpc,
@@ -316,7 +321,7 @@ impl Actuator for DelicateActuator {
         let stream = async_stream::stream! {
 
          loop{
-             yield Ok(state.get_health_response().await);
+             yield Ok(state.health_response().await);
          }
         };
 
@@ -380,9 +385,9 @@ fn init_logger() {
 
 impl Default for ActuatorSecurityConf {
     fn default() -> Self {
-        let security_level = SecurityLevel::get_app_security_level();
+        let security_level = SecurityLevel::app_security_level();
         let rsa_public_key =
-            SecurityeKey::<RSAPublicKey>::get_app_rsa_key("DELICATE_SECURITY_PUBLIC_KEY");
+            SecurityeKey::<RSAPublicKey>::app_rsa_key("DELICATE_SECURITY_PUBLIC_KEY");
 
         if matches!(security_level, SecurityLevel::Normal if rsa_public_key.is_err()) {
             error!("{}",
@@ -394,8 +399,9 @@ impl Default for ActuatorSecurityConf {
             unreachable!("When the security level is Normal, the initialization `delicate-executor` must contain the secret key (DELICATE_SECURITY_PUBLIC_KEY)");
         }
 
-        Self { security_level: SecurityLevel::get_app_security_level(),
+        let bind_scheduler = BindScheduler::default();
+        Self { security_level: SecurityLevel::app_security_level(),
                rsa_public_key: rsa_public_key.map(SecurityeKey).ok(),
-               ..Default::default() }
+               bind_scheduler }
     }
 }

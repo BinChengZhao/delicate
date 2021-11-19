@@ -16,7 +16,7 @@ async fn create_executor_processor_bind(req: &Request,
     use db::schema::executor_processor_bind;
 
     let operation_log_pair_option =
-        generate_operation_executor_processor_bind_addtion_log(req.get_session(),
+        generate_operation_executor_processor_bind_addtion_log(req.session(),
                                                                &executor_processor_binds).ok();
     send_option_operation_log_pair(operation_log_pair_option).await;
 
@@ -119,7 +119,7 @@ async fn pre_update_executor_processor_bind(req: &Request,
         req.extensions().get::<RequestClient>().expect("Missing Components `RequestClient`");
 
     let operation_log_pair_option =
-        generate_operation_executor_processor_bind_modify_log(req.get_session(),
+        generate_operation_executor_processor_bind_modify_log(req.session(),
                                                               &executor_processor_bind).ok();
     send_option_operation_log_pair(operation_log_pair_option).await;
 
@@ -215,7 +215,7 @@ async fn delete_executor_processor_bind(req: &Request,
     use db::schema::executor_processor_bind::dsl::*;
 
     let operation_log_pair_option = generate_operation_executor_processor_bind_delete_log(
-        req.get_session(),
+        req.session(),
         &CommonTableRecord::default().set_id(executor_processor_bind_id),
     )
     .ok();

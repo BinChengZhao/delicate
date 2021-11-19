@@ -20,7 +20,7 @@ async fn create_task(req: &Request,
 
     if let Ok(conn) = pool.get() {
         let operation_log_pair_option =
-            generate_operation_task_addtion_log(req.get_session(), &task).ok();
+            generate_operation_task_addtion_log(req.session(), &task).ok();
         send_option_operation_log_pair(operation_log_pair_option).await;
 
         let f_result =
@@ -132,8 +132,7 @@ pub async fn pre_update_task(req: &Request,
                              -> Result<(), CommonError> {
     let task_id = task.id;
     let conn = pool.get()?;
-    let operation_log_pair_option =
-        generate_operation_task_modify_log(req.get_session(), &task).ok();
+    let operation_log_pair_option = generate_operation_task_modify_log(req.session(), &task).ok();
     send_option_operation_log_pair(operation_log_pair_option).await;
 
     let task_binds_pair = pre_update_task_row(conn, task, binding_ids).await?;
@@ -357,7 +356,7 @@ async fn delete_task(req: &Request,
     use db::schema::{task, task_bind};
 
     let operation_log_pair_option =
-        generate_operation_task_delete_log(req.get_session(),
+        generate_operation_task_delete_log(req.session(),
                                            &CommonTableRecord::default().set_id(task_id)).ok();
     send_option_operation_log_pair(operation_log_pair_option).await;
 
@@ -427,7 +426,7 @@ async fn pre_run_task(req: &Request,
     use state::task::ScheduleType;
 
     let operation_log_pair_option = generate_operation_task_modify_log(
-        req.get_session(),
+        req.session(),
         &CommonTableRecord::default().set_id(task_id).set_description("Run task"),
     )
     .ok();
@@ -486,7 +485,7 @@ async fn run_centralized_task(req: &Request,
                                    (String, String))>)
                               -> Result<(), CommonError> {
     use actuator::actuator_client::ActuatorClient;
-    use actuator::{Task, UnifiedResponseMessagesForGrpc};
+    use actuator::{RecordId, Task};
     use tonic::transport::channel::Endpoint;
 
     let delay_timer =
@@ -504,12 +503,12 @@ async fn run_centralized_task(req: &Request,
     let task = task_builder.spawn(move |context| {
                    if let Ok(conn) = pool.get() {
                        let task_handler = tokio_spawn(async move {
-                           let  tasks : JoinAll<_> = get_executor_token_by_id(task_id, conn).await?.into_iter().map(|(task_package, (host,token))|{
+                           let  tasks : JoinAll<_> = get_executor_token_by_id(task_id, conn).await?.into_iter().map(|(task_package, (host,_token))|{
 
                             let delicate_utils_task::TaskPackage{
                                 id, command,timeout, ..
                             } = task_package;
-                            let task = Task::default().set_task_id(id as u64).set_command(command);
+                            let task = Task::default().set_task_id(id).set_command(command);
 
                             async move {
                                 let channel = Endpoint::from_shared(host).map_err(|e|{
@@ -521,7 +520,7 @@ async fn run_centralized_task(req: &Request,
                                     CommonError::DisPass(e.to_string())
                                 })?;
 
-                                Result::<UnifiedResponseMessagesForGrpc,CommonError>::Ok(resp.into_inner())
+                                Result::<RecordId,CommonError>::Ok(resp.into_inner())
                             }
 
                            }).collect();
@@ -562,7 +561,7 @@ async fn pre_operate_task(req: &Request,
     let conn = pool.get()?;
 
     let operation_log_pair_option = generate_operation_task_modify_log(
-        req.get_session(),
+        req.session(),
         &CommonTableRecord::default().set_id(task_id).set_description(action),
     )
     .ok();

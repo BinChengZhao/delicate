@@ -19,7 +19,7 @@ pub async fn pre_create_task(signed_task_package: SignedTaskPackage,
                              executor_conf: Data<&Arc<ExecutorSecurityConf>>)
                              -> Result<(), CommonError> {
     info!("pre_create_task: {}", &signed_task_package.task_package);
-    let guard = executor_conf.get_bind_scheduler_token_ref().await;
+    let guard = executor_conf.bind_scheduler_token_ref().await;
     let token = guard.as_ref().map(|s| s.deref());
     let task = signed_task_package.get_task_package_after_verify(token)
                                   .map(TryInto::<Task>::try_into)??;
@@ -44,7 +44,7 @@ pub async fn pre_update_task(signed_task_package: SignedTaskPackage,
                              executor_conf: Data<&Arc<ExecutorSecurityConf>>)
                              -> Result<(), CommonError> {
     info!("pre_update_task: {}", &signed_task_package.task_package);
-    let guard = executor_conf.get_bind_scheduler_token_ref().await;
+    let guard = executor_conf.bind_scheduler_token_ref().await;
     let token = guard.as_ref().map(|s| s.deref());
     let task = signed_task_package.get_task_package_after_verify(token)
                                   .map(TryInto::<Task>::try_into)??;
@@ -69,7 +69,7 @@ pub async fn pre_remove_task(signed_task_unit: SignedTaskUnit,
                              -> Result<(), CommonError> {
     info!("pre_remove_task: {}", &signed_task_unit);
 
-    let guard = executor_conf.get_bind_scheduler_token_ref().await;
+    let guard = executor_conf.bind_scheduler_token_ref().await;
     let token = guard.as_ref().map(|s| s.deref());
     let task_unit = signed_task_unit.get_task_unit_after_verify(token)?;
     Ok(shared_delay_timer.remove_task(task_unit.task_id as u64)?)
@@ -91,7 +91,7 @@ pub async fn pre_advance_task(signed_task_unit: SignedTaskUnit,
                               executor_conf: Data<&Arc<ExecutorSecurityConf>>)
                               -> Result<(), CommonError> {
     info!("pre_advance_task: {}", &signed_task_unit);
-    let guard = executor_conf.get_bind_scheduler_token_ref().await;
+    let guard = executor_conf.bind_scheduler_token_ref().await;
     let token = guard.as_ref().map(|s| s.deref());
     let task_unit = signed_task_unit.get_task_unit_after_verify(token)?;
     Ok(shared_delay_timer.advance_task(task_unit.task_id as u64)?)
@@ -114,7 +114,7 @@ pub async fn pre_cancel_task(signed_cancel_task_record: SignedCancelTaskRecord,
                              -> Result<(), CommonError> {
     info!("pre_cancel_task: {}", &signed_cancel_task_record);
 
-    let guard = executor_conf.get_bind_scheduler_token_ref().await;
+    let guard = executor_conf.bind_scheduler_token_ref().await;
     let token = guard.as_ref().map(|s| s.deref());
     let cancel_task_record = signed_cancel_task_record.get_cancel_task_record_after_verify(token)?;
     Ok(shared_delay_timer.cancel_task(cancel_task_record.task_id as u64,
@@ -135,7 +135,7 @@ async fn health_screen(req: &Request,
                        executor_conf: Data<&Arc<ExecutorSecurityConf>>,
                        system_mirror: Data<&Arc<SystemMirror>>)
                        -> Json<UnifiedResponseMessages<HealthCheckPackage>> {
-    let guard = executor_conf.get_bind_scheduler_token_ref().await;
+    let guard = executor_conf.bind_scheduler_token_ref().await;
     let token = guard.as_ref().map(|s| s.deref());
 
     let verify_result = signed_health_screen_unit.get_health_screen_unit_after_verify(token);
@@ -145,7 +145,7 @@ async fn health_screen(req: &Request,
 
         let system_snapshot = system_mirror.refresh_all().await;
         let bind_request =
-            executor_conf.get_bind_scheduler_inner_ref().await.clone().unwrap_or_default();
+            executor_conf.bind_scheduler_inner_ref().await.clone().unwrap_or_default();
 
         let health_check_package = HealthCheckPackage { system_snapshot, bind_request };
         return Json(UnifiedResponseMessages::<HealthCheckPackage>::success_with_data(
@@ -185,8 +185,8 @@ async fn bind_executor(Json(request_bind_scheduler): Json<SignedBindRequest>,
 
         shared_delay_timer.update_id_generator_conf(machine_id as i32, node_id as i32);
 
-        *security_conf.get_bind_scheduler_inner_mut().await = Some(bind_request);
-        *security_conf.get_bind_scheduler_token_mut().await = token.clone();
+        *security_conf.bind_scheduler_inner_mut().await = Some(bind_request);
+        *security_conf.bind_scheduler_token_mut().await = token.clone();
 
         let bind_response = BindResponse { time: get_timestamp() as i64, token }
             .encrypt_self(security_conf.get_rsa_public_key());
@@ -323,14 +323,14 @@ async fn fresh_scheduler_conf(shared_security_conf: &ExecutorSecurityConf,
                               token: &mut Option<String>,
                               scheduler: &mut Option<BindRequest>) {
     {
-        let scheduler_token = shared_security_conf.get_bind_scheduler_token_ref().await;
+        let scheduler_token = shared_security_conf.bind_scheduler_token_ref().await;
         if scheduler_token.as_ref() != token.as_ref() {
             token.clone_from(&scheduler_token);
         }
     }
 
     {
-        let fresh_scheduler = shared_security_conf.get_bind_scheduler_inner_ref().await;
+        let fresh_scheduler = shared_security_conf.bind_scheduler_inner_ref().await;
         let fresh_scheduler_time = fresh_scheduler.as_ref().map(|s| s.time);
         let scheduler_time = scheduler.as_ref().map(|s| s.time);
 

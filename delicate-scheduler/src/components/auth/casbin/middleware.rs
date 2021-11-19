@@ -98,7 +98,7 @@ impl<E: Endpoint> Endpoint for CasbinAuthMiddleware<E> {
         let enforcer = req.extensions()
                           .get::<Arc<AsyncRwLock<Enforcer>>>()
                           .expect("Casbin's enforcer acquisition failed");
-        let session = req.get_session();
+        let session = req.session();
         let path = req.uri().path().to_string();
         let auth_part = path.split('/').into_iter().collect::<Vec<&str>>();
 

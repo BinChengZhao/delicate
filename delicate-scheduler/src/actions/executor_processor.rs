@@ -16,8 +16,7 @@ async fn create_executor_processor(req: &Request,
                                    pool: Data<&Arc<db::ConnectionPool>>)
                                    -> impl IntoResponse {
     let operation_log_pair_option =
-        generate_operation_executor_processor_addtion_log(req.get_session(), &executor_processor)
-            .ok();
+        generate_operation_executor_processor_addtion_log(req.session(), &executor_processor).ok();
     send_option_operation_log_pair(operation_log_pair_option).await;
 
     if let Ok(conn) = pool.get() {
@@ -84,8 +83,7 @@ async fn update_executor_processor(req: &Request,
                                    pool: Data<&Arc<db::ConnectionPool>>)
                                    -> impl IntoResponse {
     let operation_log_pair_option =
-        generate_operation_executor_processor_modify_log(req.get_session(), &executor_processor)
-            .ok();
+        generate_operation_executor_processor_modify_log(req.session(), &executor_processor).ok();
     send_option_operation_log_pair(operation_log_pair_option).await;
 
     if let Ok(conn) = pool.get() {
@@ -112,7 +110,7 @@ async fn delete_executor_processor(req: &Request,
     use db::schema::executor_processor::dsl::*;
 
     let operation_log_pair_option = generate_operation_executor_processor_delete_log(
-        req.get_session(),
+        req.session(),
         &CommonTableRecord::default().set_id(executor_processor_id),
     )
     .ok();
@@ -181,8 +179,8 @@ async fn activate_executor(req: &Request,
         req.extensions().get::<RequestClient>().expect("Missing Components `RequestClient`");
     let url = "http://".to_string() + (host.deref()) + "/api/executor/bind";
 
-    let private_key = scheduler.get_app_security_key();
-    let scheduler_host = scheduler.get_app_host_name().clone();
+    let private_key = scheduler.app_security_key();
+    let scheduler_host = scheduler.app_host_name().clone();
     let signed_scheduler =
         service_binding::BindRequest::default().set_scheduler_host(scheduler_host)
                                                .set_executor_processor_id(id)

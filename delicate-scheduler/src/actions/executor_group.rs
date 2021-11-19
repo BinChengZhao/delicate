@@ -16,7 +16,7 @@ async fn create_executor_group(req: &Request,
     use db::schema::executor_group;
 
     let operation_log_pair_option =
-        generate_operation_executor_group_addtion_log(req.get_session(), &executor_group).ok();
+        generate_operation_executor_group_addtion_log(req.session(), &executor_group).ok();
     send_option_operation_log_pair(operation_log_pair_option).await;
 
     if let Ok(conn) = pool.get() {
@@ -28,8 +28,8 @@ async fn create_executor_group(req: &Request,
                        }).await;
 
         let id = f_result.map(Into::<UnifiedResponseMessages<u64>>::into).unwrap_or_else(|e| {
-            UnifiedResponseMessages::<u64>::error().customized_error_msg(e.to_string())
-        });
+        UnifiedResponseMessages::<u64>::error().customized_error_msg(e.to_string())
+    });
 
         return Json(id);
     }
@@ -135,7 +135,7 @@ async fn update_executor_group(req: &Request,
                                pool: Data<&Arc<db::ConnectionPool>>)
                                -> impl IntoResponse {
     let operation_log_pair_option =
-        generate_operation_executor_group_modify_log(req.get_session(), &executor_group).ok();
+        generate_operation_executor_group_modify_log(req.session(), &executor_group).ok();
     send_option_operation_log_pair(operation_log_pair_option).await;
 
     if let Ok(conn) = pool.get() {
@@ -162,7 +162,7 @@ async fn delete_executor_group(req: &Request,
     use db::schema::executor_group::dsl::*;
 
     let operation_log_pair_option = generate_operation_executor_group_delete_log(
-        req.get_session(),
+        req.session(),
         &CommonTableRecord::default().set_id(executor_group_id),
     )
     .ok();

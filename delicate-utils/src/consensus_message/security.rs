@@ -6,7 +6,7 @@ pub trait SecurityRsaKey<T: TryFrom<pem::Pem>>
     where InitSchedulerError: From<<T as std::convert::TryFrom<pem::Pem>>::Error>
 {
     /// Get delicate-executor's security key from env.
-    fn get_app_rsa_key(key_name: &str) -> Result<T, InitSchedulerError> {
+    fn app_rsa_key(key_name: &str) -> Result<T, InitSchedulerError> {
         let key_path =
             env::var_os(key_name).ok_or_else(|| {
                                      InitSchedulerError::MisEnvVar(String::from(key_name))
@@ -53,9 +53,9 @@ pub struct SchedulerSecurityConf {
 impl Default for SchedulerSecurityConf {
     fn default() -> Self {
         let cookie_conf = CookieConf::default();
-        let security_level = SecurityLevel::get_app_security_level();
+        let security_level = SecurityLevel::app_security_level();
         let rsa_private_key =
-            SecurityeKey::<RSAPrivateKey>::get_app_rsa_key("DELICATE_SECURITY_PRIVATE_KEY");
+            SecurityeKey::<RSAPrivateKey>::app_rsa_key("DELICATE_SECURITY_PRIVATE_KEY");
 
         if matches!(security_level, SecurityLevel::Normal if rsa_private_key.is_err()) {
             error!("{}",
@@ -68,7 +68,7 @@ impl Default for SchedulerSecurityConf {
         }
 
         Self { cookie_conf,
-               security_level: SecurityLevel::get_app_security_level(),
+               security_level: SecurityLevel::app_security_level(),
                rsa_private_key: rsa_private_key.map(SecurityeKey).ok() }
     }
 }
@@ -109,19 +109,19 @@ impl ExecutorSecurityConf {
         self.security_level.generate_token()
     }
 
-    pub async fn get_bind_scheduler_inner_ref(&self) -> RwLockReadGuard<'_, Option<BindRequest>> {
+    pub async fn bind_scheduler_inner_ref(&self) -> RwLockReadGuard<'_, Option<BindRequest>> {
         self.bind_scheduler.inner.read().await
     }
 
-    pub async fn get_bind_scheduler_inner_mut(&self) -> RwLockWriteGuard<'_, Option<BindRequest>> {
+    pub async fn bind_scheduler_inner_mut(&self) -> RwLockWriteGuard<'_, Option<BindRequest>> {
         self.bind_scheduler.inner.write().await
     }
 
-    pub async fn get_bind_scheduler_token_ref(&self) -> RwLockReadGuard<'_, Option<String>> {
+    pub async fn bind_scheduler_token_ref(&self) -> RwLockReadGuard<'_, Option<String>> {
         self.bind_scheduler.token.read().await
     }
 
-    pub async fn get_bind_scheduler_token_mut(&self) -> RwLockWriteGuard<'_, Option<String>> {
+    pub async fn bind_scheduler_token_mut(&self) -> RwLockWriteGuard<'_, Option<String>> {
         self.bind_scheduler.token.write().await
     }
 }
@@ -137,9 +137,9 @@ impl Default for BindScheduler {
 
 impl Default for ExecutorSecurityConf {
     fn default() -> Self {
-        let security_level = SecurityLevel::get_app_security_level();
+        let security_level = SecurityLevel::app_security_level();
         let rsa_public_key =
-            SecurityeKey::<RSAPublicKey>::get_app_rsa_key("DELICATE_SECURITY_PUBLIC_KEY");
+            SecurityeKey::<RSAPublicKey>::app_rsa_key("DELICATE_SECURITY_PUBLIC_KEY");
 
         if matches!(security_level, SecurityLevel::Normal if rsa_public_key.is_err()) {
             error!("{}",
@@ -153,7 +153,7 @@ impl Default for ExecutorSecurityConf {
 
         let bind_scheduler = BindScheduler::default();
 
-        Self { security_level: SecurityLevel::get_app_security_level(),
+        Self { security_level: SecurityLevel::app_security_level(),
                rsa_public_key: rsa_public_key.map(SecurityeKey).ok(),
                bind_scheduler }
     }
@@ -178,7 +178,7 @@ pub enum SecurityLevel {
 
 impl SecurityLevel {
     /// Get delicate-scheduler's security level from env.
-    pub fn get_app_security_level() -> Self {
+    pub fn app_security_level() -> Self {
         env::var_os("DELICATE_SECURITY_LEVEL").map_or(SecurityLevel::default(), |e| {
                                                   e.to_str()
                 .map(|s| u16::from_str(s).ok())

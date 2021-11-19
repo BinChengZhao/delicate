@@ -21,11 +21,11 @@ pub trait SeekTableId {
 }
 
 pub trait GetSession {
-    fn get_session(&self) -> &Session;
+    fn session(&self) -> &Session;
 }
 
 impl GetSession for Request {
-    fn get_session(&self) -> &Session {
+    fn session(&self) -> &Session {
         self.extensions()
             .get::<Session>()
             .expect("To use the `Session` extractor, the `CookieSession` middleware is required.")

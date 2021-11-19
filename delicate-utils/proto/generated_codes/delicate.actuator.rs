@@ -1,11 +1,13 @@
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Task {
-    #[prost(uint64, tag = "1")]
-    pub id: u64,
+    #[prost(int64, tag = "1")]
+    pub id: i64,
     #[prost(string, tag = "2")]
     pub name: ::prost::alloc::string::String,
     #[prost(string, tag = "3")]
     pub command: ::prost::alloc::string::String,
+    #[prost(uint64, tag = "4")]
+    pub timeout: u64,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct RecordId {
@@ -83,11 +85,9 @@ pub mod actuator_client {
             self.inner = self.inner.accept_gzip();
             self
         }
-        pub async fn run_task(
-            &mut self,
-            request: impl tonic::IntoRequest<super::Task>)
-            -> Result<tonic::Response<super::UnifiedResponseMessagesForGrpc>, tonic::Status>
-        {
+        pub async fn run_task(&mut self,
+                              request: impl tonic::IntoRequest<super::Task>)
+                              -> Result<tonic::Response<super::RecordId>, tonic::Status> {
             self.inner.ready().await.map_err(|e| {
                                          tonic::Status::new(tonic::Code::Unknown,
                                                             format!("Service was not ready: {}",
@@ -171,10 +171,9 @@ pub mod actuator_server {
     #[doc = "Generated trait containing gRPC methods that should be implemented for use with ActuatorServer."]
     #[async_trait]
     pub trait Actuator: Send + Sync + 'static {
-        async fn run_task(
-            &self,
-            request: tonic::Request<super::Task>)
-            -> Result<tonic::Response<super::UnifiedResponseMessagesForGrpc>, tonic::Status>;
+        async fn run_task(&self,
+                          request: tonic::Request<super::Task>)
+                          -> Result<tonic::Response<super::RecordId>, tonic::Status>;
         async fn cancel_task(
             &self,
             request: tonic::Request<super::RecordId>)
@@ -248,7 +247,7 @@ pub mod actuator_server {
                     #[allow(non_camel_case_types)]
                     struct RunTaskSvc<T: Actuator>(pub Arc<T>);
                     impl<T: Actuator> tonic::server::UnaryService<super::Task> for RunTaskSvc<T> {
-                        type Response = super::UnifiedResponseMessagesForGrpc;
+                        type Response = super::RecordId;
                         type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
                         fn call(&mut self, request: tonic::Request<super::Task>) -> Self::Future {
                             let inner = self.0.clone();

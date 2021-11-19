@@ -61,7 +61,7 @@ pub(crate) fn init_admin_account() {
                      r"`INITIAL_ADMINISTRATOR_USER_NAME` may not set in the environment variable: {}
         The default login user-name will as `admin`  .
         Please ignore this error if you have set or initialized delicate.",
-                     e.to_string()
+                     e
             );
             "admin".into()
         });
@@ -72,7 +72,7 @@ pub(crate) fn init_admin_account() {
                      r"`INITIAL_ADMINISTRATOR_PASSWORD` may not set in the environment variable: {}
         The default login user-password will as `admin`  .
         Please ignore this error if you have set or initialized delicate.",
-                     e.to_string()
+                     e
             );
 
             "admin".into()

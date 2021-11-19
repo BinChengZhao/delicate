@@ -5,7 +5,7 @@ use crate::uniform_data::Trial;
 include!("../../proto/generated_codes/delicate.actuator.rs");
 
 impl Task {
-    pub fn set_task_id(mut self, id: u64) -> Self {
+    pub fn set_task_id(mut self, id: i64) -> Self {
         self.id = id;
         self
     }

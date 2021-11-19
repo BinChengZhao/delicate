@@ -141,7 +141,7 @@ pub trait SecurityRsaKey<T: TryFrom<pem::Pem>>
     where InitSchedulerError: From<<T as std::convert::TryFrom<pem::Pem>>::Error>
 {
     /// Get delicate-executor's security key from env.
-    fn get_app_rsa_key(key_name: &str) -> Result<T, InitSchedulerError> {
+    fn app_rsa_key(key_name: &str) -> Result<T, InitSchedulerError> {
         let key_path =
             env::var_os(key_name).ok_or_else(|| {
                                      InitSchedulerError::MisEnvVar(String::from(key_name))
@@ -168,9 +168,9 @@ pub struct SchedulerSecurityConf {
 
 impl Default for SchedulerSecurityConf {
     fn default() -> Self {
-        let security_level = SecurityLevel::get_app_security_level();
+        let security_level = SecurityLevel::app_security_level();
         let rsa_private_key =
-            SecurityeKey::<RSAPrivateKey>::get_app_rsa_key("DELICATE_SECURITY_PRIVATE_KEY");
+            SecurityeKey::<RSAPrivateKey>::app_rsa_key("DELICATE_SECURITY_PRIVATE_KEY");
 
         if matches!(security_level, SecurityLevel::Normal if rsa_private_key.is_err()) {
             error!("{}",
@@ -182,7 +182,7 @@ impl Default for SchedulerSecurityConf {
             unreachable!("When the security level is Normal, the initialization `delicate-scheduler` must contain the secret key (DELICATE_SECURITY_PRIVATE_KEY)");
         }
 
-        Self { security_level: SecurityLevel::get_app_security_level(),
+        Self { security_level: SecurityLevel::app_security_level(),
                rsa_private_key: rsa_private_key.map(SecurityeKey).ok() }
     }
 }
@@ -200,7 +200,7 @@ pub enum SecurityLevel {
 
 impl SecurityLevel {
     /// Get delicate-scheduler's security level from env.
-    pub fn get_app_security_level() -> Self {
+    pub fn app_security_level() -> Self {
         env::var_os("DELICATE_SECURITY_LEVEL").map_or(SecurityLevel::default(), |e| {
                                                   e.to_str()
                 .map(|s| u16::from_str(s).ok())

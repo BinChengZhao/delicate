@@ -122,7 +122,7 @@ impl<T: UniformData + Default, E: std::error::Error> From<Result<T, E>>
             Ok(d) => Self::success_with_data(d),
             Err(e) => {
                 let message = format!("{} ({})",
-                                      e.to_string(),
+                                      e,
                                       e.source().map(|s| { s.to_string() }).unwrap_or_default());
                 Self::error().customized_error_msg(message)
             },
@@ -136,9 +136,8 @@ impl<T: UniformData + Default, E: std::error::Error> From<Result<Result<T, E>, E
     #[inline(always)]
     fn from(value: Result<Result<T, E>, E>) -> Self {
         let f = |e: E| {
-            let message = format!("{} ({})",
-                                  e.to_string(),
-                                  e.source().map(|s| { s.to_string() }).unwrap_or_default());
+            let message =
+                format!("{} ({})", e, e.source().map(|s| { s.to_string() }).unwrap_or_default());
             Self::error().customized_error_msg(message)
         };
         match value {

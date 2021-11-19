@@ -4,11 +4,11 @@ use std::{
     ops::Deref,
 };
 
-pub use actuator::{actuator_client::ActuatorClient, Task};
+pub use actuator::{actuator_client::ActuatorClient, RecordId, Task};
 pub use delicate_utils::prelude::*;
 pub use prost::Message;
 pub use prost_types::Any;
-use tokio_stream::StreamExt;
+pub use tokio_stream::StreamExt;
 pub use tonic::{transport::Server, Request, Response, Status};
 pub use tracing::{debug, info, Level};
 pub use tracing_subscriber::FmtSubscriber;
@@ -20,9 +20,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     init_logger();
 
     let mut action: String;
-    let mut id: u64;
+    let mut id: i64;
     let mut name: String;
     let mut command: String;
+    let timeout = 60;
     let mut client = ActuatorClient::connect("http://[::1]:8899").await?;
     let stdin = io::stdin();
     let buffer = BufReader::new(stdin);
@@ -34,7 +35,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         info!("");
         info!("Please operate action:");
         action = lines.next().expect("").expect("");
-        info!("Please operate task-id:");
+        info!("Please operate task-id or record-id :");
         id = lines.next().expect("").expect("").parse().expect("");
 
         info!("Please operate task-name:");
@@ -45,17 +46,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         match action.deref() {
             "create" => {
-                let task = Task { id, name, command };
+                let task = Task { id, name, command, timeout };
 
                 let response = client.run_task(Request::new(task)).await?;
 
                 debug!("{:?}", response.get_ref());
             },
 
-            "cancel" => {},
+            "cancel" => {
+                let response = client.cancel_task(Request::new(RecordId { id })).await?;
+
+                debug!("{:?}", response.get_ref());
+            },
 
             "keep" => {
-                let task = Task { id, name, command };
+                let task = Task { id, name, command, timeout };
 
                 let response = client.keep_running_task(Request::new(task)).await?;
 

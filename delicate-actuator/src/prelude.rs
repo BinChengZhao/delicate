@@ -4,6 +4,7 @@ pub use std::pin::Pin;
 pub use std::str::FromStr;
 pub use std::sync::atomic::{AtomicUsize, Ordering};
 pub use std::sync::Arc;
+pub use std::time::Duration;
 
 pub use actuator::actuator_server::{Actuator, ActuatorServer};
 pub use actuator::{
@@ -26,6 +27,7 @@ pub use tokio::io::{AsyncBufReadExt, AsyncReadExt, BufReader};
 pub use tokio::process::{Child as TokioChild, ChildStdout, Command as TokioCommand};
 pub use tokio::spawn as tokio_spawn;
 pub use tokio::task::JoinHandle;
+pub use tokio::time::sleep as async_sleep;
 pub use tokio_stream::wrappers::LinesStream;
 pub use tokio_stream::{Stream, StreamExt, StreamMap};
 pub use tonic::{transport::Server, Request, Response, Status, Streaming};

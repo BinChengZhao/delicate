@@ -9,21 +9,21 @@ pub(crate) struct SchedulerMetaInfo {
 }
 
 impl SchedulerMetaInfo {
-    pub(crate) fn get_app_host_name(&self) -> &String {
+    pub(crate) fn app_host_name(&self) -> &String {
         &self.domain
     }
 
     #[allow(dead_code)]
-    pub(crate) fn get_app_security_level(&self) -> SecurityLevel {
+    pub(crate) fn app_security_level(&self) -> SecurityLevel {
         self.security_conf.security_level
     }
 
     #[allow(dead_code)]
-    pub(crate) fn get_app_security_conf(&self) -> &SchedulerSecurityConf {
+    pub(crate) fn app_security_conf(&self) -> &SchedulerSecurityConf {
         &self.security_conf
     }
 
-    pub(crate) fn get_app_security_key(&self) -> Option<&RSAPrivateKey> {
+    pub(crate) fn app_security_key(&self) -> Option<&RSAPrivateKey> {
         self.security_conf.rsa_private_key.as_ref().map(|k| &k.0)
     }
 }

@@ -39,7 +39,7 @@ async fn create_user(req: &Request,
     let new_user = Into::<model::NewUser>::into(&user);
 
     let operation_log_pair_option =
-        generate_operation_user_addtion_log(req.get_session(), &new_user).ok();
+        generate_operation_user_addtion_log(req.session(), &new_user).ok();
     send_option_operation_log_pair(operation_log_pair_option).await;
 
     if let Ok(conn) = pool.get() {
@@ -114,7 +114,7 @@ async fn update_user(req: &Request,
                      pool: Data<&Arc<db::ConnectionPool>>)
                      -> impl IntoResponse {
     let operation_log_pair_option =
-        generate_operation_user_modify_log(req.get_session(), &user_value).ok();
+        generate_operation_user_modify_log(req.session(), &user_value).ok();
     send_option_operation_log_pair(operation_log_pair_option).await;
 
     if let Ok(conn) = pool.get() {
@@ -138,7 +138,7 @@ async fn change_password(req: &Request,
                          Json(user_value): Json<model::UserChangePassword>,
                          pool: Data<&Arc<db::ConnectionPool>>)
                          -> impl IntoResponse {
-    let session = req.get_session();
+    let session = req.session();
     let user_id = session.get::<u64>("user_id");
 
     if user_id.is_none() {
@@ -181,7 +181,7 @@ async fn delete_user(req: &Request,
                      pool: Data<&Arc<db::ConnectionPool>>)
                      -> impl IntoResponse {
     let operation_log_pair_option = generate_operation_user_delete_log(
-        req.get_session(),
+        req.session(),
         &CommonTableRecord::default().set_id(user_id as i64),
     )
     .ok();
@@ -266,7 +266,7 @@ async fn pre_login_user(req: &Request,
 fn save_session(req: &Request,
                 (_, user): (model::UserAuth, model::User))
                 -> Result<(), CommonError> {
-    let session = req.get_session();
+    let session = req.session();
 
     session.set("login_time", get_timestamp());
     session.set("user_id", user.id);
@@ -295,7 +295,7 @@ async fn check_user(req: &Request, pool: Data<&Arc<db::ConnectionPool>>) -> impl
 async fn pre_check_user(req: &Request,
                         pool: Data<&Arc<db::ConnectionPool>>)
                         -> Result<model::User, CommonError> {
-    let session = req.get_session();
+    let session = req.session();
     let conn = pool.get()?;
     let user_id = session.get::<u64>("user_id")
                          .ok_or_else(|| CommonError::DisPass("Without set `user_id` .".into()))?;
@@ -314,7 +314,7 @@ async fn pre_check_user(req: &Request,
 #[handler]
 
 async fn logout_user(req: &Request) -> impl IntoResponse {
-    let session = req.get_session();
+    let session = req.session();
     session.clear();
     UnifiedResponseMessages::<()>::success()
 }
@@ -353,7 +353,7 @@ async fn append_role(req: &Request,
                      Json(user_and_roles): Json<UserAndRoles>)
                      -> impl IntoResponse {
     let operation_log_pair_option =
-        generate_operation_user_role_addtion_log(req.get_session(), &user_and_roles).ok();
+        generate_operation_user_role_addtion_log(req.session(), &user_and_roles).ok();
     send_option_operation_log_pair(operation_log_pair_option).await;
 
     let UserAndRoles { user_name, mut operate_roles } = user_and_roles;
@@ -385,7 +385,7 @@ async fn delete_role(req: &Request,
                      Json(user_and_roles): Json<UserAndRoles>)
                      -> impl IntoResponse {
     let operation_log_pair_option =
-        generate_operation_user_role_delete_log(req.get_session(), &user_and_roles).ok();
+        generate_operation_user_role_delete_log(req.session(), &user_and_roles).ok();
     send_option_operation_log_pair(operation_log_pair_option).await;
 
     let UserAndRoles { user_name, mut operate_roles } = user_and_roles;
@@ -419,8 +419,7 @@ async fn append_permission(req: &Request,
                            Json(user_and_permissions): Json<UserAndPermissions>)
                            -> impl IntoResponse {
     let operation_log_pair_option =
-        generate_operation_user_permission_addtion_log(req.get_session(), &user_and_permissions)
-            .ok();
+        generate_operation_user_permission_addtion_log(req.session(), &user_and_permissions).ok();
     send_option_operation_log_pair(operation_log_pair_option).await;
 
     let UserAndPermissions { user_name, operate_permissions } = user_and_permissions;
@@ -438,8 +437,7 @@ async fn delete_permission(req: &Request,
                            Json(user_and_permissions): Json<UserAndPermissions>)
                            -> impl IntoResponse {
     let operation_log_pair_option =
-        generate_operation_user_permission_delete_log(req.get_session(), &user_and_permissions)
-            .ok();
+        generate_operation_user_permission_delete_log(req.session(), &user_and_permissions).ok();
     send_option_operation_log_pair(operation_log_pair_option).await;
 
     let UserAndPermissions { user_name, operate_permissions } = user_and_permissions;
