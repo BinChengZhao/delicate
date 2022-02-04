@@ -94,13 +94,10 @@ fn init_logger() -> FileLogWriterHandle {
     let (file_writer, _fw_handle) =
         FileLogWriter::builder(FileSpec::default()).rotate(// If the program runs long enough,
                 Criterion::Age(Age::Day), //
-                // 
                 // - create a new file every day
                 Naming::Timestamps,
-                // 
                 // - let the rotated files have a timestamp in their name
-                Cleanup::KeepLogFiles(15) /* 
-                                           * - keep at most seven log files */)
+                Cleanup::KeepLogFiles(15) /* - keep at most seven log files */)
         .write_mode(WriteMode::Async)
         .try_build_with_handle()
         .expect("flexi_logger init failed");

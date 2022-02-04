@@ -17,11 +17,10 @@ async fn show_one_day_tasks_state(pool: Data<&Arc<db::ConnectionPool>>) -> impl 
                 let raw_past_day = now - ChronoDuration::days(1);
                 let start_hour = datetime.hour() + 1;
 
-                let past_day = raw_past_day.with_hour(start_hour)
-                                           .map(|t| t.with_minute(0).map(|t| t.with_second(0)))
-                                           .flatten()
-                                           .flatten()
-                                           .unwrap_or(raw_past_day);
+                let past_day =
+                    raw_past_day.with_hour(start_hour)
+                                .and_then(|t| t.with_minute(0).and_then(|t| t.with_second(0)))
+                                .unwrap_or(raw_past_day);
 
                 let hours_range: Vec<u32> = (start_hour..).take(24).map(|n| n % 24).collect();
 

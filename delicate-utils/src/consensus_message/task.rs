@@ -192,10 +192,18 @@ impl<'a> TryFrom<&'a TaskPackage> for TaskBuilder<'a> {
 impl TryFrom<TaskPackage> for Task {
     type Error = CommonError;
     fn try_from(task_package: TaskPackage) -> Result<Self, Self::Error> {
-        let task_builder: TaskBuilder = (&task_package).try_into()?;
+        let task_builder: TaskBuilder = TryFrom::try_from(&task_package)?;
         let command = task_package.command.clone();
 
-        let task = task_builder.spawn(unblock_process_task_fn(command))?;
+        let task_id = task_package.id;
+        let task = task_builder.spawn_async_routine(move || {
+                                   let shell_command = command.clone();
+                                   async move {
+                                       #[allow(deprecated)]
+                           delay_timer::utils::functions::unblock_process_task_fn(shell_command,
+                                                                           task_id as u64).await;
+                                   }
+                               })?;
 
         Ok(task)
     }

@@ -188,8 +188,8 @@ async fn bind_executor(Json(request_bind_scheduler): Json<SignedBindRequest>,
         *security_conf.bind_scheduler_inner_mut().await = Some(bind_request);
         *security_conf.bind_scheduler_token_mut().await = token.clone();
 
-        let bind_response = BindResponse { time: get_timestamp() as i64, token }
-            .encrypt_self(security_conf.get_rsa_public_key());
+        let bind_response = BindResponse { time: get_timestamp() as i64,
+                                           token }.encrypt_self(security_conf.get_rsa_public_key());
 
         let response: UnifiedResponseMessages<EncryptedBindResponse> = Into::into(bind_response);
         return Json(response);

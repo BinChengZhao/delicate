@@ -93,7 +93,6 @@ impl From<(QueryNewUser, u64)> for NewUserAuths {
             user_id,
         ): (QueryNewUser, u64),
     ) -> NewUserAuths {
-        let user_auth_arr: [NewUserAuth; 3];
 
         let encrypted_certificate = get_encrypted_certificate_by_raw_certificate(&certificate);
 
@@ -119,7 +118,7 @@ impl From<(QueryNewUser, u64)> for NewUserAuths {
             status: state::user_auth::State::Health as i8,
         };
 
-        user_auth_arr = [mobile_auth, email_auth, username_auth];
+        let user_auth_arr: [NewUserAuth; 3] = [mobile_auth, email_auth, username_auth];
 
         NewUserAuths(user_auth_arr)
     }

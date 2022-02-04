@@ -167,13 +167,11 @@ async fn activate_executor(req: &Request,
                                              .first(&conn)
                 }).await??;
 
-    let model::UpdateExecutorProcessor {
-        id,
-        name,
-        host,
-        machine_id,
-        ..
-    }: model::UpdateExecutorProcessor = query;
+    let model::UpdateExecutorProcessor { id,
+                                         name,
+                                         host,
+                                         machine_id,
+                                         .. }: model::UpdateExecutorProcessor = query;
 
     let request_client =
         req.extensions().get::<RequestClient>().expect("Missing Components `RequestClient`");
@@ -199,7 +197,7 @@ async fn activate_executor(req: &Request,
                       .await?
                       .into();
 
-    Ok(response?.decrypt_self(private_key)?)
+    response?.decrypt_self(private_key)
 }
 
 async fn activate_executor_row(conn: db::PoolConnection,

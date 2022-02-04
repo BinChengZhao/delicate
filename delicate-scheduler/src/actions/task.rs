@@ -369,9 +369,11 @@ async fn delete_task(req: &Request,
                            Ok(())
                        }).await;
 
-        let resp = f_result.map(Into::<UnifiedResponseMessages<()>>::into).unwrap_or_else(|e| {
-            UnifiedResponseMessages::<()>::error().customized_error_msg(e.to_string())
-        });
+        let resp =
+            f_result.map(Into::<UnifiedResponseMessages<()>>::into)
+                    .unwrap_or_else(|e| {
+                        UnifiedResponseMessages::<()>::error().customized_error_msg(e.to_string())
+                    });
         return Json(resp);
     }
 
@@ -496,48 +498,47 @@ async fn run_centralized_task(req: &Request,
                   .expect("Missing Components `DelayTimer`")
                   .clone();
 
-    let delicate_task = &task_packages[0].0;
+    let delicate_task = task_packages[0].0.clone();
     let task_id = delicate_task.id;
-    let task_builder: TaskBuilder<'_> = delicate_task.try_into()?;
+    let task_builder: TaskBuilder<'_> = (&delicate_task).try_into()?;
 
-    let task = task_builder.spawn(move |context| {
-                   if let Ok(conn) = pool.get() {
-                       let task_handler = tokio_spawn(async move {
-                           let  tasks : JoinAll<_> = get_executor_token_by_id(task_id, conn).await?.into_iter().map(|(task_package, (host,_token))|{
+    let task = task_builder.spawn_async_routine(move || {
+        let connection_pool = pool.clone();
+        async move {
+            if let Ok(conn) = connection_pool.get() {
+                    let  tasks : JoinAll<_> = get_executor_token_by_id(task_id, conn).await.map_err(|e|{
+                        error!("{}", e);
+                    }).map(|tasks|{
+
+                        tasks.into_iter().map(|(task_package, (host,_token))|{
 
                             let delicate_utils_task::TaskPackage{
                                 id, command,timeout, ..
                             } = task_package;
                             let task = Task::default().set_task_id(id).set_command(command);
+                                async move {
 
-                            async move {
-                                let channel = Endpoint::from_shared(host).map_err(|e|{
-                                    CommonError::DisPass(e.to_string())
-                                })?.timeout(Duration::from_secs(timeout as u64)).connect().await?;
-                                let mut rpc_client = ActuatorClient::new(channel);
+                                    let channel = Endpoint::from_shared(host).map_err(|e|{
+                                        CommonError::DisPass(e.to_string())
+                                    })?.timeout(Duration::from_secs(timeout as u64)).connect().await?;
 
-                               let resp = rpc_client.run_task(task).await.map_err(|e|{
-                                    CommonError::DisPass(e.to_string())
-                                })?;
+                                    let mut rpc_client = ActuatorClient::new(channel);
 
-                                Result::<RecordId,CommonError>::Ok(resp.into_inner())
-                            }
+                                    let resp = rpc_client.run_task(task).await.map_err(|e|{
+                                        CommonError::DisPass(e.to_string())
+                                    })?;
 
-                           }).collect();
+                                    Result::<RecordId,CommonError>::Ok(resp.into_inner())
+                                }
+                           }).collect()
+                    }).expect("");
 
-                           tasks.await;
+                    tasks.await;
 
+            }
 
-                           context.finishe_task(None).await;
-
-                           Result::<(), CommonError>::Ok(())
-                       });
-                       return create_delay_task_handler(task_handler);
-                   }
-
-                   error!("Not enough database resources to perform the task: {}", task_id);
-                   create_default_delay_task_handler()
-                })?;
+            error!("Not enough database resources to perform the task: {}", task_id);}
+    })?;
 
     delay_timer.add_task(task)?;
 
