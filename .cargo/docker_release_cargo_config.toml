@@ -1,0 +1,11 @@
+[target.x86_64-unknown-linux-gnu]
+rustflags = ["-Dwarnings"]
+
+[source.crates-io]
+replace-with = "rsproxy"
+
+[source.rsproxy]
+registry = "https://rsproxy.cn/crates.io-index"
+
+[registries.rsproxy]
+index = "https://rsproxy.cn/crates.io-index"

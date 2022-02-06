@@ -182,9 +182,7 @@ impl SecurityLevel {
         env::var_os("DELICATE_SECURITY_LEVEL").map_or(SecurityLevel::default(), |e| {
                                                   e.to_str()
                 .map(|s| u16::from_str(s).ok())
-                .and_then(|e| e.and_then(|e|{
-                    e.try_into().ok()
-                }))
+                .and_then(|e| e.and_then(|e| e.try_into().ok()))
                 .expect("Environment Variables `DELICATE_SECURITY_LEVEL` missed.")
                                               })
     }

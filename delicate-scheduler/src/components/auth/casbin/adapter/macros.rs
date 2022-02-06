@@ -4,10 +4,10 @@ macro_rules! eq_empty {
             use diesel::BoolExpressionMethods;
 
             diesel::dsl::sql("").bind::<diesel::sql_types::Bool, _>($v.is_empty()).or(
-                                            diesel::dsl::sql("")
-                                                .bind::<diesel::sql_types::Bool, _>(!$v.is_empty())
-                                                .and($field.eq($v)),
-                                        )
+                                    diesel::dsl::sql("")
+                                        .bind::<diesel::sql_types::Bool, _>(!$v.is_empty())
+                                        .and($field.eq($v)),
+                                )
         }
     }
     ()};

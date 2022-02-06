@@ -228,10 +228,12 @@ impl Actuator for DelicateActuator {
                          -> Result<Response<UnifiedResponseMessagesForGrpc>, Status> {
         let record_id = reqeust.into_inner();
         let (_, task_handlers) =
-            self.state()
-                .handlers_map()
-                .remove(&record_id.id)
-                .ok_or_else(||Status::unavailable(format!("There have no running task-record: {} instance to cancel.", record_id.id)))?;
+            self.state().handlers_map().remove(&record_id.id).ok_or_else(|| {
+                                                                  Status::unavailable(format!(
+                    "There have no running task-record: {} instance to cancel.",
+                    record_id.id
+                ))
+                                                              })?;
         task_handlers.cancel();
 
         Ok(Response::new(UnifiedResponseMessagesForGrpc::success()))

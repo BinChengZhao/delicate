@@ -60,11 +60,9 @@ async fn create_user(req: &Request,
                     })
             }).await;
 
-        let resp =
-            f_result.map(Into::<UnifiedResponseMessages<()>>::into)
-                    .unwrap_or_else(|e| {
-                        UnifiedResponseMessages::<()>::error().customized_error_msg(e.to_string())
-                    });
+        let resp = f_result.map(Into::<UnifiedResponseMessages<()>>::into).unwrap_or_else(|e| {
+            UnifiedResponseMessages::<()>::error().customized_error_msg(e.to_string())
+        });
         return Json(resp);
     }
 
@@ -200,11 +198,9 @@ async fn delete_user(req: &Request,
             })
                        }).await;
 
-        let resp =
-            f_result.map(Into::<UnifiedResponseMessages<()>>::into)
-                    .unwrap_or_else(|e| {
-                        UnifiedResponseMessages::<()>::error().customized_error_msg(e.to_string())
-                    });
+        let resp = f_result.map(Into::<UnifiedResponseMessages<()>>::into).unwrap_or_else(|e| {
+            UnifiedResponseMessages::<()>::error().customized_error_msg(e.to_string())
+        });
         return Json(resp);
     }
 

@@ -200,8 +200,11 @@ impl TryFrom<TaskPackage> for Task {
                                    let shell_command = command.clone();
                                    async move {
                                        #[allow(deprecated)]
-                           delay_timer::utils::functions::unblock_process_task_fn(shell_command,
-                                                                           task_id as u64).await;
+                delay_timer::utils::functions::unblock_process_task_fn(
+                    shell_command,
+                    task_id as u64,
+                )
+                .await;
                                    }
                                })?;
 

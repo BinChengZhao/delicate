@@ -53,23 +53,40 @@ pub mod actuator_client {
     impl ActuatorClient<tonic::transport::Channel> {
         #[doc = r" Attempt to create a new client by connecting to a given endpoint."]
         pub async fn connect<D>(dst: D) -> Result<Self, tonic::transport::Error>
-            where D: std::convert::TryInto<tonic::transport::Endpoint>,
-                  D::Error: Into<StdError>
+        where
+            D: std::convert::TryInto<tonic::transport::Endpoint>,
+            D::Error: Into<StdError>,
         {
             let conn = tonic::transport::Endpoint::new(dst)?.connect().await?;
             Ok(Self::new(conn))
         }
     }
     impl<T> ActuatorClient<T>
-        where T: tonic::client::GrpcService<tonic::body::BoxBody>,
-              T::ResponseBody: Body + Send + Sync + 'static,
-              T::Error: Into<StdError>,
-              <T::ResponseBody as Body>::Error: Into<StdError> + Send
+    where
+        T: tonic::client::GrpcService<tonic::body::BoxBody>,
+        T::ResponseBody: Body + Send + Sync + 'static,
+        T::Error: Into<StdError>,
+        <T::ResponseBody as Body>::Error: Into<StdError> + Send,
     {
         pub fn new(inner: T) -> Self {
             let inner = tonic::client::Grpc::new(inner);
             Self { inner }
-        }        pub fn with_interceptor < F > (inner : T , interceptor : F) -> ActuatorClient < InterceptedService < T , F >> where F : tonic :: service :: Interceptor , T : tonic :: codegen :: Service < http :: Request < tonic :: body :: BoxBody > , Response = http :: Response << T as tonic :: client :: GrpcService < tonic :: body :: BoxBody >> :: ResponseBody > > , < T as tonic :: codegen :: Service < http :: Request < tonic :: body :: BoxBody >> > :: Error : Into < StdError > + Send + Sync ,{
+        }
+        pub fn with_interceptor<F>(
+            inner: T,
+            interceptor: F,
+        ) -> ActuatorClient<InterceptedService<T, F>>
+        where
+            F: tonic::service::Interceptor,
+            T: tonic::codegen::Service<
+                http::Request<tonic::body::BoxBody>,
+                Response = http::Response<
+                    <T as tonic::client::GrpcService<tonic::body::BoxBody>>::ResponseBody,
+                >,
+            >,
+            <T as tonic::codegen::Service<http::Request<tonic::body::BoxBody>>>::Error:
+                Into<StdError> + Send + Sync,
+        {
             ActuatorClient::new(InterceptedService::new(inner, interceptor))
         }
         #[doc = r" Compress requests with `gzip`."]
@@ -85,38 +102,48 @@ pub mod actuator_client {
             self.inner = self.inner.accept_gzip();
             self
         }
-        pub async fn run_task(&mut self,
-                              request: impl tonic::IntoRequest<super::Task>)
-                              -> Result<tonic::Response<super::RecordId>, tonic::Status> {
+        pub async fn run_task(
+            &mut self,
+            request: impl tonic::IntoRequest<super::Task>,
+        ) -> Result<tonic::Response<super::RecordId>, tonic::Status> {
             self.inner.ready().await.map_err(|e| {
-                                         tonic::Status::new(tonic::Code::Unknown,
-                                                            format!("Service was not ready: {}",
-                                                                    e.into()))
-                                     })?;
+                tonic::Status::new(
+                    tonic::Code::Unknown,
+                    format!("Service was not ready: {}", e.into()),
+                )
+            })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static("/delicate.actuator.Actuator/RunTask");
             self.inner.unary(request.into_request(), path, codec).await
         }
         pub async fn cancel_task(
             &mut self,
-            request: impl tonic::IntoRequest<super::RecordId>)
-            -> Result<tonic::Response<super::UnifiedResponseMessagesForGrpc>, tonic::Status>
-        {
+            request: impl tonic::IntoRequest<super::RecordId>,
+        ) -> Result<tonic::Response<super::UnifiedResponseMessagesForGrpc>, tonic::Status> {
             self.inner.ready().await.map_err(|e| {
-                                         tonic::Status::new(tonic::Code::Unknown,
-                                                            format!("Service was not ready: {}",
-                                                                    e.into()))
-                                     })?;
+                tonic::Status::new(
+                    tonic::Code::Unknown,
+                    format!("Service was not ready: {}", e.into()),
+                )
+            })?;
             let codec = tonic::codec::ProstCodec::default();
             let path =
                 http::uri::PathAndQuery::from_static("/delicate.actuator.Actuator/CancelTask");
             self.inner.unary(request.into_request(), path, codec).await
-        }        pub async fn keep_running_task (& mut self , request : impl tonic :: IntoRequest < super :: Task > ,) -> Result < tonic :: Response < tonic :: codec :: Streaming < super :: UnifiedResponseMessagesForGrpc >> , tonic :: Status >{
+        }
+        pub async fn keep_running_task(
+            &mut self,
+            request: impl tonic::IntoRequest<super::Task>,
+        ) -> Result<
+            tonic::Response<tonic::codec::Streaming<super::UnifiedResponseMessagesForGrpc>>,
+            tonic::Status,
+        > {
             self.inner.ready().await.map_err(|e| {
-                                         tonic::Status::new(tonic::Code::Unknown,
-                                                            format!("Service was not ready: {}",
-                                                                    e.into()))
-                                     })?;
+                tonic::Status::new(
+                    tonic::Code::Unknown,
+                    format!("Service was not ready: {}", e.into()),
+                )
+            })?;
             let codec = tonic::codec::ProstCodec::default();
             let path =
                 http::uri::PathAndQuery::from_static("/delicate.actuator.Actuator/KeepRunningTask");
@@ -124,14 +151,14 @@ pub mod actuator_client {
         }
         pub async fn bind_actuator(
             &mut self,
-            request: impl tonic::IntoRequest<super::BindRequest>)
-            -> Result<tonic::Response<super::UnifiedResponseMessagesForGrpc>, tonic::Status>
-        {
+            request: impl tonic::IntoRequest<super::BindRequest>,
+        ) -> Result<tonic::Response<super::UnifiedResponseMessagesForGrpc>, tonic::Status> {
             self.inner.ready().await.map_err(|e| {
-                                         tonic::Status::new(tonic::Code::Unknown,
-                                                            format!("Service was not ready: {}",
-                                                                    e.into()))
-                                     })?;
+                tonic::Status::new(
+                    tonic::Code::Unknown,
+                    format!("Service was not ready: {}", e.into()),
+                )
+            })?;
             let codec = tonic::codec::ProstCodec::default();
             let path =
                 http::uri::PathAndQuery::from_static("/delicate.actuator.Actuator/BindActuator");
@@ -139,24 +166,32 @@ pub mod actuator_client {
         }
         pub async fn health_check(
             &mut self,
-            request: impl tonic::IntoRequest<super::HealthCheckUnit>)
-            -> Result<tonic::Response<super::UnifiedResponseMessagesForGrpc>, tonic::Status>
-        {
+            request: impl tonic::IntoRequest<super::HealthCheckUnit>,
+        ) -> Result<tonic::Response<super::UnifiedResponseMessagesForGrpc>, tonic::Status> {
             self.inner.ready().await.map_err(|e| {
-                                         tonic::Status::new(tonic::Code::Unknown,
-                                                            format!("Service was not ready: {}",
-                                                                    e.into()))
-                                     })?;
+                tonic::Status::new(
+                    tonic::Code::Unknown,
+                    format!("Service was not ready: {}", e.into()),
+                )
+            })?;
             let codec = tonic::codec::ProstCodec::default();
             let path =
                 http::uri::PathAndQuery::from_static("/delicate.actuator.Actuator/HealthCheck");
             self.inner.unary(request.into_request(), path, codec).await
-        }        pub async fn health_watch (& mut self , request : impl tonic :: IntoRequest < super :: HealthWatchUnit > ,) -> Result < tonic :: Response < tonic :: codec :: Streaming < super :: UnifiedResponseMessagesForGrpc >> , tonic :: Status >{
+        }
+        pub async fn health_watch(
+            &mut self,
+            request: impl tonic::IntoRequest<super::HealthWatchUnit>,
+        ) -> Result<
+            tonic::Response<tonic::codec::Streaming<super::UnifiedResponseMessagesForGrpc>>,
+            tonic::Status,
+        > {
             self.inner.ready().await.map_err(|e| {
-                                         tonic::Status::new(tonic::Code::Unknown,
-                                                            format!("Service was not ready: {}",
-                                                                    e.into()))
-                                     })?;
+                tonic::Status::new(
+                    tonic::Code::Unknown,
+                    format!("Service was not ready: {}", e.into()),
+                )
+            })?;
             let codec = tonic::codec::ProstCodec::default();
             let path =
                 http::uri::PathAndQuery::from_static("/delicate.actuator.Actuator/HealthWatch");
@@ -171,32 +206,42 @@ pub mod actuator_server {
     #[doc = "Generated trait containing gRPC methods that should be implemented for use with ActuatorServer."]
     #[async_trait]
     pub trait Actuator: Send + Sync + 'static {
-        async fn run_task(&self,
-                          request: tonic::Request<super::Task>)
-                          -> Result<tonic::Response<super::RecordId>, tonic::Status>;
+        async fn run_task(
+            &self,
+            request: tonic::Request<super::Task>,
+        ) -> Result<tonic::Response<super::RecordId>, tonic::Status>;
         async fn cancel_task(
             &self,
-            request: tonic::Request<super::RecordId>)
-            -> Result<tonic::Response<super::UnifiedResponseMessagesForGrpc>, tonic::Status>;
+            request: tonic::Request<super::RecordId>,
+        ) -> Result<tonic::Response<super::UnifiedResponseMessagesForGrpc>, tonic::Status>;
         #[doc = "Server streaming response type for the KeepRunningTask method."]
-        type KeepRunningTaskStream : futures_core :: Stream < Item = Result < super :: UnifiedResponseMessagesForGrpc , tonic :: Status >> + Send + Sync + 'static ;
+        type KeepRunningTaskStream: futures_core::Stream<
+                Item = Result<super::UnifiedResponseMessagesForGrpc, tonic::Status>,
+            > + Send
+            + Sync
+            + 'static;
         async fn keep_running_task(
             &self,
-            request: tonic::Request<super::Task>)
-            -> Result<tonic::Response<Self::KeepRunningTaskStream>, tonic::Status>;
+            request: tonic::Request<super::Task>,
+        ) -> Result<tonic::Response<Self::KeepRunningTaskStream>, tonic::Status>;
         async fn bind_actuator(
             &self,
-            request: tonic::Request<super::BindRequest>)
-            -> Result<tonic::Response<super::UnifiedResponseMessagesForGrpc>, tonic::Status>;
+            request: tonic::Request<super::BindRequest>,
+        ) -> Result<tonic::Response<super::UnifiedResponseMessagesForGrpc>, tonic::Status>;
         async fn health_check(
             &self,
-            request: tonic::Request<super::HealthCheckUnit>)
-            -> Result<tonic::Response<super::UnifiedResponseMessagesForGrpc>, tonic::Status>;
+            request: tonic::Request<super::HealthCheckUnit>,
+        ) -> Result<tonic::Response<super::UnifiedResponseMessagesForGrpc>, tonic::Status>;
         #[doc = "Server streaming response type for the HealthWatch method."]
-        type HealthWatchStream : futures_core :: Stream < Item = Result < super :: UnifiedResponseMessagesForGrpc , tonic :: Status >> + Send + Sync + 'static ;
-        async fn health_watch(&self,
-                              request: tonic::Request<super::HealthWatchUnit>)
-                              -> Result<tonic::Response<Self::HealthWatchStream>, tonic::Status>;
+        type HealthWatchStream: futures_core::Stream<
+                Item = Result<super::UnifiedResponseMessagesForGrpc, tonic::Status>,
+            > + Send
+            + Sync
+            + 'static;
+        async fn health_watch(
+            &self,
+            request: tonic::Request<super::HealthWatchUnit>,
+        ) -> Result<tonic::Response<Self::HealthWatchStream>, tonic::Status>;
     }
     #[derive(Debug)]
     pub struct ActuatorServer<T: Actuator> {
@@ -209,12 +254,15 @@ pub mod actuator_server {
         pub fn new(inner: T) -> Self {
             let inner = Arc::new(inner);
             let inner = _Inner(inner);
-            Self { inner,
-                   accept_compression_encodings: Default::default(),
-                   send_compression_encodings: Default::default() }
+            Self {
+                inner,
+                accept_compression_encodings: Default::default(),
+                send_compression_encodings: Default::default(),
+            }
         }
         pub fn with_interceptor<F>(inner: T, interceptor: F) -> InterceptedService<Self, F>
-            where F: tonic::service::Interceptor
+        where
+            F: tonic::service::Interceptor,
         {
             InterceptedService::new(Self::new(inner), interceptor)
         }
@@ -230,9 +278,10 @@ pub mod actuator_server {
         }
     }
     impl<T, B> tonic::codegen::Service<http::Request<B>> for ActuatorServer<T>
-        where T: Actuator,
-              B: Body + Send + Sync + 'static,
-              B::Error: Into<StdError> + Send + 'static
+    where
+        T: Actuator,
+        B: Body + Send + Sync + 'static,
+        B::Error: Into<StdError> + Send + 'static,
     {
         type Response = http::Response<tonic::body::BoxBody>;
         type Error = Never;
@@ -262,7 +311,10 @@ pub mod actuator_server {
                         let inner = inner.0;
                         let method = RunTaskSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic :: server :: Grpc :: new (codec) . apply_compression_config (accept_compression_encodings , send_compression_encodings) ;
+                        let mut grpc = tonic::server::Grpc::new(codec).apply_compression_config(
+                            accept_compression_encodings,
+                            send_compression_encodings,
+                        );
                         let res = grpc.unary(method, req).await;
                         Ok(res)
                     };
@@ -274,9 +326,10 @@ pub mod actuator_server {
                     impl<T: Actuator> tonic::server::UnaryService<super::RecordId> for CancelTaskSvc<T> {
                         type Response = super::UnifiedResponseMessagesForGrpc;
                         type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
-                        fn call(&mut self,
-                                request: tonic::Request<super::RecordId>)
-                                -> Self::Future {
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::RecordId>,
+                        ) -> Self::Future {
                             let inner = self.0.clone();
                             let fut = async move { (*inner).cancel_task(request).await };
                             Box::pin(fut)
@@ -289,7 +342,10 @@ pub mod actuator_server {
                         let inner = inner.0;
                         let method = CancelTaskSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic :: server :: Grpc :: new (codec) . apply_compression_config (accept_compression_encodings , send_compression_encodings) ;
+                        let mut grpc = tonic::server::Grpc::new(codec).apply_compression_config(
+                            accept_compression_encodings,
+                            send_compression_encodings,
+                        );
                         let res = grpc.unary(method, req).await;
                         Ok(res)
                     };
@@ -316,7 +372,10 @@ pub mod actuator_server {
                         let inner = inner.0;
                         let method = KeepRunningTaskSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic :: server :: Grpc :: new (codec) . apply_compression_config (accept_compression_encodings , send_compression_encodings) ;
+                        let mut grpc = tonic::server::Grpc::new(codec).apply_compression_config(
+                            accept_compression_encodings,
+                            send_compression_encodings,
+                        );
                         let res = grpc.server_streaming(method, req).await;
                         Ok(res)
                     };
@@ -328,9 +387,10 @@ pub mod actuator_server {
                     impl<T: Actuator> tonic::server::UnaryService<super::BindRequest> for BindActuatorSvc<T> {
                         type Response = super::UnifiedResponseMessagesForGrpc;
                         type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
-                        fn call(&mut self,
-                                request: tonic::Request<super::BindRequest>)
-                                -> Self::Future {
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::BindRequest>,
+                        ) -> Self::Future {
                             let inner = self.0.clone();
                             let fut = async move { (*inner).bind_actuator(request).await };
                             Box::pin(fut)
@@ -343,7 +403,10 @@ pub mod actuator_server {
                         let inner = inner.0;
                         let method = BindActuatorSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic :: server :: Grpc :: new (codec) . apply_compression_config (accept_compression_encodings , send_compression_encodings) ;
+                        let mut grpc = tonic::server::Grpc::new(codec).apply_compression_config(
+                            accept_compression_encodings,
+                            send_compression_encodings,
+                        );
                         let res = grpc.unary(method, req).await;
                         Ok(res)
                     };
@@ -355,9 +418,10 @@ pub mod actuator_server {
                     impl<T: Actuator> tonic::server::UnaryService<super::HealthCheckUnit> for HealthCheckSvc<T> {
                         type Response = super::UnifiedResponseMessagesForGrpc;
                         type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
-                        fn call(&mut self,
-                                request: tonic::Request<super::HealthCheckUnit>)
-                                -> Self::Future {
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::HealthCheckUnit>,
+                        ) -> Self::Future {
                             let inner = self.0.clone();
                             let fut = async move { (*inner).health_check(request).await };
                             Box::pin(fut)
@@ -370,7 +434,10 @@ pub mod actuator_server {
                         let inner = inner.0;
                         let method = HealthCheckSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic :: server :: Grpc :: new (codec) . apply_compression_config (accept_compression_encodings , send_compression_encodings) ;
+                        let mut grpc = tonic::server::Grpc::new(codec).apply_compression_config(
+                            accept_compression_encodings,
+                            send_compression_encodings,
+                        );
                         let res = grpc.unary(method, req).await;
                         Ok(res)
                     };
@@ -386,9 +453,10 @@ pub mod actuator_server {
                         type ResponseStream = T::HealthWatchStream;
                         type Future =
                             BoxFuture<tonic::Response<Self::ResponseStream>, tonic::Status>;
-                        fn call(&mut self,
-                                request: tonic::Request<super::HealthWatchUnit>)
-                                -> Self::Future {
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::HealthWatchUnit>,
+                        ) -> Self::Future {
                             let inner = self.0.clone();
                             let fut = async move { (*inner).health_watch(request).await };
                             Box::pin(fut)
@@ -401,18 +469,22 @@ pub mod actuator_server {
                         let inner = inner.0;
                         let method = HealthWatchSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic :: server :: Grpc :: new (codec) . apply_compression_config (accept_compression_encodings , send_compression_encodings) ;
+                        let mut grpc = tonic::server::Grpc::new(codec).apply_compression_config(
+                            accept_compression_encodings,
+                            send_compression_encodings,
+                        );
                         let res = grpc.server_streaming(method, req).await;
                         Ok(res)
                     };
                     Box::pin(fut)
                 },
                 _ => Box::pin(async move {
-                    Ok(http::Response::builder().status(200)
-                                                .header("grpc-status", "12")
-                                                .header("content-type", "application/grpc")
-                                                .body(empty_body())
-                                                .unwrap())
+                    Ok(http::Response::builder()
+                        .status(200)
+                        .header("grpc-status", "12")
+                        .header("content-type", "application/grpc")
+                        .body(empty_body())
+                        .unwrap())
                 }),
             }
         }
@@ -420,9 +492,11 @@ pub mod actuator_server {
     impl<T: Actuator> Clone for ActuatorServer<T> {
         fn clone(&self) -> Self {
             let inner = self.inner.clone();
-            Self { inner,
-                   accept_compression_encodings: self.accept_compression_encodings,
-                   send_compression_encodings: self.send_compression_encodings }
+            Self {
+                inner,
+                accept_compression_encodings: self.accept_compression_encodings,
+                send_compression_encodings: self.send_compression_encodings,
+            }
         }
     }
     impl<T: Actuator> Clone for _Inner<T> {

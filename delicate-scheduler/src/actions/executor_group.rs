@@ -27,11 +27,9 @@ async fn create_executor_group(req: &Request,
                            diesel::select(db::last_insert_id).get_result::<u64>(&conn)
                        }).await;
 
-        let id =
-            f_result.map(Into::<UnifiedResponseMessages<u64>>::into)
-                    .unwrap_or_else(|e| {
-                        UnifiedResponseMessages::<u64>::error().customized_error_msg(e.to_string())
-                    });
+        let id = f_result.map(Into::<UnifiedResponseMessages<u64>>::into).unwrap_or_else(|e| {
+            UnifiedResponseMessages::<u64>::error().customized_error_msg(e.to_string())
+        });
 
         return Json(id);
     }

@@ -19,7 +19,6 @@ Cargo.lock
 *.out
 
 /doc/book/*
-
 # delicate-web
 coverage
 dist
