@@ -8,6 +8,7 @@ edition = "2018"
 
 [[bin]]
 name = "client_emulator"
+path = "src/bin/client_emulator.rs"
 
 [dependencies]
 async-stream = "0.3.2"

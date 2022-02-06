@@ -6,6 +6,7 @@ pub use dotenv::dotenv;
 pub use flexi_logger;
 pub use hex;
 pub use poem;
+pub use prometheus;
 pub use redis;
 pub use reqwest;
 pub use rsa;

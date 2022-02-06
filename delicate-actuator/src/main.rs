@@ -216,6 +216,8 @@ impl DelicateActuator {
 #[tonic::async_trait]
 impl Actuator for DelicateActuator {
     async fn run_task(&self, request: Request<Task>) -> Result<Response<RecordId>, Status> {
+        let _recorder = metrics::AutoRecorder::new("run_task");
+
         let task = request.into_inner();
         debug!("task: {:?}", &task);
 
@@ -226,6 +228,8 @@ impl Actuator for DelicateActuator {
     async fn cancel_task(&self,
                          reqeust: Request<RecordId>)
                          -> Result<Response<UnifiedResponseMessagesForGrpc>, Status> {
+        let _recorder = metrics::AutoRecorder::new("cancel_task");
+
         let record_id = reqeust.into_inner();
         let (_, task_handlers) =
             self.state().handlers_map().remove(&record_id.id).ok_or_else(|| {
@@ -247,6 +251,8 @@ impl Actuator for DelicateActuator {
     async fn keep_running_task(&self,
                                request: Request<Task>)
                                -> Result<Response<Self::KeepRunningTaskStream>, Status> {
+        let _recorder = metrics::AutoRecorder::new("keep_running_task");
+
         let task = request.into_inner();
         let mut process_linked_list = parse_and_run::<TokioChild, TokioCommand>(&task.command)
             .await
@@ -282,6 +288,8 @@ impl Actuator for DelicateActuator {
     async fn bind_actuator(&self,
                            request: Request<BindRequest>)
                            -> Result<Response<UnifiedResponseMessagesForGrpc>, Status> {
+        let _recorder = metrics::AutoRecorder::new("bind_actuator");
+
         let bind_request = request.into_inner();
 
         let executor_machine_id = bind_request.executor_machine_id as i16;
@@ -302,6 +310,8 @@ impl Actuator for DelicateActuator {
     async fn health_check(&self,
                           request: Request<HealthCheckUnit>)
                           -> Result<Response<UnifiedResponseMessagesForGrpc>, Status> {
+        let _recorder = metrics::AutoRecorder::new("health_check");
+
         let addr = request.remote_addr();
         let check_unit = request.into_inner();
         info!("Health-check From: {:?}, unit: {:?}", addr, check_unit);
@@ -316,6 +326,8 @@ impl Actuator for DelicateActuator {
     async fn health_watch(&self,
                           request: Request<HealthWatchUnit>)
                           -> Result<Response<Self::HealthWatchStream>, Status> {
+        let _recorder = metrics::AutoRecorder::new("health_watch");
+
         let addr = request.remote_addr();
         let check_unit = request.into_inner();
         info!("Health-check From: {:?}, unit: {:?}", addr, check_unit);

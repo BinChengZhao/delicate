@@ -1,5 +1,5 @@
 ##### DEV | CI | DEPLOY ENVIRONMENT #####
-FROM centos:7 AS dev
+FROM --platform=linux/arm64 centos:7 AS dev
 
 RUN yum install -y centos-release-scl epel-release && yum install -y devtoolset-7-llvm llvm-toolset-7.0-lld && \
     # compile librocksdb-sys require gcc-c++ and libclang.so package from devtoolset-7-llvm
@@ -11,7 +11,10 @@ RUN yum install -y centos-release-scl epel-release && yum install -y devtoolset-
     yum install -y openssl-devel git make && \
     # locv(from epel-release registry) for cargo-tarpaulin genhtml report to gitlab
     yum install -y lcov && \
+    yum -y update && \
+    yum install -y mysql-devel postgresql-devel sqlite3-devel && \
     yum clean all
+
 # BASH_ENV make sure CI load .bashrc before run
 ENV BASH_ENV "/root/.bashrc"
 
@@ -20,10 +23,10 @@ ENV BASH_ENV "/root/.bashrc"
 SHELL ["/bin/bash", "--login", "-c"]
 
 ENV NODEJS_LTS_VERSION v16.13.1
-RUN curl -O -L https://npm.taobao.org/mirrors/node/latest-v16.x/node-$NODEJS_LTS_VERSION-linux-x64.tar.gz && \
-    tar zxf node-$NODEJS_LTS_VERSION-linux-x64.tar.gz && \
-    rm node-$NODEJS_LTS_VERSION-linux-x64.tar.gz
-ENV PATH /node-$NODEJS_LTS_VERSION-linux-x64/bin/:$PATH
+RUN curl -O -L https://npm.taobao.org/mirrors/node/latest-v16.x/node-$NODEJS_LTS_VERSION-linux-arm64.tar.gz && \
+    tar zxf node-$NODEJS_LTS_VERSION-linux-arm64.tar.gz && \
+    rm node-$NODEJS_LTS_VERSION-linux-arm64.tar.gz
+ENV PATH /node-$NODEJS_LTS_VERSION-linux-arm64/bin/:$PATH
 
 
 # Rustup
@@ -39,7 +42,7 @@ ENV PATH /node-$NODEJS_LTS_VERSION-linux-x64/bin/:$PATH
 
 # COPY .cargo/docker_dev_cargo_config.toml /root/.cargo/config.toml
 
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh  -s -- -y
 
 ENV PATH /root/.cargo/bin/:$PATH
 
@@ -47,11 +50,13 @@ ENV PATH /root/.cargo/bin/:$PATH
 COPY rust-toolchain.toml .
 
 # Install cargo tools
+# cargo-tarpaulin (Tarpaulin only supports x86_64 processors running Linux)
 RUN mkdir cargo_install_target && \
-    CARGO_TARGET_DIR=cargo_install_target cargo install cargo-chef cargo-tarpaulin cargo-udeps typos-cli && \
+    CARGO_TARGET_DIR=cargo_install_target cargo install cargo-chef && \
+    CARGO_TARGET_DIR=cargo_install_target cargo install cargo-udeps && \
+    CARGO_TARGET_DIR=cargo_install_target cargo install typos-cli && \
+    # CARGO_TARGET_DIR=cargo_install_target cargo install cargo-tarpaulin && \
     rm -rf cargo_install_target
-
-
 
 ##### PLANNER with cargo-chef #####
 FROM dev AS planner
@@ -81,14 +86,14 @@ RUN cargo build --release --workspace && \
     cp target/release/delicate-actuator /result && \
     cp target/release/delicate-executor /result && \
     cp target/release/delicate-scheduler /result && \ 
-    mv -r delicate-web/dist /result/delicate-web
+    cp -r delicate-web/dist /result/delicate-web
 
 # Build delicate-web
 RUN npm install --legacy-peer-deps --prefix delicate-web/
 RUN npm run build --prefix delicate-web/
 
 ##### FINAL RELEASE IMAGE #####
-FROM centos:7 AS release
+FROM --platform=linux/arm64 centos:7 AS release
 
 WORKDIR /delicate
 
@@ -101,6 +106,7 @@ COPY --from=builder /result/delicate-actuator /delicate/bin/
 COPY --from=builder /result/delicate-executor /delicate/bin/
 COPY --from=builder /result/delicate-scheduler /delicate/bin/
 COPY --from=builder /result/delicate-scheduler /delicate/bin/
+COPY --from=builder /result/delicate-web /delicate/web/
 
 EXPOSE 8090 8090
 EXPOSE 9080 9080
