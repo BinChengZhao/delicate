@@ -1,5 +1,10 @@
 ##### DEV | CI | DEPLOY ENVIRONMENT #####
+# binchengzhao/delicate:{tag}
 FROM --platform=linux/arm64 centos:7 AS dev
+# The base platform is arm64, 
+# so all installed programs use the arm64 instruction set.
+# Node.js is installed separately and needs to be individually 
+# restricted to platform arm64.
 
 RUN yum install -y centos-release-scl epel-release && yum install -y devtoolset-7-llvm llvm-toolset-7.0-lld && \
     # compile librocksdb-sys require gcc-c++ and libclang.so package from devtoolset-7-llvm
@@ -23,10 +28,11 @@ ENV BASH_ENV "/root/.bashrc"
 SHELL ["/bin/bash", "--login", "-c"]
 
 ENV NODEJS_LTS_VERSION v16.13.1
-RUN curl -O -L https://npm.taobao.org/mirrors/node/latest-v16.x/node-$NODEJS_LTS_VERSION-linux-arm64.tar.gz && \
-    tar zxf node-$NODEJS_LTS_VERSION-linux-arm64.tar.gz && \
-    rm node-$NODEJS_LTS_VERSION-linux-arm64.tar.gz
-ENV PATH /node-$NODEJS_LTS_VERSION-linux-arm64/bin/:$PATH
+ENV NODEJS_PLATFORM arm64
+RUN curl -O -L https://npm.taobao.org/mirrors/node/latest-v16.x/node-$NODEJS_LTS_VERSION-linux-$NODEJS_PLATFORM.tar.gz && \
+    tar zxf node-$NODEJS_LTS_VERSION-linux-$NODEJS_PLATFORM.tar.gz && \
+    rm node-$NODEJS_LTS_VERSION-linux-$NODEJS_PLATFORM.tar.gz
+ENV PATH /node-$NODEJS_LTS_VERSION-linux-$NODEJS_PLATFORM/bin/:$PATH
 
 
 # Rustup
