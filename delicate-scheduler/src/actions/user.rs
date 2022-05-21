@@ -306,7 +306,7 @@ fn save_session(
 ) -> Result<(), CommonError> {
     let session = req.get_session();
 
-    session.set("login_time", get_timestamp());
+    session.set("login_time", timestamp());
     session.set("user_id", user.id);
     session.set("user_name", user.user_name);
     session.set("nick_name", user.nick_name);

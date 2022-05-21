@@ -206,7 +206,9 @@ impl TryFrom<TaskPackage> for Task {
             .set_schedule_iterator_time_zone(time_zone)
             .set_maximum_running_time(timeout as u64)
             .set_maximum_parallel_runnable_num(maximum_parallel_runnable_num as u64)
-            .spawn(unblock_process_task_fn(command))?;
+            .spawn_async_routine({
+                move || tokio_unblock_process_task_fn(command.clone(), id as u64)
+            })?;
 
         Ok(task)
     }

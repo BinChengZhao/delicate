@@ -101,6 +101,7 @@ pub(crate) use validator::{Validate, ValidationErrors};
 pub(crate) use poem::http::Method as HttpMethod;
 pub(crate) use poem::listener::TcpListener;
 pub(crate) use poem::middleware::{AddData, CookieJarManager};
+pub(crate) use poem::Result as PoemResult;
 
 pub(crate) use poem::middleware::Cors;
 pub(crate) use poem::session::{CookieConfig, CookieSession, Session};

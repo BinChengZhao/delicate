@@ -205,7 +205,7 @@ async fn pre_update_executor_processor_bind(
                 "http://".to_string() + (older_executor_host.deref()) + "/api/task/remove";
             TaskUnit::default()
                 .set_task_id(task_id)
-                .set_time(get_timestamp())
+                .set_time(timestamp())
                 .sign(Some(older_executor_token.deref()))
                 .map(|t| (t, executor_host))
                 .ok()

@@ -18,7 +18,7 @@ pub struct SignedHealthScreenUnit {
 
 impl Default for HealthScreenUnit {
     fn default() -> Self {
-        let time = get_timestamp();
+        let time = timestamp();
         HealthScreenUnit { time }
     }
 }

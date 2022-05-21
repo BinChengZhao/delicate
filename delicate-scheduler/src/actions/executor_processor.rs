@@ -234,7 +234,7 @@ async fn activate_executor(
         .set_executor_processor_host(host)
         .set_executor_processor_name(name)
         .set_executor_machine_id(machine_id)
-        .set_time(get_timestamp())
+        .set_time(timestamp())
         .sign(private_key)?;
 
     let response: Result<service_binding::EncryptedBindResponse, CommonError> = request_client

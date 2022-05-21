@@ -13,7 +13,7 @@ name = "delicate_utils"
 async-lock = "^2.3.0"
 casbin = {version = '2.0.9', default-features = false, features = ["incremental", "logging", "tokio", "runtime-tokio", "watcher"]}
 derive_more = "^0.99.14"
-delay_timer = {version = "^0.9.0", features = ["full"]}
+delay_timer = {version = "^0.11.0", features = ["full"]}
 fastrand = "^1.4.1"
 flexi_logger = {version = "0.19", features = ["trc"]}
 reqwest = { version = "0.11", features = ["json"] }

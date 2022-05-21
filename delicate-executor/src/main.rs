@@ -220,7 +220,7 @@ async fn bind_executor(
         *security_conf.get_bind_scheduler_token_mut().await = token.clone();
 
         let bind_response = BindResponse {
-            time: get_timestamp() as i64,
+            time: timestamp() as i64,
             token,
         }
         .encrypt_self(security_conf.get_rsa_public_key());
@@ -268,7 +268,7 @@ fn main() -> AnyResult<()> {
         let address = env::var("EXECUTOR_LISTENING_ADDRESS")
             .expect("Without `EXECUTOR_LISTENING_ADDRESS` set in .env");
         let listener = TcpListener::bind(address);
-        let server = Server::new(listener).await?;
+        let server = Server::new(listener);
         Ok(server.run(app).await?)
     });
 

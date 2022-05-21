@@ -219,10 +219,8 @@ impl SecurityLevel {
     pub fn get_app_security_level() -> Self {
         env::var_os("DELICATE_SECURITY_LEVEL").map_or(SecurityLevel::default(), |e| {
             e.to_str()
-                .map(|s| u16::from_str(s).ok())
-                .flatten()
-                .map(|e| e.try_into().ok())
-                .flatten()
+                .and_then(|s| u16::from_str(s).ok())
+                .and_then(|e| e.try_into().ok())
                 .expect("Environment Variables `DELICATE_SECURITY_LEVEL` missed.")
         })
     }

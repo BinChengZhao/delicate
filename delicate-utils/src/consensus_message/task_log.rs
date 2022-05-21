@@ -77,7 +77,7 @@ pub struct ExecutorEventCollection {
 
 impl From<Vec<ExecutorEvent>> for ExecutorEventCollection {
     fn from(events: Vec<ExecutorEvent>) -> Self {
-        let timestamp = get_timestamp() as i64;
+        let timestamp = timestamp() as i64;
         ExecutorEventCollection { events, timestamp }
     }
 }

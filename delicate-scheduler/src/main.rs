@@ -91,7 +91,7 @@ fn main() -> AnyResut<()> {
         let app = init_scheduler(app, arc_runtime_cloned).await;
 
         let listener = TcpListener::bind(scheduler_listening_address);
-        let server = Server::new(listener).await?;
+        let server = Server::new(listener);
         Ok(server.run(app).await?)
     })
 }

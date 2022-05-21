@@ -95,7 +95,7 @@ const WHITE_LIST: [&str; 9] = [
 impl<E: Endpoint> Endpoint for CasbinAuthMiddleware<E> {
     type Output = Response;
 
-    async fn call(&self, req: Request) -> Self::Output {
+    async fn call(&self, req: Request) -> PoemResult<Self::Output> {
         let enforcer = req
             .extensions()
             .get::<Arc<RwLock<Enforcer>>>()
@@ -111,39 +111,39 @@ impl<E: Endpoint> Endpoint for CasbinAuthMiddleware<E> {
 
         // Path in the whitelist do not need to be verified.
         if WHITE_LIST.contains(&path.deref()) {
-            return self.ep.call(req).await.into_response();
+            return Ok(self.ep.call(req).await?.into_response());
         }
 
         #[cfg(APP_DEBUG_MODE)]
         {
-            return self.ep.call(req).await.into_response();
+            return Ok(self.ep.call(req).await?.into_response());
         }
 
         let auther = enforcer.read().await;
 
         if username.is_empty() || resource.is_empty() || action.is_empty() {
-            return UnifiedResponseMessages::<()>::error()
+            return Ok(UnifiedResponseMessages::<()>::error()
                 .customized_error_msg(String::from("Permission check failed."))
-                .into_response();
+                .into_response());
         }
 
         match auther.enforce(vec![username, resource, action]) {
             Ok(true) => {
                 drop(auther);
-                self.ep.call(req).await.into_response()
+                Ok(self.ep.call(req).await?.into_response())
             }
             Ok(false) => {
                 drop(auther);
-                UnifiedResponseMessages::<()>::error()
+                Ok(UnifiedResponseMessages::<()>::error()
                     .customized_error_msg(String::from("Permission check failed."))
-                    .into_response()
+                    .into_response())
             }
             Err(e) => {
                 drop(auther);
 
-                UnifiedResponseMessages::<()>::error()
+                Ok(UnifiedResponseMessages::<()>::error()
                     .customized_error_msg(format!("Permission check failed. ({})", e))
-                    .into_response()
+                    .into_response())
             }
         }
     }

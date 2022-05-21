@@ -318,7 +318,7 @@ pub async fn pre_update_task_sevice(
 
                 let message = delicate_utils_task::TaskUnit::default()
                     .set_task_id(task_id)
-                    .set_time(get_timestamp());
+                    .set_time(timestamp());
 
                 info!("Remove task{} at:{}", &task_package, &executor_host);
                 message
@@ -603,7 +603,7 @@ async fn pre_operate_task(
         .filter_map(|(executor_host, executor_token)| {
             let message = delicate_utils_task::TaskUnit::default()
                 .set_task_id(task_id)
-                .set_time(get_timestamp());
+                .set_time(timestamp());
 
             let executor_host = "http://".to_string() + (executor_host.deref()) + url;
 

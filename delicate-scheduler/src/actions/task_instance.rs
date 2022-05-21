@@ -288,7 +288,7 @@ async fn kill_one_task_instance(
     let record = delicate_utils_task_log::CancelTaskRecord::default()
         .set_task_id(task_id)
         .set_record_id(record_id.0)
-        .set_time(get_timestamp())
+        .set_time(timestamp())
         .sign(token.as_deref())?;
 
     request_client
