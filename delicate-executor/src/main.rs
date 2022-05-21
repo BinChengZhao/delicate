@@ -234,7 +234,7 @@ fn main() -> AnyResult<()> {
                        let address = env::var("EXECUTOR_LISTENING_ADDRESS")
             .expect("Without `EXECUTOR_LISTENING_ADDRESS` set in .env");
                        let listener = TcpListener::bind(address);
-                       let server = Server::new(listener).await?;
+                       let server = Server::new(listener);
                        Ok(server.run(app).await?)
                    });
 

@@ -78,12 +78,33 @@ fn main() -> AnyResut<()> {
                    let app = init_scheduler(app, arc_runtime_cloned).await;
 
                    let listener = TcpListener::bind(scheduler_listening_address);
-                   let server = Server::new(listener).await?;
+                   let server = Server::new(listener);
                    Ok(server.run(app).await?)
                })
 }
 
 fn init_logger() -> FileLogWriterHandle {
+    // TODO: opentelemetry
+    // https://crates.io/crates/tracing-opentelemetry
+    // /Users/bincheng_paopao/project/repo/rust/others/libs/tracing/examples/
+    // examples/opentelemetry.rs
+
+    /////////-------------- demo -----------------/////////
+
+    // Install an otel pipeline with a simple span processor that exports data one
+    // at a time when spans end. See the `install_batch` option on each
+    // exporter's pipeline builder to see how to export in batches.
+    //
+    // let tracer = opentelemetry_jaeger::new_pipeline()
+    //     .with_service_name("report_example")
+    //     .install_simple()?;
+    // let opentelemetry = tracing_opentelemetry::subscriber().with_tracer(tracer);
+    // tracing_subscriber::registry()
+    //     .with(opentelemetry)
+    //     .try_init()?;
+
+    /////////-------------- demo -----------------/////////
+
     let log_level: Level =
         FromStr::from_str(&env::var("LOG_LEVEL").unwrap_or_else(|_| String::from("info")))
             .expect("Log level acquired fail.");

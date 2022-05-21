@@ -59,7 +59,7 @@ pub struct SessionAuthMiddleware<E> {
 impl<E: Endpoint> Endpoint for SessionAuthMiddleware<E> {
     type Output = Response;
 
-    async fn call(&self, req: Request) -> Self::Output {
+    async fn call(&self, req: Request) -> PoemResult<Self::Output> {
         #[cfg(APP_DEBUG_MODE)]
         {
             return self.ep.call(req).await.into_response();
@@ -75,16 +75,16 @@ impl<E: Endpoint> Endpoint for SessionAuthMiddleware<E> {
 
         match path {
             "/api/user/login" | "/api/task_log/event_trigger" => {
-                self.ep.call(req).await.into_response()
+                Ok(self.ep.call(req).await?.into_response())
             },
             _ => {
                 let user_id = session.get::<u64>("user_id");
                 if user_id.is_some() {
-                    self.ep.call(req).await.into_response()
+                    Ok(self.ep.call(req).await?.into_response())
                 } else {
-                    UnifiedResponseMessages::<()>::error()
+                    Ok(UnifiedResponseMessages::<()>::error()
                         .customized_error_msg(String::from("Please log in and operate."))
-                        .into_response()
+                        .into_response())
                 }
             },
         }

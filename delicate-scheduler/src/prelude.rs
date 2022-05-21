@@ -49,6 +49,8 @@ pub(crate) use flexi_logger::{
     writers::FileLogWriter, Age, Cleanup, Criterion, FileSpec, Naming, WriteMode,
 };
 pub(crate) use futures::future::{join, join3, JoinAll};
+pub(crate) use opentelemetry::sdk::export::trace::stdout;
+pub(crate) use poem::error::Result as PoemResult;
 pub(crate) use poem::http::Method as HttpMethod;
 pub(crate) use poem::listener::TcpListener;
 pub(crate) use poem::middleware::Cors;
@@ -77,7 +79,9 @@ pub(crate) use tokio::task::spawn_blocking;
 pub(crate) use tokio::time::{interval, sleep};
 pub(crate) use tokio::time::{timeout as tokio_timeout, Timeout as TokioTimeout};
 pub(crate) use tracing::{debug, error, info, info_span, span, Instrument, Level};
+pub(crate) use tracing_subscriber::layer::SubscriberExt;
 pub(crate) use tracing_subscriber::FmtSubscriber;
+pub(crate) use tracing_subscriber::Registry;
 pub(crate) use validator::{Validate, ValidationErrors};
 
 #[allow(unused_imports)]

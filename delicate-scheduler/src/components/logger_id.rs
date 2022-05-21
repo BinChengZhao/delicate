@@ -24,7 +24,7 @@ pub struct LoggerIdMiddleware<E> {
 impl<E: Endpoint> Endpoint for LoggerIdMiddleware<E> {
     type Output = E::Output;
 
-    async fn call(&self, req: Request) -> Self::Output {
+    async fn call(&self, req: Request) -> PoemResult<Self::Output> {
         let unique_id = get_unique_id_string();
         self.ep.call(req).instrument(info_span!("logger-", id = unique_id.deref())).await
     }

@@ -5,6 +5,8 @@ pub use delay_timer;
 pub use dotenv::dotenv;
 pub use flexi_logger;
 pub use hex;
+pub use opentelemetry;
+pub use opentelemetry_jaeger;
 pub use poem;
 pub use prometheus;
 pub use redis;
@@ -15,6 +17,7 @@ pub use sysinfo;
 pub use tokio;
 pub use tonic;
 pub use tracing;
+pub use tracing_opentelemetry;
 pub use tracing_subscriber;
 
 pub use crate::consensus_message::security::{
